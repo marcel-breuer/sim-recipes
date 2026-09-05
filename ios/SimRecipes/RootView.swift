@@ -37,7 +37,7 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ExploreView()
+            ExploreView(apiClient: apiClient)
                 .tabItem {
                     Label(AppTab.explore.title, systemImage: AppTab.explore.systemImage)
                 }

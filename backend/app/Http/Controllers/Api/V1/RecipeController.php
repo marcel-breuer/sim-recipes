@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\IndexRecipeRequest;
 use App\Http\Requests\Api\V1\StoreRecipeRequest;
 use App\Http\Requests\Api\V1\UpdateRecipeRequest;
 use App\Http\Resources\Api\V1\RecipeResource;
@@ -12,13 +13,49 @@ use App\Models\RecipeSetting;
 use App\Models\Tag;
 use App\Services\Recipes\RecipeCapabilityValidator;
 use App\Services\Recipes\RecipeImageStorage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class RecipeController extends Controller
 {
+    public function index(IndexRecipeRequest $request): AnonymousResourceCollection
+    {
+        $filters = $request->validated();
+        $query = Recipe::query()
+            ->where('status', Recipe::STATUS_PUBLISHED)
+            ->with([
+                'cameraModel',
+                'user',
+                'categories',
+                'tags',
+                'settings',
+                'images',
+            ]);
+
+        $this->applyFilters($query, $filters);
+
+        if (($filters['feed'] ?? 'popular') === 'newest') {
+            $query
+                ->orderByDesc('published_at')
+                ->orderByDesc('id');
+        } else {
+            $query
+                ->orderByDesc('likes_count')
+                ->orderByDesc('downloads_count')
+                ->orderByDesc('views_count')
+                ->orderByDesc('published_at')
+                ->orderByDesc('id');
+        }
+
+        return RecipeResource::collection($query->paginate(
+            perPage: $filters['per_page'] ?? config('api.pagination.default_per_page'),
+        ));
+    }
+
     public function show(Recipe $recipe): RecipeResource
     {
         abort_unless($this->canView($recipe), 404);
@@ -118,6 +155,63 @@ class RecipeController extends Controller
     {
         return $recipe->status === Recipe::STATUS_PUBLISHED
             || (request()->user() !== null && request()->user()->getKey() === $recipe->user_id);
+    }
+
+    /**
+     * @param  Builder<Recipe>  $query
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyFilters(Builder $query, array $filters): void
+    {
+        if (filled($filters['search'] ?? null)) {
+            $search = mb_strtolower(trim((string) $filters['search']));
+            $pattern = '%'.$search.'%';
+            $query->where(function (Builder $searchQuery) use ($pattern): void {
+                $searchQuery
+                    ->whereRaw('LOWER(name) LIKE ?', [$pattern])
+                    ->orWhereRaw('LOWER(description) LIKE ?', [$pattern])
+                    ->orWhereRaw('LOWER(recommendation) LIKE ?', [$pattern])
+                    ->orWhereHas('tags', function (Builder $tagQuery) use ($pattern): void {
+                        $tagQuery
+                            ->whereRaw('LOWER(tags.name) LIKE ?', [$pattern])
+                            ->orWhereRaw('LOWER(tags.slug) LIKE ?', [$pattern]);
+                    });
+            });
+        }
+
+        if (filled($filters['camera_model_id'] ?? null)) {
+            $query->where('camera_model_id', $filters['camera_model_id']);
+        }
+
+        if (filled($filters['film_simulation'] ?? null)) {
+            $query->whereHas('settings', function (Builder $settingQuery) use ($filters): void {
+                $settingQuery
+                    ->where('setting_key', 'film_simulation')
+                    ->whereJsonContains('value', $filters['film_simulation']);
+            });
+        }
+
+        $this->applyRelationFilter($query, 'categories', $filters['categories'] ?? []);
+        $this->applyRelationFilter($query, 'tags', $filters['tags'] ?? []);
+    }
+
+    /**
+     * @param  Builder<Recipe>  $query
+     * @param  array<int, string>  $values
+     */
+    private function applyRelationFilter(Builder $query, string $relation, array $values): void
+    {
+        if ($values === []) {
+            return;
+        }
+
+        $query->whereHas($relation, function (Builder $relationQuery) use ($values, $relation): void {
+            $relationQuery->where(function (Builder $valueQuery) use ($values, $relation): void {
+                $valueQuery
+                    ->whereIn($relation.'.id', $values)
+                    ->orWhereIn($relation.'.slug', $values);
+            });
+        });
     }
 
     /**

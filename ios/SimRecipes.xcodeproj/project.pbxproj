@@ -32,6 +32,9 @@
 		A00000000000000000000023 /* RecipeDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000027 /* RecipeDraftStore.swift */; };
 		A00000000000000000000024 /* RecipeEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000028 /* RecipeEditorViewModel.swift */; };
 		A00000000000000000000025 /* RecipeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000029 /* RecipeEditorView.swift */; };
+		A00000000000000000000026 /* CommunityFeedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000030 /* CommunityFeedModels.swift */; };
+		A00000000000000000000027 /* ExploreViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000031 /* ExploreViewModel.swift */; };
+		A00000000000000000000028 /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000032 /* RecipeDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +77,9 @@
 		B00000000000000000000027 /* RecipeDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDraftStore.swift; sourceTree = "<group>"; };
 		B00000000000000000000028 /* RecipeEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeEditorViewModel.swift; sourceTree = "<group>"; };
 		B00000000000000000000029 /* RecipeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeEditorView.swift; sourceTree = "<group>"; };
+		B00000000000000000000030 /* CommunityFeedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityFeedModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000031 /* ExploreViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ExploreViewModel.swift; sourceTree = "<group>"; };
+		B00000000000000000000032 /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +125,8 @@
 				B00000000000000000000005 /* ProfileView.swift */,
 				B00000000000000000000028 /* RecipeEditorViewModel.swift */,
 				B00000000000000000000029 /* RecipeEditorView.swift */,
+				B00000000000000000000031 /* ExploreViewModel.swift */,
+				B00000000000000000000032 /* RecipeDetailView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -154,6 +162,7 @@
 				B00000000000000000000025 /* CameraCapabilityService.swift */,
 				B00000000000000000000026 /* RecipeEditorModels.swift */,
 				B00000000000000000000027 /* RecipeDraftStore.swift */,
+				B00000000000000000000030 /* CommunityFeedModels.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -305,6 +314,9 @@
 				A00000000000000000000023 /* RecipeDraftStore.swift in Sources */,
 				A00000000000000000000024 /* RecipeEditorViewModel.swift in Sources */,
 				A00000000000000000000025 /* RecipeEditorView.swift in Sources */,
+				A00000000000000000000026 /* CommunityFeedModels.swift in Sources */,
+				A00000000000000000000027 /* ExploreViewModel.swift in Sources */,
+				A00000000000000000000028 /* RecipeDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

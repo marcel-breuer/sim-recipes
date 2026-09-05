@@ -50,6 +50,22 @@ setting list.
 iOS editor. Category IDs from this response are submitted with recipe writes;
 free-form tags remain plain strings.
 
+## Community recipes
+
+`GET /api/v1/recipes` is public and returns only published recipes. It uses
+page-number pagination with a default of 20 items and accepts these composable
+query parameters:
+
+- `feed=popular|newest` (defaults to `popular`);
+- `search` for recipe name, description, recommendation, or tag text;
+- `camera_model_id` and `film_simulation`;
+- repeated `categories[]` and `tags[]` values, matched by ID or slug;
+- `per_page` up to the configured API maximum.
+
+Filters are combined with AND semantics between filter types. Multiple values
+within a category or tag filter match any selected value. Ordering has stable
+ID tie-breakers so adjacent pages remain deterministic during normal browsing.
+
 Recipe image URLs are API URLs rather than direct object-storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images
