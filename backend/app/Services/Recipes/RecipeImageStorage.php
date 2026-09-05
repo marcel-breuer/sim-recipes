@@ -59,9 +59,10 @@ class RecipeImageStorage
             throw new \RuntimeException('The default filesystem disk is not configured.');
         }
 
-        $sortOrder = (int) RecipeImage::query()
+        $maxSortOrder = RecipeImage::query()
             ->where('recipe_id', $recipe->getKey())
-            ->max('sort_order') + 1;
+            ->max('sort_order');
+        $sortOrder = $maxSortOrder === null ? 0 : (int) $maxSortOrder + 1;
         if ($sortOrder + count($images) > $maxPerRecipe) {
             throw ValidationException::withMessages([
                 'images' => ['A recipe may contain at most '.$maxPerRecipe.' images.'],
