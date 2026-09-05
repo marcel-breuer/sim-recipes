@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import PhotosUI
 
 @MainActor
 final class RecipeEditorViewModel: ObservableObject {
@@ -63,25 +62,20 @@ final class RecipeEditorViewModel: ObservableObject {
         }
     }
 
-    func addPhotos(_ items: [PhotosPickerItem]) async {
+    func addPhotos(_ images: [Data]) {
         let remaining = max(0, 5 - draft.totalImageCount)
         guard remaining > 0 else {
             errorMessage = RecipeDraftValidationError.tooManyImages.localizedDescription
             return
         }
 
-        for item in items.prefix(remaining) {
-            do {
-                guard let data = try await item.loadTransferable(type: Data.self) else { continue }
-                draft.images.append(
-                    RecipeDraftImage(
-                        filename: "recipe-\(draft.images.count + 1).jpg",
-                        data: data
-                    )
+        for data in images.prefix(remaining) {
+            draft.images.append(
+                RecipeDraftImage(
+                    filename: "recipe-\(draft.images.count + 1).jpg",
+                    data: data
                 )
-            } catch {
-                errorMessage = "The selected image could not be loaded."
-            }
+            )
         }
     }
 

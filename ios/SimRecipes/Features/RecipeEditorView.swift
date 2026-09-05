@@ -166,7 +166,19 @@ struct RecipeEditorView: View {
                 .onChange(of: selectedPhotoItems) {
                     let items = selectedPhotoItems
                     selectedPhotoItems = []
-                    Task { await viewModel.addPhotos(items) }
+                    Task {
+                        var imageData: [Data] = []
+                        for item in items {
+                            do {
+                                if let data = try await item.loadTransferable(type: Data.self) {
+                                    imageData.append(data)
+                                }
+                            } catch {
+                                viewModel.errorMessage = "The selected image could not be loaded."
+                            }
+                        }
+                        viewModel.addPhotos(imageData)
+                    }
                 }
 
                 Text("Up to five images. Originals are retained securely when the recipe is uploaded.")
@@ -299,20 +311,28 @@ private struct RecipeSettingEditorRow: View {
 
     @ViewBuilder
     private func objectField(key: String, allowed: JSONValue?) -> some View {
-        if case let .array(options) = allowed,
-           let strings = options.compactMap(\.stringValue), !strings.isEmpty {
-            Picker(key.replacingOccurrences(of: "_", with: " ").capitalized, selection: objectStringBinding(for: key, fallback: strings[0])) {
-                ForEach(strings, id: \.self) { option in
-                    Text(option).tag(option)
+        if case let .array(options) = allowed {
+            let strings = options.compactMap(\.stringValue)
+            if !strings.isEmpty {
+                Picker(key.replacingOccurrences(of: "_", with: " ").capitalized, selection: objectStringBinding(for: key, fallback: strings[0])) {
+                    ForEach(strings, id: \.self) { option in
+                        Text(option).tag(option)
+                    }
                 }
+            } else {
+                numericObjectField(key: key)
             }
         } else {
-            Stepper(
-                "\(key.replacingOccurrences(of: "_", with: " ").capitalized): \(Int(objectNumberValue(for: key)))",
-                value: objectNumberBinding(for: key),
-                in: Int(capability.minimum ?? -9)...Int(capability.maximum ?? 9)
-            )
+            numericObjectField(key: key)
         }
+    }
+
+    private func numericObjectField(key: String) -> some View {
+        Stepper(
+            "\(key.replacingOccurrences(of: "_", with: " ").capitalized): \(Int(objectNumberValue(for: key)))",
+            value: objectNumberBinding(for: key),
+            in: Int(capability.minimum ?? -9)...Int(capability.maximum ?? 9)
+        )
     }
 
     private var allowedStringValues: [String] {
