@@ -6,7 +6,7 @@ actor ImageCache {
 
     init(directoryURL: URL? = nil) {
         self.directoryURL = directoryURL
-            ?? fileManager.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("RecipeImages", isDirectory: true)
     }
 

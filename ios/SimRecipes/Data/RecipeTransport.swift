@@ -70,7 +70,7 @@ struct RecipeImageTransport: Codable, Equatable, Sendable, Identifiable {
     let url: URL?
     let derivativeURLs: [String: URL]
     let processingStatus: String
-    let localURL: URL? = nil
+    let localURL: URL?
 
     init(
         id: String,
