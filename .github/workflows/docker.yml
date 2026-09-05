@@ -25,19 +25,25 @@ jobs:
         shell: bash
         run: |
           if [[ -f docker-compose.yml ]]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "type=compose" >> "$GITHUB_OUTPUT"
+          elif [[ -f backend/Dockerfile ]]; then
+            echo "type=api" >> "$GITHUB_OUTPUT"
           else
-            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "type=none" >> "$GITHUB_OUTPUT"
             echo "Docker Compose configuration is not present yet; Docker checks will activate with the deployment foundation."
           fi
 
       - name: Validate Compose configuration
-        if: steps.project.outputs.present == 'true'
+        if: ${{ steps.project.outputs.type == 'compose' }}
         run: docker compose config --quiet
 
       - name: Build Compose services
-        if: steps.project.outputs.present == 'true'
+        if: ${{ steps.project.outputs.type == 'compose' }}
         env:
           COMPOSE_DOCKER_CLI_BUILD: '1'
           DOCKER_BUILDKIT: '1'
         run: docker compose build --pull
+
+      - name: Build API image
+        if: ${{ steps.project.outputs.type == 'api' }}
+        run: docker build --tag sim-recipes-api:ci backend
