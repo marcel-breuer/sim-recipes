@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Services\Auth\AppleIdentityTokenVerifier;
 use App\Services\Auth\AppleIdentityTokenVerifierContract;
+use App\Services\Recipes\DefaultPopularityRanking;
+use App\Services\Recipes\PopularityRanking;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -17,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
             AppleIdentityTokenVerifierContract::class,
             AppleIdentityTokenVerifier::class,
         );
+        $this->app->bind(PopularityRanking::class, DefaultPopularityRanking::class);
     }
 
     /**

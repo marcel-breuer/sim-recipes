@@ -11,6 +11,7 @@ use App\Models\CameraCapability;
 use App\Models\Recipe;
 use App\Models\RecipeSetting;
 use App\Models\Tag;
+use App\Services\Recipes\PopularityRanking;
 use App\Services\Recipes\RecipeCapabilityValidator;
 use App\Services\Recipes\RecipeImageStorage;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,8 +23,10 @@ use Illuminate\Support\Str;
 
 class RecipeController extends Controller
 {
-    public function index(IndexRecipeRequest $request): AnonymousResourceCollection
-    {
+    public function index(
+        IndexRecipeRequest $request,
+        PopularityRanking $popularityRanking,
+    ): AnonymousResourceCollection {
         $filters = $request->validated();
         $query = Recipe::query()
             ->where('status', Recipe::STATUS_PUBLISHED)
@@ -43,12 +46,7 @@ class RecipeController extends Controller
                 ->orderByDesc('published_at')
                 ->orderByDesc('id');
         } else {
-            $query
-                ->orderByDesc('likes_count')
-                ->orderByDesc('downloads_count')
-                ->orderByDesc('views_count')
-                ->orderByDesc('published_at')
-                ->orderByDesc('id');
+            $popularityRanking->apply($query);
         }
 
         return RecipeResource::collection($query->paginate(

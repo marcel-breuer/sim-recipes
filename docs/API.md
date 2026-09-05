@@ -66,6 +66,23 @@ Filters are combined with AND semantics between filter types. Multiple values
 within a category or tag filter match any selected value. Ordering has stable
 ID tie-breakers so adjacent pages remain deterministic during normal browsing.
 
+## Community engagement
+
+- `POST /api/v1/recipes/{recipe}/view` records a public view. Authenticated
+  viewers are deduplicated per recipe for 15 minutes. Anonymous clients may
+  provide a stable `X-Anonymous-Key`; otherwise the API derives a short-lived
+  actor key from the request context.
+- Authenticated users can `POST` and `DELETE`
+  `/api/v1/recipes/{recipe}/like`. Both operations are idempotent and only
+  published recipes can be liked.
+- Successful copy/download application flows record a `recipe_downloads` event
+  through the engagement service and increment only the source recipe counter.
+  The copy endpoint is defined by the recipe-copy issue.
+
+The default popularity strategy scores likes × 3, downloads × 5, and views ×
+1. It is bound behind a replaceable `PopularityRanking` service so the formula
+can change without a database migration.
+
 Recipe image URLs are API URLs rather than direct object-storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images
