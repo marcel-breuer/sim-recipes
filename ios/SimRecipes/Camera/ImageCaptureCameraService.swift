@@ -249,7 +249,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
     }
 
     private func removeDescriptor(for device: ICDevice) {
-        let id = device.uuidString ?? device.persistentIDString
+        let id = device.uuidString
         guard let id else {
             return
         }
@@ -257,7 +257,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         devicesByID.removeValue(forKey: id)
         discoveredCameras.removeAll { $0.id == id }
 
-        if activeCamera?.uuidString == id || activeCamera?.persistentIDString == id {
+        if activeCamera?.uuidString == id {
             activeCamera = nil
         }
     }
@@ -279,7 +279,7 @@ private extension Data {
     }
 }
 
-extension ImageCaptureCameraService: ICDeviceBrowserDelegate {
+@MainActor extension ImageCaptureCameraService: ICDeviceBrowserDelegate {
     func deviceBrowser(_ browser: ICDeviceBrowser, didAdd device: ICDevice, moreComing: Bool) {
         guard let camera = device as? ICCameraDevice else {
             return
@@ -296,14 +296,13 @@ extension ImageCaptureCameraService: ICDeviceBrowserDelegate {
 private extension CameraDescriptor {
     init(camera: ICCameraDevice) {
         let id = camera.uuidString
-            ?? camera.persistentIDString
             ?? "usb-\(camera.usbVendorID)-\(camera.usbProductID)-\(camera.name ?? "camera")"
 
         self.init(
             id: id,
             name: camera.name ?? camera.productKind ?? "Unknown camera",
             productKind: camera.productKind,
-            serialNumber: camera.serialNumberString,
+            serialNumber: nil,
             transportType: camera.transportType,
             usbVendorID: camera.usbVendorID,
             usbProductID: camera.usbProductID,

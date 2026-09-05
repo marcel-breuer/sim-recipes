@@ -151,9 +151,10 @@ the camera applied the requested setting.
 
 Issue #8/#9 add `ImageCaptureCameraService` under
 `ios/SimRecipes/Camera/`. It discovers `ICCameraDevice` instances, records
-their model, transport, USB identifiers, serial number, and PTP capability,
-and only treats a USB/PTP device whose reported model contains `X-S20` as a
-candidate. The service opens and closes a session, sends the standard
+their available model, transport, USB identifiers, and PTP capability, and
+only treats a USB/PTP device whose reported model contains `X-S20` as a
+candidate. ImageCaptureCore does not expose the serial-number property to this
+iOS target, so that diagnostic remains optional. The service opens and closes a session, sends the standard
 read-only `GetDeviceInfo` operation, and reads property values for the slot
 currently selected on the camera. It validates the response container,
 success code, and transaction ID before returning data. It does not change the
