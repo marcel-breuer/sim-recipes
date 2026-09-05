@@ -31,9 +31,9 @@
 /* Begin PBXFileReference section */
 		B00000000000000000000001 /* SimRecipesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimRecipesApp.swift; sourceTree = "<group>"; };
 		B00000000000000000000002 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		B00000000000000000000003 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
-		B00000000000000000000004 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
-		B00000000000000000000005 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ExploreView.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/LibraryView.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/ProfileView.swift; sourceTree = "<group>"; };
 		B00000000000000000000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B00000000000000000000007 /* SimRecipes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimRecipes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B00000000000000000000008 /* SimRecipesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimRecipesTests.swift; sourceTree = "<group>"; };
