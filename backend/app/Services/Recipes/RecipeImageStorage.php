@@ -62,6 +62,11 @@ class RecipeImageStorage
         $sortOrder = (int) RecipeImage::query()
             ->where('recipe_id', $recipe->getKey())
             ->max('sort_order') + 1;
+        if ($sortOrder + count($images) > $maxPerRecipe) {
+            throw ValidationException::withMessages([
+                'images' => ['A recipe may contain at most '.$maxPerRecipe.' images.'],
+            ]);
+        }
         $storedPaths = [];
 
         try {
