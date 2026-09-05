@@ -23,7 +23,7 @@ final class KeychainCredentialStore: CredentialStore {
 
     func read() throws -> Data? {
         var result: AnyObject?
-        let status = SecItemCopyMatching(query(returningData: true), &result)
+        let status = SecItemCopyMatching(query(returningData: true) as CFDictionary, &result)
 
         switch status {
         case errSecSuccess:
