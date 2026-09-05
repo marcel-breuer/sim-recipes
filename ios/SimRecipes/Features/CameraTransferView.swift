@@ -202,45 +202,7 @@ struct CameraTransferView: View {
     }
 
     var body: some View {
-        List {
-            Section("Recipe") {
-                LabeledContent("Name", value: viewModel.recipe.name)
-                LabeledContent("Camera", value: viewModel.recipe.cameraModelName ?? viewModel.recipe.cameraModelID)
-                Text("The recipe is read from this iPhone, so transfer does not require an internet connection.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            connectionSection
-
-            if !viewModel.slots.isEmpty {
-                Section("Target slot") {
-                    ForEach(viewModel.slots) { status in
-                        Button {
-                            viewModel.selectedSlot = status.slot
-                        } label: {
-                            HStack {
-                                Image(systemName: viewModel.selectedSlot == status.slot ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(viewModel.selectedSlot == status.slot ? .tint : .secondary)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(status.title)
-                                        .font(.headline)
-                                    Text(status.detail)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Select camera slot \(status.title)")
-                        .accessibilityValue(status.detail)
-                    }
-                }
-            }
-
-            actionSection
-        }
+        transferList
         .navigationTitle("Transfer to Camera")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -271,6 +233,54 @@ struct CameraTransferView: View {
         }
         .onDisappear {
             Task { await viewModel.close() }
+        }
+    }
+
+    private var transferList: some View {
+        List {
+            recipeSection
+            connectionSection
+            slotSection
+            actionSection
+        }
+    }
+
+    private var recipeSection: some View {
+        Section("Recipe") {
+            LabeledContent("Name", value: viewModel.recipe.name)
+            LabeledContent("Camera", value: viewModel.recipe.cameraModelName ?? viewModel.recipe.cameraModelID)
+            Text("The recipe is read from this iPhone, so transfer does not require an internet connection.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var slotSection: some View {
+        if !viewModel.slots.isEmpty {
+            Section("Target slot") {
+                ForEach(viewModel.slots) { status in
+                    Button {
+                        viewModel.selectedSlot = status.slot
+                    } label: {
+                        HStack {
+                            Image(systemName: viewModel.selectedSlot == status.slot ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(viewModel.selectedSlot == status.slot ? .tint : .secondary)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(status.title)
+                                    .font(.headline)
+                                Text(status.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Select camera slot \(status.title)")
+                    .accessibilityValue(status.detail)
+                }
+            }
         }
     }
 

@@ -140,7 +140,7 @@ struct ExploreView: View {
     }
 
     private func transferService(for recipe: RecipeTransport) -> (any CameraService)? {
-        guard let localRecipe = try? localStore.recipe(id: recipe.id), localRecipe != nil else {
+        guard (try? localStore.recipe(id: recipe.id)) != nil else {
             return nil
         }
         return cameraService
