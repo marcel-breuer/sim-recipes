@@ -27,6 +27,10 @@ final class StubAPIClient: APIClient {
 
         return response
     }
+
+    func download(_ request: APIRequest) async throws -> Data {
+        throw APIClientError.invalidResponse
+    }
 }
 
 final class MemoryCredentialStore: CredentialStore {

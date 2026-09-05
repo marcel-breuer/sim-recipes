@@ -10,6 +10,24 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testImageCachePersistsAndRemovesRecipeImages() async throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SimRecipesTests-\(UUID().uuidString)", isDirectory: true)
+        let cache = ImageCache(directoryURL: directoryURL)
+        let data = Data([1, 2, 3])
+
+        let cachedURL = try await cache.store(data, recipeID: "recipe-1", imageID: "image-1")
+
+        XCTAssertEqual(try Data(contentsOf: cachedURL), data)
+        let storedURL = await cache.cachedURL(recipeID: "recipe-1", imageID: "image-1")
+        XCTAssertEqual(storedURL, cachedURL)
+
+        try await cache.remove(recipeID: "recipe-1")
+
+        let removedURL = await cache.cachedURL(recipeID: "recipe-1", imageID: "image-1")
+        XCTAssertNil(removedURL)
+    }
+
     func testAPIRequestResolvesRelativeAPIPathAndQuery() throws {
         let request = APIRequest(
             method: .get,

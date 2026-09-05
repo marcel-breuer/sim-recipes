@@ -70,12 +70,28 @@ struct RecipeImageTransport: Codable, Equatable, Sendable, Identifiable {
     let url: URL?
     let derivativeURLs: [String: URL]
     let processingStatus: String
+    let localURL: URL?
+
+    init(
+        id: String,
+        url: URL?,
+        derivativeURLs: [String: URL],
+        processingStatus: String,
+        localURL: URL? = nil
+    ) {
+        self.id = id
+        self.url = url
+        self.derivativeURLs = derivativeURLs
+        self.processingStatus = processingStatus
+        self.localURL = localURL
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
         case url
         case derivativeURLs = "derivative_urls"
         case processingStatus = "processing_status"
+        case localURL = "local_url"
     }
 }
 

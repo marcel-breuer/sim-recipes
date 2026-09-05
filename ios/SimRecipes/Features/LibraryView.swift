@@ -5,6 +5,19 @@ struct LibraryView: View {
     let apiClient: any APIClient
     let localStore: LocalRecipeStore
     @State private var recipes: [RecipeTransport] = []
+    @State private var searchText = ""
+
+    private var filteredRecipes: [RecipeTransport] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return recipes }
+
+        return recipes.filter { recipe in
+            [recipe.name, recipe.description ?? "", recipe.styleRecommendation ?? ""]
+                .plus(recipe.categories)
+                .plus(recipe.tags)
+                .contains { $0.localizedCaseInsensitiveContains(query) }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -15,29 +28,43 @@ struct LibraryView: View {
                         systemImage: "books.vertical",
                         description: Text("Private recipes and community copies remain available offline after sign-in.")
                     )
-                } else if recipes.isEmpty {
+                } else if filteredRecipes.isEmpty {
                     ContentUnavailableView(
-                        "Your library is empty",
+                        recipes.isEmpty ? "Your library is empty" : "No matching recipes",
                         systemImage: "books.vertical",
-                        description: Text("Create a recipe or save one from the community to see it here.")
+                        description: Text(recipes.isEmpty
+                            ? "Create a recipe or save one from the community to see it here."
+                            : "Try a different local search.")
                     )
                 } else {
-                    List(recipes) { recipe in
+                    List(filteredRecipes) { recipe in
                         NavigationLink {
                             editor(for: recipe)
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(recipe.name)
-                                    .font(.headline)
-                                Text(recipe.isPublished ? "Published" : "Private draft")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            HStack(spacing: 12) {
+                                if let imageURL = recipe.images.first?.localURL {
+                                    AsyncImage(url: imageURL) { image in
+                                        image.resizable().scaledToFill()
+                                    } placeholder: {
+                                        Rectangle().fill(.quaternary)
+                                    }
+                                    .frame(width: 56, height: 56)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(recipe.name)
+                                        .font(.headline)
+                                    Text(recipe.isPublished ? "Published" : "Private draft")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
                 }
             }
             .navigationTitle("Library")
+            .searchable(text: $searchText, prompt: "Search your library")
             .toolbar {
                 if authService.session != nil {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -50,7 +77,7 @@ struct LibraryView: View {
                 }
             }
             .task(id: authService.session?.token) {
-                reloadRecipes()
+                await syncAndReload()
             }
         }
     }
@@ -71,7 +98,23 @@ struct LibraryView: View {
         }
     }
 
+    private func syncAndReload() async {
+        reloadRecipes()
+        guard let session = authService.session else { return }
+
+        let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
+        let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
+        _ = try? await repository.refreshRecipes()
+        reloadRecipes()
+    }
+
     private func reloadRecipes() {
         recipes = (try? localStore.recipes()) ?? []
+    }
+}
+
+private extension Array where Element == String {
+    func plus(_ values: [String]) -> [String] {
+        self + values
     }
 }

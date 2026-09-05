@@ -16,6 +16,7 @@ final class StoredRecipe {
     var sourceAuthorID: String?
     var updatedAt: Date
     var settingsData: Data
+    var imagesData: Data = Data()
     var syncStateRawValue: String
     var lastSyncedAt: Date?
 
@@ -38,6 +39,7 @@ final class StoredRecipe {
         self.sourceAuthorID = recipe.provenance?.sourceAuthorID
         self.updatedAt = recipe.updatedAt
         self.settingsData = try encoder.encode(recipe.settings)
+        self.imagesData = try encoder.encode(recipe.images)
         self.syncStateRawValue = syncState.rawValue
         self.lastSyncedAt = syncedAt
     }
@@ -70,7 +72,8 @@ final class StoredRecipe {
             isPublished: isPublished,
             provenance: provenance,
             updatedAt: updatedAt,
-            settings: try decoder.decode([RecipeSettingTransport].self, from: settingsData)
+            settings: try decoder.decode([RecipeSettingTransport].self, from: settingsData),
+            images: (try? decoder.decode([RecipeImageTransport].self, from: imagesData)) ?? []
         )
     }
 }

@@ -59,6 +59,7 @@ final class LocalRecipeStore {
             existing.sourceAuthorID = recipe.provenance?.sourceAuthorID
             existing.updatedAt = recipe.updatedAt
             existing.settingsData = try JSONEncoder().encode(recipe.settings)
+            existing.imagesData = try JSONEncoder().encode(recipe.images)
             existing.syncState = .synced
             existing.lastSyncedAt = syncedAt
         } else {
@@ -90,6 +91,7 @@ final class LocalRecipeStore {
             existing.sourceAuthorID = recipe.provenance?.sourceAuthorID
             existing.updatedAt = recipe.updatedAt
             existing.settingsData = try JSONEncoder().encode(recipe.settings)
+            existing.imagesData = try JSONEncoder().encode(recipe.images)
             existing.syncState = .pendingUpload
         } else {
             modelContext.insert(try StoredRecipe(recipe: recipe, syncState: .localOnly, syncedAt: nil))
