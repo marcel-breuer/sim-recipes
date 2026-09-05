@@ -2,6 +2,10 @@
 
 return [
 
+    'apple' => [
+        'client_id' => env('APPLE_CLIENT_ID'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

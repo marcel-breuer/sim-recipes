@@ -59,6 +59,29 @@ final class SimRecipesTests: XCTestCase {
     }
 
     @MainActor
+    func testAuthServiceRestoresAndLogsOutKeychainBackedSession() async throws {
+        let session = AuthSession(
+            token: "token-1",
+            expiresAt: Date().addingTimeInterval(3600),
+            user: AuthenticatedUser(id: "user-1", name: "Marcel", email: "marcel@example.test")
+        )
+        let credentialStore = MemoryCredentialStore()
+        credentialStore.data = try JSONEncoder().encode(session)
+        let apiClient = StubAPIClient(
+            responses: [APIResponse(data: LogoutResponse(loggedOut: true))]
+        )
+        let authService = AuthService(apiClient: apiClient, credentialStore: credentialStore)
+
+        XCTAssertEqual(authService.session, session)
+
+        try await authService.logout()
+
+        XCTAssertNil(authService.session)
+        XCTAssertNil(credentialStore.data)
+        XCTAssertEqual(apiClient.requests, ["auth/logout"])
+    }
+
+    @MainActor
     func testRepositoryUsesLocalRecipeWithoutCallingAPI() async throws {
         let recipe = makeRecipe(id: "cached")
         let apiClient = StubAPIClient()
