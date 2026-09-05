@@ -13,6 +13,9 @@
 		A00000000000000000000004 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* LibraryView.swift */; };
 		A00000000000000000000005 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* ProfileView.swift */; };
 		A00000000000000000000006 /* SimRecipesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* SimRecipesTests.swift */; };
+		A00000000000000000000007 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* CameraService.swift */; };
+		A00000000000000000000008 /* PTPCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* PTPCommand.swift */; };
+		A00000000000000000000009 /* ImageCaptureCameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* ImageCaptureCameraService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +38,9 @@
 		B00000000000000000000007 /* SimRecipes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimRecipes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B00000000000000000000008 /* SimRecipesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimRecipesTests.swift; sourceTree = "<group>"; };
 		B00000000000000000000009 /* SimRecipesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimRecipesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000010 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
+		B00000000000000000000011 /* PTPCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTPCommand.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* ImageCaptureCameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCaptureCameraService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +73,7 @@
 		G00000000000000000000002 /* SimRecipes */ = {
 			isa = PBXGroup;
 			children = (
+				G00000000000000000000005 /* Camera */,
 				B00000000000000000000001 /* SimRecipesApp.swift */,
 				B00000000000000000000002 /* RootView.swift */,
 				B00000000000000000000003 /* ExploreView.swift */,
@@ -83,6 +90,16 @@
 				B00000000000000000000008 /* SimRecipesTests.swift */,
 			);
 			path = SimRecipesTests;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000005 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000010 /* CameraService.swift */,
+				B00000000000000000000011 /* PTPCommand.swift */,
+				B00000000000000000000012 /* ImageCaptureCameraService.swift */,
+			);
+			path = Camera;
 			sourceTree = "<group>";
 		};
 		G00000000000000000000004 /* Products */ = {
@@ -196,6 +213,9 @@
 				A00000000000000000000003 /* ExploreView.swift in Sources */,
 				A00000000000000000000004 /* LibraryView.swift in Sources */,
 				A00000000000000000000005 /* ProfileView.swift in Sources */,
+				A00000000000000000000007 /* CameraService.swift in Sources */,
+				A00000000000000000000008 /* PTPCommand.swift in Sources */,
+				A00000000000000000000009 /* ImageCaptureCameraService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

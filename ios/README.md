@@ -5,8 +5,11 @@ The iOS client is a SwiftUI application targeting iOS 17 and later. The shared
 Simulator.
 
 The current shell contains the Explore, Library, and Profile product sections.
-Networking, SwiftData persistence, image caching, authentication, and camera
-communication remain behind service boundaries and will be added in their
-respective implementation issues.
+The read-only camera prototype uses an ImageCaptureCore service boundary for
+USB camera discovery, X-S20 candidate matching, session management, and a
+validated `GetDeviceInfo` PTP request. It does not write camera settings.
+Networking, SwiftData persistence, image caching, and authentication remain
+behind service boundaries and will be added in their respective implementation
+issues.
 
 Do not place credentials or signing material in this directory.

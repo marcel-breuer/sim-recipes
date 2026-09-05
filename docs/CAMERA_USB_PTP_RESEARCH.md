@@ -146,3 +146,14 @@ the camera applied the requested setting.
 - Explicitly deferred: ISO and exposure-compensation slot mappings.
 - Next implementation: a read-only iOS camera discovery/session prototype with
   diagnostics and no write operations.
+
+## Read-only prototype
+
+Issue #8 adds `ImageCaptureCameraService` under
+`ios/SimRecipes/Camera/`. It discovers `ICCameraDevice` instances, records
+their model, transport, USB identifiers, serial number, and PTP capability,
+and only treats a USB/PTP device whose reported model contains `X-S20` as a
+candidate. The service opens and closes a session and sends only the standard
+read-only `GetDeviceInfo` operation. It validates the response container,
+success code, and transaction ID before returning it. No vendor properties or
+camera settings are written.
