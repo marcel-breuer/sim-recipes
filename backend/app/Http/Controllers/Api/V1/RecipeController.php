@@ -8,12 +8,11 @@ use App\Http\Requests\Api\V1\UpdateRecipeRequest;
 use App\Http\Resources\Api\V1\RecipeResource;
 use App\Models\CameraCapability;
 use App\Models\Recipe;
-use App\Models\RecipeImage;
 use App\Models\RecipeSetting;
 use App\Models\Tag;
 use App\Services\Recipes\RecipeCapabilityValidator;
+use App\Services\Recipes\RecipeImageStorage;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -27,13 +26,16 @@ class RecipeController extends Controller
         return new RecipeResource($this->recipeQuery()->findOrFail($recipe->getKey()));
     }
 
-    public function store(StoreRecipeRequest $request, RecipeCapabilityValidator $capabilityValidator): RecipeResource
-    {
+    public function store(
+        StoreRecipeRequest $request,
+        RecipeCapabilityValidator $capabilityValidator,
+        RecipeImageStorage $imageStorage,
+    ): RecipeResource {
         $data = $request->validated();
         $settings = $data['settings'] ?? [];
         $capabilityValidator->validate($data['camera_model_id'], $settings);
 
-        $recipe = DB::transaction(function () use ($request, $data, $settings): Recipe {
+        $recipe = DB::transaction(function () use ($request, $data, $settings, $imageStorage): Recipe {
             $recipe = Recipe::create([
                 'user_id' => $request->user()->getKey(),
                 'camera_model_id' => $data['camera_model_id'],
@@ -43,7 +45,7 @@ class RecipeController extends Controller
                 'lens' => $data['lens'] ?? null,
             ]);
             $this->syncRelations($recipe, $data, $settings);
-            $this->storeImages($recipe, $request->file('images', []));
+            $imageStorage->store($recipe, $request->file('images', []));
 
             return $recipe;
         });
@@ -55,6 +57,7 @@ class RecipeController extends Controller
         UpdateRecipeRequest $request,
         Recipe $recipe,
         RecipeCapabilityValidator $capabilityValidator,
+        RecipeImageStorage $imageStorage,
     ): RecipeResource {
         Gate::authorize('update', $recipe);
         $data = $request->validated();
@@ -68,7 +71,7 @@ class RecipeController extends Controller
             ])->all();
         $capabilityValidator->validate($cameraModelID, $settings);
 
-        DB::transaction(function () use ($request, $data, $recipe, $cameraModelID, $settings): void {
+        DB::transaction(function () use ($request, $data, $recipe, $cameraModelID, $settings, $imageStorage): void {
             $attributes = ['camera_model_id' => $cameraModelID];
             foreach (['name', 'description', 'recommendation', 'lens'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -78,16 +81,19 @@ class RecipeController extends Controller
             $recipe->fill($attributes);
             $recipe->save();
             $this->syncRelations($recipe, $data, $settings);
-            $this->storeImages($recipe, $request->file('images', []));
+            $imageStorage->store($recipe, $request->file('images', []));
         });
 
         return new RecipeResource($this->recipeQuery()->findOrFail($recipe->getKey()));
     }
 
-    public function destroy(Recipe $recipe): JsonResponse
+    public function destroy(Recipe $recipe, RecipeImageStorage $imageStorage): JsonResponse
     {
         Gate::authorize('delete', $recipe);
-        $recipe->delete();
+        DB::transaction(function () use ($recipe, $imageStorage): void {
+            $imageStorage->deleteForRecipe($recipe);
+            $recipe->delete();
+        });
 
         return response()->json(['data' => ['deleted' => true]]);
     }
@@ -149,30 +155,6 @@ class RecipeController extends Controller
                     'value' => $setting['value'],
                 ]);
             }
-        }
-    }
-
-    /**
-     * @param  array<int, UploadedFile>  $images
-     */
-    private function storeImages(Recipe $recipe, array $images): void
-    {
-        if ($images === []) {
-            return;
-        }
-
-        $disk = config('filesystems.default');
-        $sortOrder = (int) $recipe->images()->max('sort_order') + 1;
-        foreach ($images as $index => $image) {
-            $path = $image->store('recipes/'.$recipe->getKey(), $disk);
-            RecipeImage::create([
-                'recipe_id' => $recipe->getKey(),
-                'storage_disk' => $disk,
-                'original_path' => $path,
-                'original_size_bytes' => $image->getSize(),
-                'mime_type' => $image->getMimeType(),
-                'sort_order' => $sortOrder + $index,
-            ]);
         }
     }
 

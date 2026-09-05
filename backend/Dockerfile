@@ -1,8 +1,9 @@
 FROM php:8.4-cli
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends --yes curl libpq-dev unzip \
-    && docker-php-ext-install pdo_pgsql \
+    && apt-get install --no-install-recommends --yes curl libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev libpq-dev unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install gd pdo_pgsql \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*

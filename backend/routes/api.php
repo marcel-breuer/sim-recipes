@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CameraController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
+use App\Http\Controllers\Api\V1\RecipeImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -21,6 +22,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.cameras.show');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
+    Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])
+        ->name('api.v1.recipe-images.show');
 
     Route::middleware('auth.api:sanctum')->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout'])
@@ -37,5 +40,7 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipes.destroy');
         Route::post('/recipes/{recipe}/publish', [RecipeController::class, 'publish'])
             ->name('api.v1.recipes.publish');
+        Route::delete('/recipe-images/{recipeImage}', [RecipeImageController::class, 'destroy'])
+            ->name('api.v1.recipe-images.destroy');
     });
 });
