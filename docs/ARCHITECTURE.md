@@ -134,6 +134,14 @@ codes, and read-back values before reporting a transfer as successful. See
 `docs/CAMERA_USB_PTP_RESEARCH.md` for the research record and hardware test
 plan.
 
+The iOS transfer flow is local-first: it reads a saved recipe, discovers a
+connected X-S20, loads the slots reported by `CameraService`, requires an
+explicit overwrite confirmation, and exposes progress and retry/exit states.
+The UI only enters its success state after the adapter returns a verified
+snapshot. The current adapter intentionally reports recipe-transfer encoding
+as unavailable until the provisional X-S20 property encodings are validated on
+hardware; it therefore cannot claim a write or silently change camera values.
+
 ## Deployment
 
 One root-level `docker-compose.yml` is the deployment definition.

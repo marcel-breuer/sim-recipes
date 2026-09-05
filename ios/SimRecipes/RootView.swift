@@ -33,6 +33,7 @@ struct RootView: View {
     @ObservedObject var profileService: ProfileService
     let apiClient: any APIClient
     let localStore: LocalRecipeStore
+    let cameraService: any CameraService
     @State private var selectedTab: AppTab = .explore
 
     var body: some View {
@@ -40,7 +41,8 @@ struct RootView: View {
             ExploreView(
                 authService: authService,
                 apiClient: apiClient,
-                localStore: localStore
+                localStore: localStore,
+                cameraService: cameraService
             )
                 .tabItem {
                     Label(AppTab.explore.title, systemImage: AppTab.explore.systemImage)
@@ -50,7 +52,8 @@ struct RootView: View {
             LibraryView(
                 authService: authService,
                 apiClient: apiClient,
-                localStore: localStore
+                localStore: localStore,
+                cameraService: cameraService
             )
                 .tabItem {
                     Label(AppTab.library.title, systemImage: AppTab.library.systemImage)

@@ -91,6 +91,7 @@ enum CameraServiceError: LocalizedError {
     case invalidPTPResponse
     case unexpectedPTPResponseCode(UInt16)
     case transactionMismatch(expected: UInt32, actual: UInt32)
+    case recipeTransferEncodingUnavailable
     case underlying(Error)
 
     var errorDescription: String? {
@@ -127,6 +128,8 @@ enum CameraServiceError: LocalizedError {
             "The camera rejected the PTP command with response code 0x\(String(code, radix: 16))."
         case let .transactionMismatch(expected, actual):
             "The PTP transaction ID did not match (expected \(expected), received \(actual))."
+        case .recipeTransferEncodingUnavailable:
+            "This camera adapter cannot safely encode the recipe settings yet. No camera values were changed."
         case let .underlying(error):
             error.localizedDescription
         }
@@ -143,7 +146,14 @@ protocol CameraService: AnyObject {
     func openSession(for cameraID: String) async throws
     func readDeviceInfo() async throws -> PTPResponseHeader
     func readProperty(_ propertyCode: UInt16) async throws -> Data
+    func availableSlots() async throws -> [CameraSlot]
+    func readCurrentSlotSnapshot(propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot
     func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot
+    func transferRecipe(
+        _ recipe: RecipeTransport,
+        to slot: CameraSlot,
+        confirmation: CameraSlotOverwriteConfirmation
+    ) async throws -> CameraSlotSnapshot
     func writeRecipe(
         to slot: CameraSlot,
         properties: [UInt16: Data],
