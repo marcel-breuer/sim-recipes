@@ -33,6 +33,10 @@ jobs:
             echo "Docker Compose configuration is not present yet; Docker checks will activate with the deployment foundation."
           fi
 
+      - name: Prepare Compose validation environment
+        if: ${{ steps.project.outputs.type == 'compose' }}
+        run: cp .env.example .env
+
       - name: Validate Compose configuration
         if: ${{ steps.project.outputs.type == 'compose' }}
         run: docker compose config --quiet
