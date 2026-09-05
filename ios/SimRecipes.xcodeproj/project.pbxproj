@@ -16,6 +16,12 @@
 		A00000000000000000000007 /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* CameraService.swift */; };
 		A00000000000000000000008 /* PTPCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* PTPCommand.swift */; };
 		A00000000000000000000009 /* ImageCaptureCameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* ImageCaptureCameraService.swift */; };
+		A00000000000000000000010 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* APIClient.swift */; };
+		A00000000000000000000011 /* RecipeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* RecipeTransport.swift */; };
+		A00000000000000000000012 /* StoredRecipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* StoredRecipe.swift */; };
+		A00000000000000000000013 /* LocalRecipeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* LocalRecipeStore.swift */; };
+		A00000000000000000000014 /* RecipeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* RecipeRepository.swift */; };
+		A00000000000000000000015 /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* TestDoubles.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +47,12 @@
 		B00000000000000000000010 /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		B00000000000000000000011 /* PTPCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTPCommand.swift; sourceTree = "<group>"; };
 		B00000000000000000000012 /* ImageCaptureCameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCaptureCameraService.swift; sourceTree = "<group>"; };
+		B00000000000000000000013 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 /* RecipeTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeTransport.swift; sourceTree = "<group>"; };
+		B00000000000000000000015 /* StoredRecipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredRecipe.swift; sourceTree = "<group>"; };
+		B00000000000000000000016 /* LocalRecipeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalRecipeStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000017 /* RecipeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeRepository.swift; sourceTree = "<group>"; };
+		B00000000000000000000018 /* TestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDoubles.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				G00000000000000000000005 /* Camera */,
+				G00000000000000000000006 /* Data */,
 				B00000000000000000000001 /* SimRecipesApp.swift */,
 				B00000000000000000000002 /* RootView.swift */,
 				B00000000000000000000003 /* ExploreView.swift */,
@@ -88,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				B00000000000000000000008 /* SimRecipesTests.swift */,
+				B00000000000000000000018 /* TestDoubles.swift */,
 			);
 			path = SimRecipesTests;
 			sourceTree = "<group>";
@@ -100,6 +114,18 @@
 				B00000000000000000000012 /* ImageCaptureCameraService.swift */,
 			);
 			path = Camera;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000006 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000013 /* APIClient.swift */,
+				B00000000000000000000014 /* RecipeTransport.swift */,
+				B00000000000000000000015 /* StoredRecipe.swift */,
+				B00000000000000000000016 /* LocalRecipeStore.swift */,
+				B00000000000000000000017 /* RecipeRepository.swift */,
+			);
+			path = Data;
 			sourceTree = "<group>";
 		};
 		G00000000000000000000004 /* Products */ = {
@@ -216,6 +242,11 @@
 				A00000000000000000000007 /* CameraService.swift in Sources */,
 				A00000000000000000000008 /* PTPCommand.swift in Sources */,
 				A00000000000000000000009 /* ImageCaptureCameraService.swift in Sources */,
+				A00000000000000000000010 /* APIClient.swift in Sources */,
+				A00000000000000000000011 /* RecipeTransport.swift in Sources */,
+				A00000000000000000000012 /* StoredRecipe.swift in Sources */,
+				A00000000000000000000013 /* LocalRecipeStore.swift in Sources */,
+				A00000000000000000000014 /* RecipeRepository.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +255,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000006 /* SimRecipesTests.swift in Sources */,
+				A00000000000000000000015 /* TestDoubles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
