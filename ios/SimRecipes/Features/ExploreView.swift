@@ -133,7 +133,7 @@ private struct RecipeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let imageURL = recipe.images.first?.url {
+            if let imageURL = recipe.images.first?.localURL ?? recipe.images.first?.url {
                 AsyncImage(url: imageURL) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {

@@ -143,6 +143,8 @@ protocol APIClient {
         _ request: APIRequest,
         responseType: Response.Type
     ) async throws -> Response
+
+    func download(_ request: APIRequest) async throws -> Data
 }
 
 final class URLSessionAPIClient: APIClient {
@@ -220,6 +222,44 @@ final class URLSessionAPIClient: APIClient {
             throw APIClientError.decoding(error)
         }
     }
+
+    func download(_ request: APIRequest) async throws -> Data {
+        let url = try request.url(relativeTo: baseURL)
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = request.method.rawValue
+        urlRequest.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+
+        for (header, value) in request.headers {
+            urlRequest.setValue(value, forHTTPHeaderField: header)
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: urlRequest)
+        } catch {
+            throw APIClientError.transport(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let payload = try? decoder.decode(APIErrorPayload.self, from: data)
+            switch httpResponse.statusCode {
+            case 401:
+                throw APIClientError.unauthorized(payload)
+            case 403:
+                throw APIClientError.forbidden(payload)
+            case 422:
+                throw APIClientError.validation(payload)
+            default:
+                throw APIClientError.server(statusCode: httpResponse.statusCode, payload: payload)
+            }
+        }
+
+        return data
+    }
 }
 
 final class BearerAPIClient: APIClient {
@@ -247,6 +287,21 @@ final class BearerAPIClient: APIClient {
         )
 
         return try await apiClient.send(authenticatedRequest, responseType: responseType)
+    }
+
+    func download(_ request: APIRequest) async throws -> Data {
+        var headers = request.headers
+        headers["Authorization"] = "Bearer \(accessToken)"
+        let authenticatedRequest = APIRequest(
+            method: request.method,
+            path: request.path,
+            queryItems: request.queryItems,
+            headers: headers,
+            body: request.body,
+            contentType: request.contentType
+        )
+
+        return try await apiClient.download(authenticatedRequest)
     }
 }
 

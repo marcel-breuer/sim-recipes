@@ -16,8 +16,9 @@ the camera-selected custom slot. It does not write camera settings or change
 the selected slot. The write path requires explicit slot confirmation, a
 supported property set, validated raw PTP payloads, per-property read-back,
 and rollback on failure; it never writes the slot selector automatically.
-Image caching and authentication remain behind service boundaries and will be
-added in their respective implementation issues. The recipe editor now loads
+Recipe images are downloaded through the authenticated API client into the
+durable `ImageCache`; SwiftData stores their local file URLs with recipe
+metadata so the personal library remains useful offline. The recipe editor now loads
 camera capabilities and predefined categories from the API, renders supported
 settings dynamically, uploads photo-library images as multipart form data, and
 stores drafts locally for offline recovery. Published recipes are presented as

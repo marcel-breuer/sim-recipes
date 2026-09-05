@@ -22,10 +22,16 @@ struct RecipePageSyncResult: Equatable {
 final class RecipeRepository {
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
+    private let imageCache: ImageCache
 
-    init(apiClient: any APIClient, localStore: LocalRecipeStore) {
+    init(
+        apiClient: any APIClient,
+        localStore: LocalRecipeStore,
+        imageCache: ImageCache = ImageCache()
+    ) {
         self.apiClient = apiClient
         self.localStore = localStore
+        self.imageCache = imageCache
     }
 
     func cachedRecipes() throws -> [RecipeTransport] {
@@ -39,10 +45,11 @@ final class RecipeRepository {
     func refreshRecipe(id: String) async throws -> RecipeTransport {
         let request = APIRequest(method: .get, path: "recipes/\(id)")
         let recipe = try await apiClient.send(request, responseType: RecipeTransport.self)
-        if try localStore.mergeRemote(recipe) == .conflict {
+        let cachedRecipe = await cacheImages(for: recipe)
+        if try localStore.mergeRemote(cachedRecipe) == .conflict {
             throw RecipeSyncError.conflict(recipeID: recipe.id)
         }
-        return recipe
+        return cachedRecipe
     }
 
     func refreshRecipes(page: Int = 1) async throws -> RecipePageSyncResult {
@@ -58,7 +65,8 @@ final class RecipeRepository {
         var conflicts: [String] = []
 
         for recipe in response.data {
-            if try localStore.mergeRemote(recipe) == .conflict {
+            let cachedRecipe = await cacheImages(for: recipe)
+            if try localStore.mergeRemote(cachedRecipe) == .conflict {
                 conflicts.append(recipe.id)
             }
         }
@@ -124,8 +132,9 @@ final class RecipeRepository {
             categoryIDs: categoryIDs
         )
         let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
-        try localStore.mergeRemote(response.data)
-        return response.data
+        let cachedRecipe = await cacheImages(for: response.data)
+        try localStore.mergeRemote(cachedRecipe)
+        return cachedRecipe
     }
 
     func update(_ draft: RecipeDraft, categoryIDs: [String]) async throws -> RecipeTransport {
@@ -140,22 +149,74 @@ final class RecipeRepository {
             categoryIDs: categoryIDs
         )
         let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
-        try localStore.mergeRemote(response.data)
-        return response.data
+        let cachedRecipe = await cacheImages(for: response.data)
+        try localStore.mergeRemote(cachedRecipe)
+        return cachedRecipe
     }
 
     func publish(id: String) async throws -> RecipeTransport {
         let request = APIRequest(method: .post, path: "recipes/\(id)/publish")
         let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
-        try localStore.mergeRemote(response.data)
-        return response.data
+        let cachedRecipe = await cacheImages(for: response.data)
+        try localStore.mergeRemote(cachedRecipe)
+        return cachedRecipe
     }
 
     func copy(id: String) async throws -> RecipeTransport {
         let request = APIRequest(method: .post, path: "recipes/\(id)/copy")
         let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
-        try localStore.mergeRemote(response.data)
-        return response.data
+        let cachedRecipe = await cacheImages(for: response.data)
+        try localStore.mergeRemote(cachedRecipe)
+        return cachedRecipe
+    }
+
+    private func cacheImages(for recipe: RecipeTransport) async -> RecipeTransport {
+        var images: [RecipeImageTransport] = []
+        for image in recipe.images {
+            var cachedImage = image
+            if let cachedURL = await imageCache.cachedURL(recipeID: recipe.id, imageID: image.id) {
+                cachedImage = RecipeImageTransport(
+                    id: image.id,
+                    url: image.url,
+                    derivativeURLs: image.derivativeURLs,
+                    processingStatus: image.processingStatus,
+                    localURL: cachedURL
+                )
+            } else {
+                do {
+                    let data = try await apiClient.download(
+                        APIRequest(method: .get, path: "recipe-images/\(image.id)")
+                    )
+                    let cachedURL = try await imageCache.store(data, recipeID: recipe.id, imageID: image.id)
+                    cachedImage = RecipeImageTransport(
+                        id: image.id,
+                        url: image.url,
+                        derivativeURLs: image.derivativeURLs,
+                        processingStatus: image.processingStatus,
+                        localURL: cachedURL
+                    )
+                } catch {
+                    // Metadata remains usable when an image is unavailable.
+                }
+            }
+            images.append(cachedImage)
+        }
+
+        return RecipeTransport(
+            id: recipe.id,
+            name: recipe.name,
+            description: recipe.description,
+            styleRecommendation: recipe.styleRecommendation,
+            cameraModelID: recipe.cameraModelID,
+            lens: recipe.lens,
+            categories: recipe.categories,
+            tags: recipe.tags,
+            isPublished: recipe.isPublished,
+            provenance: recipe.provenance,
+            updatedAt: recipe.updatedAt,
+            settings: recipe.settings,
+            images: images
+        )
     }
 
     private func makeMultipartRequest(

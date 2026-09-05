@@ -9,7 +9,7 @@ struct RecipeDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if let imageURL = recipe.images.first?.url {
+                if let imageURL = recipe.images.first?.localURL ?? recipe.images.first?.url {
                     AsyncImage(url: imageURL) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
