@@ -1,0 +1,43 @@
+name: Docker quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    name: Compose configuration and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Detect Docker configuration
+        id: project
+        shell: bash
+        run: |
+          if [[ -f docker-compose.yml ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Docker Compose configuration is not present yet; Docker checks will activate with the deployment foundation."
+          fi
+
+      - name: Validate Compose configuration
+        if: steps.project.outputs.present == 'true'
+        run: docker compose config --quiet
+
+      - name: Build Compose services
+        if: steps.project.outputs.present == 'true'
+        env:
+          COMPOSE_DOCKER_CLI_BUILD: '1'
+          DOCKER_BUILDKIT: '1'
+        run: docker compose build --pull
