@@ -260,25 +260,12 @@ struct CameraTransferView: View {
         if !viewModel.slots.isEmpty {
             Section("Target slot") {
                 ForEach(viewModel.slots) { status in
-                    Button {
+                    CameraSlotRow(
+                        status: status,
+                        isSelected: viewModel.selectedSlot == status.slot
+                    ) {
                         viewModel.selectedSlot = status.slot
-                    } label: {
-                        HStack {
-                            Image(systemName: viewModel.selectedSlot == status.slot ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(viewModel.selectedSlot == status.slot ? .tint : .secondary)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(status.title)
-                                    .font(.headline)
-                                Text(status.detail)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Select camera slot \(status.title)")
-                    .accessibilityValue(status.detail)
                 }
             }
         }
@@ -363,5 +350,31 @@ struct CameraTransferView: View {
             .disabled(!viewModel.canTransfer || viewModel.phase.isBusy)
             .accessibilityLabel("Transfer recipe to selected camera slot")
         }
+    }
+}
+
+private struct CameraSlotRow: View {
+    let status: CameraSlotStatus
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? .tint : .secondary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(status.title)
+                        .font(.headline)
+                    Text(status.detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Select camera slot \(status.title)")
+        .accessibilityValue(status.detail)
     }
 }
