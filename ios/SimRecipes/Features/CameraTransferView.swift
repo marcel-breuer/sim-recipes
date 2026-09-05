@@ -362,7 +362,7 @@ private struct CameraSlotRow: View {
         Button(action: action) {
             HStack {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? .tint : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(status.title)
                         .font(.headline)
