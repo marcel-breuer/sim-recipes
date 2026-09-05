@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import SimRecipes
 
@@ -6,6 +7,159 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(
             AppTab.allCases,
             [.explore, .library, .profile]
+        )
+    }
+
+    func testAPIRequestResolvesRelativeAPIPathAndQuery() throws {
+        let request = APIRequest(
+            method: .get,
+            path: "recipes/recipe-1",
+            queryItems: [URLQueryItem(name: "include", value: "settings")]
+        )
+
+        let url = try request.url(relativeTo: URL(string: "https://api.example.test/api/v1")!)
+
+        XCTAssertEqual(
+            url.absoluteString,
+            "https://api.example.test/api/v1/recipes/recipe-1?include=settings"
+        )
+    }
+
+    func testRecipeTransportCodableRoundTrip() throws {
+        let recipe = RecipeTransport(
+            id: "recipe-1",
+            name: "Soft Chrome",
+            description: "A muted everyday recipe.",
+            styleRecommendation: "Everyday street photography",
+            cameraModelID: "fujifilm-x-s20",
+            lens: "23mm prime",
+            categories: ["Street", "Everyday"],
+            tags: ["muted", "daylight"],
+            isPublished: true,
+            provenance: RecipeProvenanceTransport(sourceRecipeID: nil, sourceAuthorID: nil),
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            settings: [RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome")]
+        )
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+
+        XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
+    }
+
+    func testAPIErrorPayloadPreservesValidationMessages() throws {
+        let payload = APIErrorPayload(
+            message: "The given data was invalid.",
+            errors: ["name": ["The name field is required."]]
+        )
+
+        XCTAssertEqual(
+            try JSONDecoder().decode(APIErrorPayload.self, from: JSONEncoder().encode(payload)),
+            payload
+        )
+    }
+
+    @MainActor
+    func testRepositoryUsesLocalRecipeWithoutCallingAPI() async throws {
+        let recipe = makeRecipe(id: "cached")
+        let apiClient = StubAPIClient()
+        let localStore = try LocalRecipeStore(inMemory: true)
+        try localStore.upsert(recipe)
+        let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+
+        let result = try await repository.recipe(id: recipe.id)
+
+        XCTAssertEqual(result, recipe)
+        XCTAssertTrue(apiClient.requests.isEmpty)
+    }
+
+    @MainActor
+    func testRepositoryRefreshesRemoteRecipeAndPersistsIt() async throws {
+        let recipe = makeRecipe(id: "remote")
+        let apiClient = StubAPIClient(responses: [recipe])
+        let localStore = try LocalRecipeStore(inMemory: true)
+        let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+
+        let result = try await repository.recipe(id: recipe.id)
+
+        XCTAssertEqual(result, recipe)
+        XCTAssertEqual(try localStore.recipe(id: recipe.id), recipe)
+        XCTAssertEqual(apiClient.requests, ["recipes/remote"])
+        XCTAssertEqual(try localStore.syncState(for: recipe.id), .synced)
+    }
+
+    @MainActor
+    func testRepositoryReportsConflictForPendingPrivateRecipe() async throws {
+        let localRecipe = makeRecipe(id: "conflict", isPublished: false)
+        let remoteRecipe = makeRecipe(id: "conflict", name: "Remote update", isPublished: false)
+        let apiClient = StubAPIClient(responses: [remoteRecipe])
+        let localStore = try LocalRecipeStore(inMemory: true)
+        try localStore.saveLocally(localRecipe)
+        let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+
+        do {
+            _ = try await repository.refreshRecipe(id: localRecipe.id)
+            XCTFail("Expected a sync conflict")
+        } catch let error as RecipeSyncError {
+            XCTAssertEqual(error, .conflict(recipeID: localRecipe.id))
+        }
+
+        XCTAssertEqual(try localStore.syncState(for: localRecipe.id), .conflict)
+    }
+
+    @MainActor
+    func testRepositorySynchronizesPaginatedRecipes() async throws {
+        let firstRecipe = makeRecipe(id: "page-1")
+        let secondRecipe = makeRecipe(id: "page-2")
+        let page = RecipePageTransport(
+            data: [firstRecipe, secondRecipe],
+            meta: RecipePageMetadata(currentPage: 2, lastPage: 3, perPage: 2, total: 6),
+            links: RecipePageLinks(next: URL(string: "https://api.example.test/api/v1/recipes?page=3"))
+        )
+        let apiClient = StubAPIClient(responses: [page])
+        let localStore = try LocalRecipeStore(inMemory: true)
+        let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+
+        let result = try await repository.refreshRecipes(page: 2)
+
+        XCTAssertEqual(result.recipes, [firstRecipe, secondRecipe])
+        XCTAssertEqual(result.currentPage, 2)
+        XCTAssertEqual(result.lastPage, 3)
+        XCTAssertTrue(result.conflicts.isEmpty)
+        XCTAssertEqual(
+            try localStore.recipes().map(\.id).sorted(),
+            [firstRecipe.id, secondRecipe.id].sorted()
+        )
+        XCTAssertEqual(apiClient.requests, ["recipes"])
+    }
+
+    @MainActor
+    func testPublishedRecipesCannotBeEditedLocally() throws {
+        let localStore = try LocalRecipeStore(inMemory: true)
+        try localStore.upsert(makeRecipe(id: "published"))
+
+        XCTAssertThrowsError(try localStore.saveLocally(makeRecipe(id: "published", name: "Changed"))) { error in
+            XCTAssertEqual(error as? RecipeStoreError, .publishedRecipeIsImmutable)
+        }
+    }
+
+    private func makeRecipe(
+        id: String,
+        name: String = "Soft Chrome",
+        isPublished: Bool = true
+    ) -> RecipeTransport {
+        RecipeTransport(
+            id: id,
+            name: name,
+            description: "A muted everyday recipe.",
+            styleRecommendation: nil,
+            cameraModelID: "fujifilm-x-s20",
+            lens: nil,
+            categories: ["Everyday"],
+            tags: ["muted"],
+            isPublished: isPublished,
+            provenance: nil,
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            settings: [RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome")]
         )
     }
 
