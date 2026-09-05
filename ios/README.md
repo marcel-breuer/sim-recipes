@@ -1,8 +1,12 @@
 # SimRecipes iOS client
 
-This directory contains the SwiftUI iOS application. The client will use Swift
-Concurrency and SwiftData, with networking, persistence, image caching, and
-camera communication kept behind service boundaries.
+The iOS client is a SwiftUI application targeting iOS 17 and later. The shared
+`SimRecipes` scheme builds the app and its unit-test target on an iPhone
+Simulator.
 
-The Xcode project and application targets will be added in the iOS foundation
-issue. Do not place credentials or signing material in this directory.
+The current shell contains the Explore, Library, and Profile product sections.
+Networking, SwiftData persistence, image caching, authentication, and camera
+communication remain behind service boundaries and will be added in their
+respective implementation issues.
+
+Do not place credentials or signing material in this directory.
