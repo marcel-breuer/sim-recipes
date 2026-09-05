@@ -27,12 +27,26 @@ struct CameraDescriptor: Equatable, Identifiable, Sendable {
     }
 }
 
+enum CameraSlot: UInt8, CaseIterable, Sendable {
+    case c1 = 1
+    case c2 = 2
+    case c3 = 3
+    case c4 = 4
+}
+
+struct CameraSlotSnapshot: Equatable, Sendable {
+    let slot: CameraSlot
+    let properties: [UInt16: Data]
+}
+
 enum CameraServiceError: LocalizedError {
     case authorizationDenied
     case cameraNotFound(String)
     case unsupportedCamera
     case sessionNotOpen
     case ptpNotSupported
+    case invalidSlotValue
+    case requestedSlotIsNotSelected(expected: CameraSlot, actual: UInt8)
     case invalidPTPResponse
     case unexpectedPTPResponseCode(UInt16)
     case transactionMismatch(expected: UInt32, actual: UInt32)
@@ -50,6 +64,10 @@ enum CameraServiceError: LocalizedError {
             "The camera session is not open."
         case .ptpNotSupported:
             "The camera does not report PTP command support."
+        case .invalidSlotValue:
+            "The camera returned an invalid custom-slot value."
+        case let .requestedSlotIsNotSelected(expected, actual):
+            "The camera has slot C\(actual) selected instead of \(expected)."
         case .invalidPTPResponse:
             "The camera returned an invalid PTP response."
         case let .unexpectedPTPResponseCode(code):
@@ -71,5 +89,7 @@ protocol CameraService: AnyObject {
     func stopDiscovery()
     func openSession(for cameraID: String) async throws
     func readDeviceInfo() async throws -> PTPResponseHeader
+    func readProperty(_ propertyCode: UInt16) async throws -> Data
+    func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot
     func closeSession() async throws
 }

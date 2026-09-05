@@ -5,15 +5,31 @@ struct PTPCommand: Equatable, Sendable {
         PTPCommand(code: 0x1001, transactionID: transactionID)
     }
 
+    static func getDevicePropValue(propertyCode: UInt16, transactionID: UInt32) -> PTPCommand {
+        PTPCommand(
+            code: 0x1015,
+            transactionID: transactionID,
+            parameters: [UInt32(propertyCode)]
+        )
+    }
+
     let code: UInt16
     let transactionID: UInt32
+    let parameters: [UInt32]
+
+    init(code: UInt16, transactionID: UInt32, parameters: [UInt32] = []) {
+        self.code = code
+        self.transactionID = transactionID
+        self.parameters = parameters
+    }
 
     var encoded: Data {
         var data = Data()
-        data.appendLittleEndian(UInt32(12))
+        data.appendLittleEndian(UInt32(12 + parameters.count * 4))
         data.appendLittleEndian(UInt16(1))
         data.appendLittleEndian(code)
         data.appendLittleEndian(transactionID)
+        parameters.forEach { data.appendLittleEndian($0) }
         return data
     }
 }
@@ -53,7 +69,7 @@ struct PTPResponseHeader: Equatable, Sendable {
     }
 }
 
-private extension Data {
+extension Data {
     mutating func appendLittleEndian<T: FixedWidthInteger>(_ value: T) {
         var littleEndianValue = value.littleEndian
         Swift.withUnsafeBytes(of: &littleEndianValue) { bytes in
@@ -79,4 +95,9 @@ private extension Data {
             | UInt32(self[offset + 2]) << 16
             | UInt32(self[offset + 3]) << 24
     }
+}
+
+struct PTPTransaction: Equatable, Sendable {
+    let header: PTPResponseHeader
+    let data: Data
 }

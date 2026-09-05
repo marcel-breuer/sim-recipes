@@ -65,6 +65,40 @@ final class ImageCaptureCameraService: NSObject, CameraService {
     }
 
     func readDeviceInfo() async throws -> PTPResponseHeader {
+        let transaction = try await sendReadOnlyPTPCommand(
+            PTPCommand.getDeviceInfo(transactionID: nextTransactionID)
+        )
+        return transaction.header
+    }
+
+    func readProperty(_ propertyCode: UInt16) async throws -> Data {
+        let command = PTPCommand.getDevicePropValue(
+            propertyCode: propertyCode,
+            transactionID: nextTransactionID
+        )
+        let transaction = try await sendReadOnlyPTPCommand(command)
+        return transaction.data
+    }
+
+    func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
+        let selectedSlotData = try await readProperty(0xD18C)
+        guard let selectedSlot = selectedSlotData.cameraSlotValue else {
+            throw CameraServiceError.invalidSlotValue
+        }
+
+        guard selectedSlot == slot.rawValue else {
+            throw CameraServiceError.requestedSlotIsNotSelected(expected: slot, actual: selectedSlot)
+        }
+
+        var properties: [UInt16: Data] = [:]
+        for propertyCode in propertyCodes {
+            properties[propertyCode] = try await readProperty(propertyCode)
+        }
+
+        return CameraSlotSnapshot(slot: slot, properties: properties)
+    }
+
+    private func sendReadOnlyPTPCommand(_ command: PTPCommand) async throws -> PTPTransaction {
         guard let camera = activeCamera, camera.hasOpenSession else {
             throw CameraServiceError.sessionNotOpen
         }
@@ -73,11 +107,10 @@ final class ImageCaptureCameraService: NSObject, CameraService {
             throw CameraServiceError.ptpNotSupported
         }
 
-        let command = PTPCommand.getDeviceInfo(transactionID: nextTransactionID)
         nextTransactionID = nextTransactionID == .max ? 1 : nextTransactionID + 1
 
-        let responseData = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PTPResponseHeader, Error>) in
-            camera.requestSendPTPCommand(command.encoded, outData: nil) { response, _, error in
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PTPTransaction, Error>) in
+            camera.requestSendPTPCommand(command.encoded, outData: nil) { response, data, error in
                 Task { @MainActor in
                     if let error = error {
                         continuation.resume(throwing: CameraServiceError.underlying(error))
@@ -102,12 +135,10 @@ final class ImageCaptureCameraService: NSObject, CameraService {
                         return
                     }
 
-                    continuation.resume(returning: responseHeader)
+                    continuation.resume(returning: PTPTransaction(header: responseHeader, data: data))
                 }
             }
         }
-
-        return responseData
     }
 
     func closeSession() async throws {
@@ -149,6 +180,22 @@ final class ImageCaptureCameraService: NSObject, CameraService {
 
         if activeCamera?.uuidString == id || activeCamera?.persistentIDString == id {
             activeCamera = nil
+        }
+    }
+}
+
+private extension Data {
+    var cameraSlotValue: UInt8? {
+        switch count {
+        case 1:
+            return self[0]
+        case 2:
+            guard let value = readLittleEndianUInt16(at: 0), value <= UInt16(UInt8.max) else {
+                return nil
+            }
+            return UInt8(value)
+        default:
+            return nil
         }
     }
 }

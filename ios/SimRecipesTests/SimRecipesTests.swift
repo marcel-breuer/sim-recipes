@@ -46,6 +46,13 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testGetDevicePropertyValueCommandUsesPropertyParameter() {
+        XCTAssertEqual(
+            Array(PTPCommand.getDevicePropValue(propertyCode: 0xD18C, transactionID: 1).encoded),
+            [16, 0, 0, 0, 1, 0, 21, 16, 1, 0, 0, 0, 140, 209, 0, 0]
+        )
+    }
+
     func testPTPResponseHeaderRejectsMalformedResponses() {
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 11)))
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 12)))

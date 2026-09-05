@@ -149,11 +149,13 @@ the camera applied the requested setting.
 
 ## Read-only prototype
 
-Issue #8 adds `ImageCaptureCameraService` under
+Issue #8/#9 add `ImageCaptureCameraService` under
 `ios/SimRecipes/Camera/`. It discovers `ICCameraDevice` instances, records
 their model, transport, USB identifiers, serial number, and PTP capability,
 and only treats a USB/PTP device whose reported model contains `X-S20` as a
-candidate. The service opens and closes a session and sends only the standard
-read-only `GetDeviceInfo` operation. It validates the response container,
-success code, and transaction ID before returning it. No vendor properties or
-camera settings are written.
+candidate. The service opens and closes a session, sends the standard
+read-only `GetDeviceInfo` operation, and reads property values for the slot
+currently selected on the camera. It validates the response container,
+success code, and transaction ID before returning data. It does not change the
+selected slot, write vendor properties, or write camera settings; automatic
+C1-C4 selection remains part of the later verified transfer work.

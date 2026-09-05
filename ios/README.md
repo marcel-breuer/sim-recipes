@@ -6,8 +6,10 @@ Simulator.
 
 The current shell contains the Explore, Library, and Profile product sections.
 The read-only camera prototype uses an ImageCaptureCore service boundary for
-USB camera discovery, X-S20 candidate matching, session management, and a
-validated `GetDeviceInfo` PTP request. It does not write camera settings.
+USB camera discovery, X-S20 candidate matching, session management, a
+validated `GetDeviceInfo` PTP request, and capability-driven property reads for
+the camera-selected custom slot. It does not write camera settings or change
+the selected slot.
 Networking, SwiftData persistence, image caching, and authentication remain
 behind service boundaries and will be added in their respective implementation
 issues.
