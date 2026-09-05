@@ -105,6 +105,8 @@ class AuthenticationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.logged_out', true);
 
+        $this->app['auth']->forgetGuards();
+
         $this->withToken($token->plainTextToken)
             ->postJson('/api/v1/protected-test-route')
             ->assertUnauthorized();
