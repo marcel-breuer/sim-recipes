@@ -4,7 +4,7 @@ import PhotosUI
 
 @MainActor
 final class RecipeEditorViewModel: ObservableObject {
-    @Published private(set) var cameras: [CameraModelTransport] = []
+    @Published private(set) var cameras: [SupportedCameraTransport] = []
     @Published private(set) var categories: [CategoryTransport] = []
     @Published private(set) var capabilities: [CameraCapabilityTransport] = []
     @Published var draft: RecipeDraft

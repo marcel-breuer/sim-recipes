@@ -1,6 +1,5 @@
 import Foundation
 
-@MainActor
 final class RecipeDraftStore {
     private let defaults: UserDefaults
     private let key = "recipe-drafts"

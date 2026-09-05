@@ -17,7 +17,7 @@ struct CameraCapabilityTransport: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-struct CameraModelTransport: Codable, Equatable, Identifiable, Sendable {
+struct SupportedCameraTransport: Codable, Equatable, Identifiable, Sendable {
     let id: String
     let manufacturer: String
     let name: String
@@ -32,10 +32,10 @@ struct CameraCapabilityService {
         self.apiClient = apiClient
     }
 
-    func supportedCameras() async throws -> [CameraModelTransport] {
+    func supportedCameras() async throws -> [SupportedCameraTransport] {
         let response = try await apiClient.send(
             APIRequest(method: .get, path: "cameras"),
-            responseType: APIResponse<[CameraModelTransport]>.self
+            responseType: APIResponse<[SupportedCameraTransport]>.self
         )
         return response.data
     }
