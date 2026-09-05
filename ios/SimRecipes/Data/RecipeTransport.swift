@@ -101,6 +101,7 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
     let description: String?
     let styleRecommendation: String?
     let cameraModelID: String
+    let cameraModelName: String?
     let lens: String?
     let categories: [String]
     let tags: [String]
@@ -109,6 +110,12 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
     let updatedAt: Date
     let settings: [RecipeSettingTransport]
     let images: [RecipeImageTransport]
+    let author: RecipeAuthorTransport?
+    let publishedAt: Date?
+    let viewsCount: Int
+    let likesCount: Int
+    let downloadsCount: Int
+    let isLiked: Bool?
 
     init(
         id: String,
@@ -116,6 +123,7 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         description: String?,
         styleRecommendation: String?,
         cameraModelID: String,
+        cameraModelName: String? = nil,
         lens: String?,
         categories: [String],
         tags: [String],
@@ -123,13 +131,20 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         provenance: RecipeProvenanceTransport?,
         updatedAt: Date,
         settings: [RecipeSettingTransport],
-        images: [RecipeImageTransport] = []
+        images: [RecipeImageTransport] = [],
+        author: RecipeAuthorTransport? = nil,
+        publishedAt: Date? = nil,
+        viewsCount: Int = 0,
+        likesCount: Int = 0,
+        downloadsCount: Int = 0,
+        isLiked: Bool? = nil
     ) {
         self.id = id
         self.name = name
         self.description = description
         self.styleRecommendation = styleRecommendation
         self.cameraModelID = cameraModelID
+        self.cameraModelName = cameraModelName
         self.lens = lens
         self.categories = categories
         self.tags = tags
@@ -138,6 +153,12 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         self.updatedAt = updatedAt
         self.settings = settings
         self.images = images
+        self.author = author
+        self.publishedAt = publishedAt
+        self.viewsCount = viewsCount
+        self.likesCount = likesCount
+        self.downloadsCount = downloadsCount
+        self.isLiked = isLiked
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -145,7 +166,10 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         case cameraModelID = "camera_model_id"
         case cameraModel = "camera_model"
         case lens, categories, tags, status, isPublished = "is_published"
-        case provenance, updatedAt = "updated_at", createdAt = "created_at"
+        case provenance, author, publishedAt = "published_at"
+        case updatedAt = "updated_at", createdAt = "created_at"
+        case viewsCount = "views_count", likesCount = "likes_count", downloadsCount = "downloads_count"
+        case isLiked = "liked_by_current_user"
         case settings, images
     }
 
@@ -157,6 +181,7 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
 
     private struct CameraReference: Codable {
         let id: String
+        let name: String?
     }
 
     init(from decoder: Decoder) throws {
@@ -170,8 +195,11 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
 
         if let cameraModelID = try container.decodeIfPresent(String.self, forKey: .cameraModelID) {
             self.cameraModelID = cameraModelID
+            cameraModelName = nil
         } else {
-            self.cameraModelID = try container.decode(CameraReference.self, forKey: .cameraModel).id
+            let camera = try container.decode(CameraReference.self, forKey: .cameraModel)
+            self.cameraModelID = camera.id
+            cameraModelName = camera.name
         }
 
         lens = try container.decodeIfPresent(String.self, forKey: .lens)
@@ -188,6 +216,12 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         self.updatedAt = updatedAt ?? createdAt ?? Date()
         settings = try container.decodeIfPresent([RecipeSettingTransport].self, forKey: .settings) ?? []
         images = try container.decodeIfPresent([RecipeImageTransport].self, forKey: .images) ?? []
+        author = try container.decodeIfPresent(RecipeAuthorTransport.self, forKey: .author)
+        publishedAt = try container.decodeIfPresent(Date.self, forKey: .publishedAt)
+        viewsCount = try container.decodeIfPresent(Int.self, forKey: .viewsCount) ?? 0
+        likesCount = try container.decodeIfPresent(Int.self, forKey: .likesCount) ?? 0
+        downloadsCount = try container.decodeIfPresent(Int.self, forKey: .downloadsCount) ?? 0
+        isLiked = try container.decodeIfPresent(Bool.self, forKey: .isLiked)
     }
 
     private static func decodeNames(
@@ -216,7 +250,18 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         try container.encode(updatedAt, forKey: .updatedAt)
         try container.encode(settings, forKey: .settings)
         try container.encode(images, forKey: .images)
+        try container.encodeIfPresent(author, forKey: .author)
+        try container.encodeIfPresent(publishedAt, forKey: .publishedAt)
+        try container.encode(viewsCount, forKey: .viewsCount)
+        try container.encode(likesCount, forKey: .likesCount)
+        try container.encode(downloadsCount, forKey: .downloadsCount)
+        try container.encodeIfPresent(isLiked, forKey: .isLiked)
     }
+}
+
+struct RecipeAuthorTransport: Codable, Equatable, Sendable {
+    let id: String
+    let name: String
 }
 
 struct RecipeProvenanceTransport: Codable, Equatable, Sendable {

@@ -121,9 +121,18 @@ struct ExploreView: View {
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
             RecipeDetailView(recipe: recipe) {
                 try await repository.copy(id: recipe.id)
+            } viewAction: {
+                try await repository.recordView(id: recipe.id)
+            } likeAction: {
+                try await repository.like(id: recipe.id)
+            } unlikeAction: {
+                try await repository.unlike(id: recipe.id)
             }
         } else {
-            RecipeDetailView(recipe: recipe)
+            let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+            RecipeDetailView(recipe: recipe, viewAction: {
+                try await repository.recordView(id: recipe.id)
+            })
         }
     }
 }

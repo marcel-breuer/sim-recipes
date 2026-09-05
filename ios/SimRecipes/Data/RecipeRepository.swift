@@ -18,6 +18,19 @@ struct RecipePageSyncResult: Equatable {
     let conflicts: [String]
 }
 
+struct RecipeEngagementTransport: Codable, Equatable, Sendable {
+    let recorded: Bool?
+    let liked: Bool?
+    let viewsCount: Int?
+    let likesCount: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case recorded, liked
+        case viewsCount = "views_count"
+        case likesCount = "likes_count"
+    }
+}
+
 @MainActor
 final class RecipeRepository {
     private let apiClient: any APIClient
@@ -170,6 +183,33 @@ final class RecipeRepository {
         return cachedRecipe
     }
 
+    func recordView(id: String) async throws -> RecipeEngagementTransport {
+        let request = APIRequest(method: .post, path: "recipes/\(id)/view")
+        let response = try await apiClient.send(
+            request,
+            responseType: APIResponse<RecipeEngagementTransport>.self
+        )
+        return response.data
+    }
+
+    func like(id: String) async throws -> RecipeEngagementTransport {
+        let request = APIRequest(method: .post, path: "recipes/\(id)/like")
+        let response = try await apiClient.send(
+            request,
+            responseType: APIResponse<RecipeEngagementTransport>.self
+        )
+        return response.data
+    }
+
+    func unlike(id: String) async throws -> RecipeEngagementTransport {
+        let request = APIRequest(method: .delete, path: "recipes/\(id)/like")
+        let response = try await apiClient.send(
+            request,
+            responseType: APIResponse<RecipeEngagementTransport>.self
+        )
+        return response.data
+    }
+
     private func cacheImages(for recipe: RecipeTransport) async -> RecipeTransport {
         var images: [RecipeImageTransport] = []
         for image in recipe.images {
@@ -208,6 +248,7 @@ final class RecipeRepository {
             description: recipe.description,
             styleRecommendation: recipe.styleRecommendation,
             cameraModelID: recipe.cameraModelID,
+            cameraModelName: recipe.cameraModelName,
             lens: recipe.lens,
             categories: recipe.categories,
             tags: recipe.tags,
@@ -215,7 +256,13 @@ final class RecipeRepository {
             provenance: recipe.provenance,
             updatedAt: recipe.updatedAt,
             settings: recipe.settings,
-            images: images
+            images: images,
+            author: recipe.author,
+            publishedAt: recipe.publishedAt,
+            viewsCount: recipe.viewsCount,
+            likesCount: recipe.likesCount,
+            downloadsCount: recipe.downloadsCount,
+            isLiked: recipe.isLiked
         )
     }
 

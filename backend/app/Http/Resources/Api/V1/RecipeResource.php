@@ -32,6 +32,9 @@ class RecipeResource extends JsonResource
             'lens' => $this->resource->getAttribute('lens'),
             'status' => $this->resource->getAttribute('status'),
             'published_at' => $publishedAt instanceof CarbonInterface ? $publishedAt->toISOString() : null,
+            'views_count' => $this->resource->getAttribute('views_count'),
+            'likes_count' => $this->resource->getAttribute('likes_count'),
+            'downloads_count' => $this->resource->getAttribute('downloads_count'),
             'camera_model' => $camera instanceof CameraModel ? [
                 'id' => $camera->getKey(),
                 'name' => $camera->getAttribute('name'),
