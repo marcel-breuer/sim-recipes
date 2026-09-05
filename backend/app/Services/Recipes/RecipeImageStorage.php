@@ -6,6 +6,7 @@ use App\Jobs\GenerateRecipeImageDerivatives;
 use App\Models\Recipe;
 use App\Models\RecipeImage;
 use App\Models\User;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -98,6 +99,87 @@ class RecipeImageStorage
         }
     }
 
+    public function copyForRecipe(Recipe $source, Recipe $target): void
+    {
+        $images = $source->images()->get();
+        if ($images->isEmpty()) {
+            return;
+        }
+
+        $userID = $target->getAttribute('user_id');
+        User::query()->whereKey($userID)->lockForUpdate()->firstOrFail();
+
+        $maxPerRecipe = (int) config('recipes.images.max_per_recipe', 5);
+        if ($images->count() > $maxPerRecipe) {
+            throw ValidationException::withMessages([
+                'images' => ['A recipe may contain at most '.$maxPerRecipe.' images.'],
+            ]);
+        }
+
+        $copiedBytes = (int) $images->sum('original_size_bytes');
+        $usedBytes = (int) RecipeImage::query()
+            ->join('recipes', 'recipes.id', '=', 'recipe_images.recipe_id')
+            ->where('recipes.user_id', $userID)
+            ->sum('recipe_images.original_size_bytes');
+        $quotaBytes = (int) config('recipes.images.user_quota_bytes', 5 * 1024 * 1024 * 1024);
+        if ($usedBytes + $copiedBytes > $quotaBytes) {
+            throw ValidationException::withMessages([
+                'images' => ['The user image storage quota has been exceeded.'],
+            ]);
+        }
+
+        $copiedPaths = [];
+        try {
+            foreach ($images as $sourceImage) {
+                $diskName = $sourceImage->getAttribute('storage_disk');
+                $sourcePath = $sourceImage->getAttribute('original_path');
+                if (! is_string($diskName) || ! is_string($sourcePath)) {
+                    throw new \RuntimeException('The source image storage metadata is invalid.');
+                }
+
+                $disk = Storage::disk($diskName);
+                $originalPath = $this->copyPath(
+                    $disk,
+                    $sourcePath,
+                    'recipes/'.$target->getKey().'/original-'.$sourceImage->getKey(),
+                    $copiedPaths,
+                );
+                $derivatives = [];
+                $sourceDerivatives = $sourceImage->getAttribute('derivatives');
+                if (is_array($sourceDerivatives)) {
+                    foreach ($sourceDerivatives as $variant => $derivativePath) {
+                        if (! is_string($variant) || ! is_string($derivativePath)) {
+                            continue;
+                        }
+
+                        $derivatives[$variant] = $this->copyPath(
+                            $disk,
+                            $derivativePath,
+                            'recipes/'.$target->getKey().'/'.$variant.'-'.$sourceImage->getKey(),
+                            $copiedPaths,
+                        );
+                    }
+                }
+
+                RecipeImage::create([
+                    'recipe_id' => $target->getKey(),
+                    'storage_disk' => $diskName,
+                    'original_path' => $originalPath,
+                    'original_size_bytes' => $sourceImage->getAttribute('original_size_bytes'),
+                    'mime_type' => $sourceImage->getAttribute('mime_type'),
+                    'width' => $sourceImage->getAttribute('width'),
+                    'height' => $sourceImage->getAttribute('height'),
+                    'sort_order' => $sourceImage->getAttribute('sort_order'),
+                    'derivatives' => $derivatives === [] ? null : $derivatives,
+                    'processing_status' => $sourceImage->getAttribute('processing_status'),
+                ]);
+            }
+        } catch (Throwable $exception) {
+            Storage::disk($diskName ?? config('filesystems.default'))->delete($copiedPaths);
+            throw $exception;
+        }
+    }
+
     public function delete(RecipeImage $image): void
     {
         $diskName = $image->getAttribute('storage_disk');
@@ -123,5 +205,20 @@ class RecipeImageStorage
         }
 
         return $size;
+    }
+
+    private function copyPath(
+        Filesystem $disk,
+        string $sourcePath,
+        string $targetPath,
+        array &$copiedPaths,
+    ): string {
+        if (! $disk->copy($sourcePath, $targetPath)) {
+            throw new \RuntimeException('The source image could not be copied.');
+        }
+
+        $copiedPaths[] = $targetPath;
+
+        return $targetPath;
     }
 }

@@ -77,7 +77,11 @@ ID tie-breakers so adjacent pages remain deterministic during normal browsing.
   published recipes can be liked.
 - Successful copy/download application flows record a `recipe_downloads` event
   through the engagement service and increment only the source recipe counter.
-  The copy endpoint is defined by the recipe-copy issue.
+- Authenticated users copy a public recipe with `POST
+  /api/v1/recipes/{recipe}/copy`. The response is the new private recipe in the
+  user's normal library, including `provenance.source_recipe_id` and
+  `provenance.source_author_id`. Metadata, settings, relations, and stored image
+  representations are copied transactionally.
 
 The default popularity strategy scores likes × 3, downloads × 5, and views ×
 1. It is bound behind a replaceable `PopularityRanking` service so the formula
