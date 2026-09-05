@@ -11,6 +11,7 @@ use App\Models\CameraCapability;
 use App\Models\Recipe;
 use App\Models\RecipeSetting;
 use App\Models\Tag;
+use App\Services\Moderation\UserGeneratedContentSafety;
 use App\Services\Recipes\PopularityRanking;
 use App\Services\Recipes\RecipeCapabilityValidator;
 use App\Services\Recipes\RecipeImageStorage;
@@ -30,6 +31,8 @@ class RecipeController extends Controller
         $filters = $request->validated();
         $query = Recipe::query()
             ->where('status', Recipe::STATUS_PUBLISHED)
+            ->where('is_hidden', false)
+            ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('is_suspended', false))
             ->with([
                 'cameraModel',
                 'user',
@@ -40,6 +43,11 @@ class RecipeController extends Controller
             ]);
 
         $this->applyFilters($query, $filters);
+
+        if ($request->user() !== null) {
+            $query->whereDoesntHave('user.blocksReceived', fn (Builder $blockQuery) => $blockQuery
+                ->where('blocker_id', $request->user()->getKey()));
+        }
 
         if (($filters['feed'] ?? 'popular') === 'newest') {
             $query
@@ -65,8 +73,10 @@ class RecipeController extends Controller
         StoreRecipeRequest $request,
         RecipeCapabilityValidator $capabilityValidator,
         RecipeImageStorage $imageStorage,
+        UserGeneratedContentSafety $contentSafety,
     ): RecipeResource {
         $data = $request->validated();
+        $contentSafety->assertAllowed($data);
         $settings = $data['settings'] ?? [];
         $capabilityValidator->validate($data['camera_model_id'], $settings);
 
@@ -93,9 +103,11 @@ class RecipeController extends Controller
         Recipe $recipe,
         RecipeCapabilityValidator $capabilityValidator,
         RecipeImageStorage $imageStorage,
+        UserGeneratedContentSafety $contentSafety,
     ): RecipeResource {
         Gate::authorize('update', $recipe);
         $data = $request->validated();
+        $contentSafety->assertAllowed($data);
         $cameraModelID = $data['camera_model_id'] ?? $recipe->camera_model_id;
         $settings = $data['settings'] ?? RecipeSetting::query()
             ->where('recipe_id', $recipe->getKey())
@@ -151,8 +163,17 @@ class RecipeController extends Controller
 
     private function canView(Recipe $recipe): bool
     {
+        if ($recipe->is_hidden || $recipe->user()->where('is_suspended', true)->exists()) {
+            return false;
+        }
+
+        $user = request()->user();
+        if ($user !== null && $user->blocksCreated()->where('blocked_user_id', $recipe->user_id)->exists()) {
+            return false;
+        }
+
         return $recipe->status === Recipe::STATUS_PUBLISHED
-            || (request()->user() !== null && request()->user()->getKey() === $recipe->user_id);
+            || ($user !== null && $user->getKey() === $recipe->user_id);
     }
 
     /**

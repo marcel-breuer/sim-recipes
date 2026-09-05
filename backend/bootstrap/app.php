@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RejectSuspendedUsers;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'auth.api' => Authenticate::class,
+            'active.account' => RejectSuspendedUsers::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

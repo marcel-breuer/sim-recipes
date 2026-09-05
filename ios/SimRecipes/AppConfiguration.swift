@@ -11,4 +11,7 @@ enum AppConfiguration {
 
         return url
     }
+
+    static let communityStandardsURL = URL(string: "https://simrecipes.app/docs/community-standards")!
+    static let supportEmailURL = URL(string: "mailto:support@simrecipes.app")!
 }

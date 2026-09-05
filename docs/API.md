@@ -92,3 +92,21 @@ image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images
 behind the same ownership boundary. Private recipe owners may delete images;
 published images are immutable.
+
+## Safety and moderation
+
+`GET /api/v1/support` is public and returns the current support email,
+community-standards URL, and privacy-policy URL.
+
+Authenticated users can report published recipes, recipe images, and profiles
+with `POST /recipes/{recipe}/reports`,
+`POST /recipe-images/{recipeImage}/reports`, and
+`POST /profiles/{username}/reports`. They can block and unblock profiles with
+`POST`/`DELETE /profiles/{username}/block` or the equivalent user-ID routes.
+Blocked users and their public recipes are omitted from the blocker's feed and
+detail views.
+
+Administrators can review paginated reports with `GET /admin/reports` and
+resolve them with `PATCH /admin/reports/{report}` using `hide_content`,
+`suspend_user`, `restore_content`, or `dismiss`. Recipe text is screened before
+storage; image moderation remains report- and admin-review driven.

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Recipe extends Model
 {
@@ -25,6 +26,9 @@ class Recipe extends Model
         'recommendation',
         'lens',
         'status',
+        'is_hidden',
+        'moderated_at',
+        'moderation_reason',
         'published_at',
         'views_count',
         'likes_count',
@@ -35,6 +39,8 @@ class Recipe extends Model
     {
         return [
             'published_at' => 'datetime',
+            'is_hidden' => 'boolean',
+            'moderated_at' => 'datetime',
             'views_count' => 'integer',
             'likes_count' => 'integer',
             'downloads_count' => 'integer',
@@ -89,5 +95,10 @@ class Recipe extends Model
     public function provenance(): HasOne
     {
         return $this->hasOne(RecipeProvenance::class, 'copied_recipe_id');
+    }
+
+    public function moderationReports(): MorphMany
+    {
+        return $this->morphMany(ModerationReport::class, 'reportable');
     }
 }

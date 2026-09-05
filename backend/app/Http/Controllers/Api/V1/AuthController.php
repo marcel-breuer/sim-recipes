@@ -37,6 +37,10 @@ class AuthController extends Controller
                 $user->email_verified_at ??= now();
             }
 
+            if ($user->is_suspended) {
+                throw new AuthenticationException('This account has been suspended.');
+            }
+
             $user->save();
 
             $token = $user->createToken(

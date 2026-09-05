@@ -16,9 +16,15 @@ class RecipeCopyController extends Controller
         Recipe $recipe,
         RecipeCopyService $copyService,
     ): RecipeResource {
-        abort_unless($recipe->status === Recipe::STATUS_PUBLISHED, 404);
+        abort_unless(
+            $recipe->status === Recipe::STATUS_PUBLISHED
+                && ! $recipe->is_hidden
+                && ! $recipe->user()->where('is_suspended', true)->exists(),
+            404,
+        );
         $user = $request->user();
         abort_unless($user instanceof User, 401);
+        abort_unless(! $user->blocksCreated()->where('blocked_user_id', $recipe->user_id)->exists(), 404);
 
         $copy = $copyService->copy($recipe, $user);
 

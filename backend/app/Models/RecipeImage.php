@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class RecipeImage extends Model
 {
@@ -37,5 +38,10 @@ class RecipeImage extends Model
     public function recipe(): BelongsTo
     {
         return $this->belongsTo(Recipe::class);
+    }
+
+    public function moderationReports(): MorphMany
+    {
+        return $this->morphMany(ModerationReport::class, 'reportable');
     }
 }

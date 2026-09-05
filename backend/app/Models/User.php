@@ -39,7 +39,9 @@ class User extends Authenticatable
 
     public function publishedRecipes(): HasMany
     {
-        return $this->recipes()->where('status', Recipe::STATUS_PUBLISHED);
+        return $this->recipes()
+            ->where('status', Recipe::STATUS_PUBLISHED)
+            ->where('is_hidden', false);
     }
 
     public function recipes(): HasMany
@@ -62,6 +64,21 @@ class User extends Authenticatable
         return $this->hasMany(RecipeDownload::class);
     }
 
+    public function blocksCreated(): HasMany
+    {
+        return $this->hasMany(UserBlock::class, 'blocker_id');
+    }
+
+    public function blocksReceived(): HasMany
+    {
+        return $this->hasMany(UserBlock::class, 'blocked_user_id');
+    }
+
+    public function moderationReports(): HasMany
+    {
+        return $this->hasMany(ModerationReport::class, 'reporter_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -72,6 +89,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'is_suspended' => 'boolean',
         ];
     }
 }

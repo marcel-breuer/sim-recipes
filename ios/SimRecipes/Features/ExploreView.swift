@@ -122,6 +122,7 @@ struct ExploreView: View {
         if let session = authService.session {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
+            let moderationService = ModerationService(apiClient: authenticatedClient)
             RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
                 try await repository.copy(id: recipe.id)
             } viewAction: {
@@ -130,6 +131,12 @@ struct ExploreView: View {
                 try await repository.like(id: recipe.id)
             } unlikeAction: {
                 try await repository.unlike(id: recipe.id)
+            } reportAction: {
+                try await moderationService.reportRecipe(id: recipe.id)
+            } blockAction: {
+                if let author = recipe.author {
+                    try await moderationService.blockUser(id: author.id)
+                }
             }
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
