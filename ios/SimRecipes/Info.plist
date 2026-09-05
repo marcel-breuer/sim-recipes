@@ -23,7 +23,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>SimRecipes connects to your Fujifilm camera to read supported settings.</string>
+	<string>SimRecipes connects to your Fujifilm camera to inspect custom-setting slots and transfer recipes.</string>
 	<key>APIBaseURL</key>
 	<string>http://localhost/api/v1</string>
 	<key>LSRequiresIPhoneOS</key>

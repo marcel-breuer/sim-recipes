@@ -80,14 +80,19 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         return transaction.data
     }
 
-    func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
-        let selectedSlotData = try await readProperty(0xD18C)
-        guard let selectedSlot = selectedSlotData.cameraSlotValue else {
-            throw CameraServiceError.invalidSlotValue
+    func availableSlots() async throws -> [CameraSlot] {
+        guard activeCamera != nil else {
+            throw CameraServiceError.sessionNotOpen
         }
 
-        guard selectedSlot == slot.rawValue else {
-            throw CameraServiceError.requestedSlotIsNotSelected(expected: slot, actual: selectedSlot)
+        return CameraSlot.allCases
+    }
+
+    func readCurrentSlotSnapshot(propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
+        let selectedSlotData = try await readProperty(0xD18C)
+        guard let selectedSlot = selectedSlotData.cameraSlotValue,
+              let slot = CameraSlot(rawValue: selectedSlot) else {
+            throw CameraServiceError.invalidSlotValue
         }
 
         var properties: [UInt16: Data] = [:]
@@ -96,6 +101,26 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         }
 
         return CameraSlotSnapshot(slot: slot, properties: properties)
+    }
+
+    func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
+        let snapshot = try await readCurrentSlotSnapshot(propertyCodes: propertyCodes)
+        guard snapshot.slot == slot else {
+            throw CameraServiceError.requestedSlotIsNotSelected(expected: slot, actual: snapshot.slot.rawValue)
+        }
+
+        return snapshot
+    }
+
+    func transferRecipe(
+        _ recipe: RecipeTransport,
+        to slot: CameraSlot,
+        confirmation: CameraSlotOverwriteConfirmation
+    ) async throws -> CameraSlotSnapshot {
+        // The X-S20 vendor-property value encodings are not hardware-verified.
+        // Refuse to manufacture a payload instead of claiming a successful write.
+        _ = (recipe, slot, confirmation)
+        throw CameraServiceError.recipeTransferEncodingUnavailable
     }
 
     func writeRecipe(

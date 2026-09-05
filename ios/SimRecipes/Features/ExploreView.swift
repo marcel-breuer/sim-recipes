@@ -4,17 +4,20 @@ struct ExploreView: View {
     @ObservedObject private var authService: AuthService
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
+    private let cameraService: any CameraService
     @StateObject private var viewModel: ExploreViewModel
     @State private var showingFilters = false
 
     init(
         authService: AuthService,
         apiClient: any APIClient,
-        localStore: LocalRecipeStore
+        localStore: LocalRecipeStore,
+        cameraService: any CameraService
     ) {
         _authService = ObservedObject(wrappedValue: authService)
         self.apiClient = apiClient
         self.localStore = localStore
+        self.cameraService = cameraService
         let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
         let capabilityService = CameraCapabilityService(apiClient: apiClient)
         _viewModel = StateObject(wrappedValue: ExploreViewModel(
@@ -119,7 +122,7 @@ struct ExploreView: View {
         if let session = authService.session {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
-            RecipeDetailView(recipe: recipe) {
+            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
                 try await repository.copy(id: recipe.id)
             } viewAction: {
                 try await repository.recordView(id: recipe.id)
@@ -130,10 +133,17 @@ struct ExploreView: View {
             }
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
-            RecipeDetailView(recipe: recipe, viewAction: {
+            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe), viewAction: {
                 try await repository.recordView(id: recipe.id)
             })
         }
+    }
+
+    private func transferService(for recipe: RecipeTransport) -> (any CameraService)? {
+        guard let localRecipe = try? localStore.recipe(id: recipe.id), localRecipe != nil else {
+            return nil
+        }
+        return cameraService
     }
 }
 
@@ -236,6 +246,7 @@ private struct ExploreFilterView: View {
     ExploreView(
         authService: AuthService(apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)),
         apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!),
-        localStore: try! LocalRecipeStore(inMemory: true)
+        localStore: try! LocalRecipeStore(inMemory: true),
+        cameraService: ImageCaptureCameraService()
     )
 }

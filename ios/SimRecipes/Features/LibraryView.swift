@@ -4,6 +4,7 @@ struct LibraryView: View {
     @ObservedObject var authService: AuthService
     let apiClient: any APIClient
     let localStore: LocalRecipeStore
+    let cameraService: any CameraService
     @State private var recipes: [RecipeTransport] = []
     @State private var searchText = ""
 
@@ -42,23 +43,23 @@ struct LibraryView: View {
                             editor(for: recipe)
                         } label: {
                             HStack(spacing: 12) {
-                                if let imageURL = recipe.images.first?.localURL {
-                                    AsyncImage(url: imageURL) { image in
-                                        image.resizable().scaledToFill()
-                                    } placeholder: {
-                                        Rectangle().fill(.quaternary)
-                                    }
-                                    .frame(width: 56, height: 56)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                }
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(recipe.name)
-                                        .font(.headline)
-                                    Text(recipe.isPublished ? "Published" : "Private draft")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+                                recipeRow(recipe)
                             }
+                        }
+                        .contextMenu {
+                            NavigationLink {
+                                transfer(for: recipe)
+                            } label: {
+                                Label("Transfer to Camera", systemImage: "arrow.down.to.line.compact")
+                            }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            NavigationLink {
+                                transfer(for: recipe)
+                            } label: {
+                                Label("Transfer", systemImage: "arrow.down.to.line.compact")
+                            }
+                            .tint(.accentColor)
                         }
                     }
                 }
@@ -95,6 +96,31 @@ struct LibraryView: View {
                     capabilityService: capabilityService
                 )
             )
+        }
+    }
+
+    @ViewBuilder
+    private func transfer(for recipe: RecipeTransport) -> some View {
+        CameraTransferView(recipe: recipe, cameraService: cameraService)
+    }
+
+    @ViewBuilder
+    private func recipeRow(_ recipe: RecipeTransport) -> some View {
+        if let imageURL = recipe.images.first?.localURL {
+            AsyncImage(url: imageURL) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Rectangle().fill(.quaternary)
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(recipe.name)
+                .font(.headline)
+            Text(recipe.isPublished ? "Published" : "Private draft")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

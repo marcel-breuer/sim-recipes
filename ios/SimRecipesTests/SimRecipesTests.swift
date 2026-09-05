@@ -382,6 +382,60 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testCameraTransferLoadsServiceSlotsAndRequiresOverwriteConfirmation() async throws {
+        let camera = CameraDescriptor(
+            id: "camera-1",
+            name: "FUJIFILM X-S20",
+            productKind: "Camera",
+            serialNumber: nil,
+            transportType: "USB",
+            usbVendorID: 1,
+            usbProductID: 2,
+            supportsPTP: true
+        )
+        let service = StubCameraService(discoveredCameras: [camera])
+        service.currentSnapshot = CameraSlotSnapshot(slot: .c2, properties: [0xD192: Data([1])])
+        let viewModel = CameraTransferViewModel(recipe: makeRecipe(id: "transfer"), cameraService: service)
+
+        await viewModel.start()
+        await viewModel.connect(to: camera)
+
+        XCTAssertEqual(viewModel.slots.map(\.slot), CameraSlot.allCases)
+        XCTAssertEqual(viewModel.selectedSlot, .c2)
+        XCTAssertEqual(viewModel.slots.first(where: { $0.slot == .c2 })?.propertyCount, 1)
+
+        viewModel.requestTransfer()
+
+        XCTAssertTrue(viewModel.showingOverwriteConfirmation)
+        XCTAssertEqual(viewModel.phase, .ready)
+    }
+
+    @MainActor
+    func testCameraTransferNeverReportsSuccessWhenAdapterFails() async throws {
+        let camera = CameraDescriptor(
+            id: "camera-1",
+            name: "FUJIFILM X-S20",
+            productKind: "Camera",
+            serialNumber: nil,
+            transportType: "USB",
+            usbVendorID: 1,
+            usbProductID: 2,
+            supportsPTP: true
+        )
+        let service = StubCameraService(discoveredCameras: [camera])
+        service.transferError = CameraServiceError.recipeTransferEncodingUnavailable
+        let viewModel = CameraTransferViewModel(recipe: makeRecipe(id: "transfer"), cameraService: service)
+
+        await viewModel.start()
+        await viewModel.connect(to: camera)
+        await viewModel.confirmTransfer()
+
+        XCTAssertEqual(viewModel.phase, .failed(CameraServiceError.recipeTransferEncodingUnavailable.localizedDescription))
+        XCTAssertNil(viewModel.resultMessage)
+        XCTAssertEqual(viewModel.errorMessage, CameraServiceError.recipeTransferEncodingUnavailable.localizedDescription)
+    }
+
     func testPTPResponseHeaderRejectsMalformedResponses() {
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 11)))
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 12)))

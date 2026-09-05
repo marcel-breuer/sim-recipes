@@ -6,6 +6,7 @@ struct SimRecipesApp: App {
     @StateObject private var profileService: ProfileService
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
+    private let cameraService: ImageCaptureCameraService
 
     init() {
         let apiClient = URLSessionAPIClient(baseURL: AppConfiguration.apiBaseURL)
@@ -14,6 +15,7 @@ struct SimRecipesApp: App {
         _profileService = StateObject(wrappedValue: ProfileService(authService: authService))
         self.apiClient = apiClient
         self.localStore = try! LocalRecipeStore()
+        self.cameraService = ImageCaptureCameraService()
     }
 
     var body: some Scene {
@@ -22,7 +24,8 @@ struct SimRecipesApp: App {
                 authService: authService,
                 profileService: profileService,
                 apiClient: apiClient,
-                localStore: localStore
+                localStore: localStore,
+                cameraService: cameraService
             )
         }
     }

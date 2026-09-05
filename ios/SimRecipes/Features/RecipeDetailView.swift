@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
+    var transferService: (any CameraService)?
     var copyAction: (() async throws -> RecipeTransport)?
     var viewAction: (() async throws -> RecipeEngagementTransport)?
     var likeAction: (() async throws -> RecipeEngagementTransport)?
@@ -14,12 +15,14 @@ struct RecipeDetailView: View {
 
     init(
         recipe: RecipeTransport,
+        transferService: (any CameraService)? = nil,
         copyAction: (() async throws -> RecipeTransport)? = nil,
         viewAction: (() async throws -> RecipeEngagementTransport)? = nil,
         likeAction: (() async throws -> RecipeEngagementTransport)? = nil,
         unlikeAction: (() async throws -> RecipeEngagementTransport)? = nil
     ) {
         self.recipe = recipe
+        self.transferService = transferService
         self.copyAction = copyAction
         self.viewAction = viewAction
         self.likeAction = likeAction
@@ -119,6 +122,16 @@ struct RecipeDetailView: View {
         .navigationTitle("Recipe")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if let transferService {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        CameraTransferView(recipe: recipe, cameraService: transferService)
+                    } label: {
+                        Label("Transfer to Camera", systemImage: "arrow.down.to.line.compact")
+                    }
+                    .accessibilityLabel("Transfer recipe to camera")
+                }
+            }
             if let copyAction {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
