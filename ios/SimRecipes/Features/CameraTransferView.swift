@@ -102,7 +102,7 @@ final class CameraTransferViewModel: ObservableObject {
     }
 
     func connect(to camera: CameraDescriptor) async {
-        guard camera.isX20Candidate, !phase.isBusy else { return }
+        guard camera.isX20Candidate, canOpenCameraSession else { return }
         phase = .connecting
         errorMessage = nil
         resultMessage = nil
@@ -182,6 +182,15 @@ final class CameraTransferViewModel: ObservableObject {
     private var isFailed: Bool {
         if case .failed = phase { return true }
         return false
+    }
+
+    private var canOpenCameraSession: Bool {
+        switch phase {
+        case .discovering, .ready, .succeeded, .failed:
+            true
+        case .idle, .requestingAccess, .connecting, .loadingSlots, .transferring:
+            false
+        }
     }
 
     private func fail(_ error: Error) {
