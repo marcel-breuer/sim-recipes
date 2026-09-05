@@ -1,0 +1,80 @@
+name: Backend quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Laravel checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Detect Laravel project
+        id: project
+        shell: bash
+        run: |
+          if [[ -f composer.json ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Laravel backend is not present yet; backend checks will activate with the backend foundation."
+          fi
+
+      - name: Set up PHP
+        if: steps.project.outputs.present == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pgsql, pdo_pgsql, redis
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer configuration
+        if: steps.project.outputs.present == 'true'
+        run: composer validate --strict --no-check-publish
+
+      - name: Install Composer dependencies
+        if: steps.project.outputs.present == 'true'
+        run: composer install --locked --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Check formatting with Laravel Pint
+        if: steps.project.outputs.present == 'true'
+        run: |
+          if [[ ! -x vendor/bin/pint ]]; then
+            echo '::error::Laravel Pint must be configured in the backend project.'
+            exit 1
+          fi
+          vendor/bin/pint --test
+
+      - name: Run static analysis with PHPStan
+        if: steps.project.outputs.present == 'true'
+        run: |
+          if [[ ! -x vendor/bin/phpstan ]]; then
+            echo '::error::PHPStan must be configured in the backend project.'
+            exit 1
+          fi
+          if [[ ! -f phpstan.neon && ! -f phpstan.neon.dist ]]; then
+            echo '::error::A PHPStan configuration file is required.'
+            exit 1
+          fi
+          vendor/bin/phpstan analyse --no-progress
+
+      - name: Run backend tests
+        if: steps.project.outputs.present == 'true'
+        run: |
+          if [[ ! -x vendor/bin/phpunit ]]; then
+            echo '::error::PHPUnit must be configured in the backend project.'
+            exit 1
+          fi
+          vendor/bin/phpunit --colors=never

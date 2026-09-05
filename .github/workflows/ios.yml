@@ -1,0 +1,109 @@
+name: iOS quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: iOS build and tests
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Detect Xcode project and scheme
+        id: project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          workspace="$(find ios -maxdepth 3 -type d -name '*.xcworkspace' -print -quit)"
+          project="$(find ios -maxdepth 3 -type d -name '*.xcodeproj' -print -quit)"
+
+          if [[ -n "$workspace" ]]; then
+            project_type=workspace
+            project_path="$workspace"
+            scheme="$(xcodebuild -workspace "$workspace" -list -json | jq -r '.workspace.schemes[0] // empty')"
+          elif [[ -n "$project" ]]; then
+            project_type=project
+            project_path="$project"
+            scheme="$(xcodebuild -project "$project" -list -json | jq -r '.project.schemes[0] // empty')"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Xcode project is not present yet; iOS checks will activate with the iOS foundation."
+            exit 0
+          fi
+
+          if [[ -z "$scheme" ]]; then
+            echo '::error::The iOS project must expose a shared build scheme.'
+            exit 1
+          fi
+
+          {
+            echo "present=true"
+            echo "project_type=$project_type"
+            echo "project_path=$project_path"
+            echo "scheme=$scheme"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Cache Swift package and derived data
+        if: steps.project.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-${{ hashFiles('ios/**/Package.resolved', 'ios/**/*.xcodeproj/project.pbxproj', 'ios/**/*.xcworkspace/contents.xcworkspacedata') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
+
+      - name: Resolve Swift package dependencies
+        if: steps.project.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.project.outputs.project_type }}" == "workspace" ]]; then
+            xcodebuild -workspace "${{ steps.project.outputs.project_path }}" \
+              -scheme "${{ steps.project.outputs.scheme }}" \
+              -resolvePackageDependencies
+          else
+            xcodebuild -project "${{ steps.project.outputs.project_path }}" \
+              -scheme "${{ steps.project.outputs.scheme }}" \
+              -resolvePackageDependencies
+          fi
+
+      - name: Build and test on an available iOS Simulator
+        if: steps.project.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          simulator_udid="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')"
+          if [[ -z "$simulator_udid" ]]; then
+            echo '::error::No available iPhone Simulator was found on the runner.'
+            exit 1
+          fi
+
+          common_args=(
+            -scheme "${{ steps.project.outputs.scheme }}"
+            -destination "id=$simulator_udid"
+            -derivedDataPath "$RUNNER_TEMP/DerivedData"
+            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_REQUIRED=NO
+          )
+
+          if [[ "${{ steps.project.outputs.project_type }}" == "workspace" ]]; then
+            xcodebuild -workspace "${{ steps.project.outputs.project_path }}" "${common_args[@]}" build test
+          else
+            xcodebuild -project "${{ steps.project.outputs.project_path }}" "${common_args[@]}" build test
+          fi
