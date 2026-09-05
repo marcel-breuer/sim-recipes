@@ -23,6 +23,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.cameras.show');
     Route::get('/categories', [CategoryController::class, 'index'])
         ->name('api.v1.categories.index');
+    Route::get('/recipes', [RecipeController::class, 'index'])
+        ->name('api.v1.recipes.index');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
     Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])

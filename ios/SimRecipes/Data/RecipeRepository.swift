@@ -71,6 +71,43 @@ final class RecipeRepository {
         )
     }
 
+    func communityRecipes(
+        feed: RecipeFeed,
+        filter: CommunityRecipeFilter = CommunityRecipeFilter(),
+        page: Int = 1,
+        perPage: Int = 20
+    ) async throws -> RecipePageTransport {
+        var queryItems = [URLQueryItem(
+            name: "feed",
+            value: feed.rawValue
+        ), URLQueryItem(name: "page", value: String(page)), URLQueryItem(
+            name: "per_page",
+            value: String(perPage)
+        )]
+
+        let search = filter.search.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !search.isEmpty {
+            queryItems.append(URLQueryItem(name: "search", value: search))
+        }
+        if let cameraModelID = filter.cameraModelID {
+            queryItems.append(URLQueryItem(name: "camera_model_id", value: cameraModelID))
+        }
+        if let filmSimulation = filter.filmSimulation, !filmSimulation.isEmpty {
+            queryItems.append(URLQueryItem(name: "film_simulation", value: filmSimulation))
+        }
+        queryItems.append(contentsOf: filter.categorySlugs.map {
+            URLQueryItem(name: "categories[]", value: $0)
+        })
+        queryItems.append(contentsOf: filter.tags.map {
+            URLQueryItem(name: "tags[]", value: $0)
+        })
+
+        return try await apiClient.send(
+            APIRequest(method: .get, path: "recipes", queryItems: queryItems),
+            responseType: RecipePageTransport.self
+        )
+    }
+
     func recipe(id: String) async throws -> RecipeTransport {
         if let cachedRecipe = try localStore.recipe(id: id) {
             return cachedRecipe
