@@ -1,0 +1,139 @@
+name: sim-recipes
+
+x-app-environment: &app-environment
+  APP_NAME: ${APP_NAME:-SimRecipes}
+  APP_ENV: ${APP_ENV:-production}
+  APP_DEBUG: ${APP_DEBUG:-false}
+  APP_KEY: ${APP_KEY:-}
+  APP_URL: ${APP_URL:-http://localhost:8000}
+  LOG_CHANNEL: ${LOG_CHANNEL:-stack}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DB_CONNECTION: pgsql
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_DATABASE: ${DB_DATABASE:?DB_DATABASE must be set}
+  DB_USERNAME: ${DB_USERNAME:?DB_USERNAME must be set}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  SESSION_DRIVER: ${SESSION_DRIVER:-database}
+  REDIS_CLIENT: phpredis
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-s3}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-central-1}
+  AWS_BUCKET: ${AWS_BUCKET:-}
+  AWS_ENDPOINT: ${AWS_ENDPOINT:-}
+  AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
+  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+  APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+  APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+  APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+
+x-api-service: &api-service
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  image: ${API_IMAGE:-sim-recipes-api}:${API_IMAGE_TAG:-local}
+  restart: unless-stopped
+  environment:
+    <<: *app-environment
+
+services:
+  api:
+    <<: *api-service
+    ports:
+      - ${API_PORT:-8000}:8000
+    command:
+      - sh
+      - -c
+      - php artisan migrate --force && exec php artisan serve --host=0.0.0.0 --port=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://127.0.0.1:8000/api/v1/health >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  queue:
+    <<: *api-service
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --verbose
+      - --tries=3
+      - --timeout=90
+    depends_on:
+      api:
+        condition: service_healthy
+
+  scheduler:
+    <<: *api-service
+    command:
+      - php
+      - artisan
+      - schedule:work
+    depends_on:
+      api:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE must be set}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME must be set}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command:
+      - sh
+      - -c
+      - >-
+        if [ -n "$${REDIS_PASSWORD}" ]; then
+          exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}";
+        else
+          exec redis-server --appendonly yes;
+        fi
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          if [ -n "$${REDIS_PASSWORD}" ]; then
+            redis-cli -a "$${REDIS_PASSWORD}" ping | grep PONG;
+          else
+            redis-cli ping | grep PONG;
+          fi
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
