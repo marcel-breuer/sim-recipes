@@ -13,19 +13,22 @@ struct APIRequest: Sendable {
     let queryItems: [URLQueryItem]
     let headers: [String: String]
     let body: Data?
+    let contentType: String?
 
     init(
         method: HTTPMethod,
         path: String,
         queryItems: [URLQueryItem] = [],
         headers: [String: String] = [:],
-        body: Data? = nil
+        body: Data? = nil,
+        contentType: String? = nil
     ) {
         self.method = method
         self.path = path
         self.queryItems = queryItems
         self.headers = headers
         self.body = body
+        self.contentType = contentType
     }
 
     func url(relativeTo baseURL: URL) throws -> URL {
@@ -45,6 +48,47 @@ struct APIRequest: Sendable {
         }
 
         return resolvedURL
+    }
+}
+
+struct MultipartFormDataBuilder: Sendable {
+    let boundary: String
+    private var body = Data()
+
+    init(boundary: String = "Boundary-\(UUID().uuidString)") {
+        self.boundary = boundary
+    }
+
+    mutating func append(name: String, value: String) {
+        appendHeader(name: name)
+        body.append(Data(value.utf8))
+        body.append(Data("\r\n".utf8))
+    }
+
+    mutating func appendJSON<T: Encodable>(name: String, value: T, encoder: JSONEncoder = JSONEncoder()) throws {
+        append(name: name, value: String(data: try encoder.encode(value), encoding: .utf8) ?? "null")
+    }
+
+    mutating func appendFile(name: String, filename: String, mimeType: String, data: Data) {
+        appendHeader(name: name, filename: filename, mimeType: mimeType)
+        body.append(data)
+        body.append(Data("\r\n".utf8))
+    }
+
+    func finalized() -> (data: Data, contentType: String) {
+        var result = body
+        result.append(Data("--\(boundary)--\r\n".utf8))
+        return (result, "multipart/form-data; boundary=\(boundary)")
+    }
+
+    private mutating func appendHeader(name: String, filename: String? = nil, mimeType: String? = nil) {
+        body.append(Data("--\(boundary)\r\n".utf8))
+        if let filename, let mimeType {
+            body.append(Data("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n".utf8))
+            body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
+        } else {
+            body.append(Data("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".utf8))
+        }
     }
 }
 
@@ -133,7 +177,9 @@ final class URLSessionAPIClient: APIClient {
             urlRequest.setValue(value, forHTTPHeaderField: header)
         }
 
-        if request.body != nil {
+        if let contentType = request.contentType {
+            urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        } else if request.body != nil {
             urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
@@ -196,7 +242,8 @@ final class BearerAPIClient: APIClient {
             path: request.path,
             queryItems: request.queryItems,
             headers: headers,
-            body: request.body
+            body: request.body,
+            contentType: request.contentType
         )
 
         return try await apiClient.send(authenticatedRequest, responseType: responseType)

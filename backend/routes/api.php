@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CameraController;
+use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
@@ -20,6 +21,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.cameras.capabilities');
     Route::get('/cameras/{camera}', [CameraController::class, 'show'])
         ->name('api.v1.cameras.show');
+    Route::get('/categories', [CategoryController::class, 'index'])
+        ->name('api.v1.categories.index');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
     Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])
@@ -34,7 +37,7 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.me.profile.update');
         Route::post('/recipes', [RecipeController::class, 'store'])
             ->name('api.v1.recipes.store');
-        Route::patch('/recipes/{recipe}', [RecipeController::class, 'update'])
+        Route::match(['patch', 'post'], '/recipes/{recipe}', [RecipeController::class, 'update'])
             ->name('api.v1.recipes.update');
         Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])
             ->name('api.v1.recipes.destroy');

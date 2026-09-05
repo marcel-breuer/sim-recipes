@@ -31,6 +31,8 @@ enum AppTab: Hashable, CaseIterable {
 struct RootView: View {
     @ObservedObject var authService: AuthService
     @ObservedObject var profileService: ProfileService
+    let apiClient: any APIClient
+    let localStore: LocalRecipeStore
     @State private var selectedTab: AppTab = .explore
 
     var body: some View {
@@ -41,7 +43,11 @@ struct RootView: View {
                 }
                 .tag(AppTab.explore)
 
-            LibraryView()
+            LibraryView(
+                authService: authService,
+                apiClient: apiClient,
+                localStore: localStore
+            )
                 .tabItem {
                     Label(AppTab.library.title, systemImage: AppTab.library.systemImage)
                 }
