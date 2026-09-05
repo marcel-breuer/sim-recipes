@@ -27,6 +27,11 @@
 		A00000000000000000000018 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000021 /* AppConfiguration.swift */; };
 		A00000000000000000000019 /* ProfileModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000023 /* ProfileModels.swift */; };
 		A00000000000000000000020 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000024 /* ProfileService.swift */; };
+		A00000000000000000000021 /* CameraCapabilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000025 /* CameraCapabilityService.swift */; };
+		A00000000000000000000022 /* RecipeEditorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000026 /* RecipeEditorModels.swift */; };
+		A00000000000000000000023 /* RecipeDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000027 /* RecipeDraftStore.swift */; };
+		A00000000000000000000024 /* RecipeEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000028 /* RecipeEditorViewModel.swift */; };
+		A00000000000000000000025 /* RecipeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000029 /* RecipeEditorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +69,11 @@
 		B00000000000000000000022 /* SimRecipes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimRecipes.entitlements; sourceTree = "<group>"; };
 		B00000000000000000000023 /* ProfileModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileModels.swift; sourceTree = "<group>"; };
 		B00000000000000000000024 /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
+		B00000000000000000000025 /* CameraCapabilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCapabilityService.swift; sourceTree = "<group>"; };
+		B00000000000000000000026 /* RecipeEditorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeEditorModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000027 /* RecipeDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDraftStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000028 /* RecipeEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeEditorViewModel.swift; sourceTree = "<group>"; };
+		B00000000000000000000029 /* RecipeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeEditorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +117,8 @@
 				B00000000000000000000003 /* ExploreView.swift */,
 				B00000000000000000000004 /* LibraryView.swift */,
 				B00000000000000000000005 /* ProfileView.swift */,
+				B00000000000000000000028 /* RecipeEditorViewModel.swift */,
+				B00000000000000000000029 /* RecipeEditorView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -139,6 +151,9 @@
 				B00000000000000000000015 /* StoredRecipe.swift */,
 				B00000000000000000000016 /* LocalRecipeStore.swift */,
 				B00000000000000000000017 /* RecipeRepository.swift */,
+				B00000000000000000000025 /* CameraCapabilityService.swift */,
+				B00000000000000000000026 /* RecipeEditorModels.swift */,
+				B00000000000000000000027 /* RecipeDraftStore.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -285,6 +300,11 @@
 				A00000000000000000000018 /* AppConfiguration.swift in Sources */,
 				A00000000000000000000019 /* ProfileModels.swift in Sources */,
 				A00000000000000000000020 /* ProfileService.swift in Sources */,
+				A00000000000000000000021 /* CameraCapabilityService.swift in Sources */,
+				A00000000000000000000022 /* RecipeEditorModels.swift in Sources */,
+				A00000000000000000000023 /* RecipeDraftStore.swift in Sources */,
+				A00000000000000000000024 /* RecipeEditorViewModel.swift in Sources */,
+				A00000000000000000000025 /* RecipeEditorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

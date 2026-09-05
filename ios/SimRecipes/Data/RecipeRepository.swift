@@ -78,4 +78,76 @@ final class RecipeRepository {
 
         return try await refreshRecipe(id: id)
     }
+
+    func create(_ draft: RecipeDraft, categoryIDs: [String]) async throws -> RecipeTransport {
+        let request = try makeMultipartRequest(
+            method: .post,
+            path: "recipes",
+            draft: draft,
+            categoryIDs: categoryIDs
+        )
+        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        try localStore.mergeRemote(response.data)
+        return response.data
+    }
+
+    func update(_ draft: RecipeDraft, categoryIDs: [String]) async throws -> RecipeTransport {
+        guard let id = draft.id else {
+            return try await create(draft, categoryIDs: categoryIDs)
+        }
+
+        let request = try makeMultipartRequest(
+            method: .post,
+            path: "recipes/\(id)",
+            draft: draft,
+            categoryIDs: categoryIDs
+        )
+        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        try localStore.mergeRemote(response.data)
+        return response.data
+    }
+
+    func publish(id: String) async throws -> RecipeTransport {
+        let request = APIRequest(method: .post, path: "recipes/\(id)/publish")
+        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        try localStore.mergeRemote(response.data)
+        return response.data
+    }
+
+    private func makeMultipartRequest(
+        method: HTTPMethod,
+        path: String,
+        draft: RecipeDraft,
+        categoryIDs: [String]
+    ) throws -> APIRequest {
+        var form = MultipartFormDataBuilder()
+        form.append(name: "name", value: draft.name)
+        form.append(name: "description", value: draft.description)
+        form.append(name: "recommendation", value: draft.recommendation)
+        form.append(name: "lens", value: draft.lens)
+        form.append(name: "camera_model_id", value: draft.cameraModelID)
+        try form.appendJSON(name: "categories", value: categoryIDs)
+        try form.appendJSON(name: "tags", value: draft.tags)
+        try form.appendJSON(name: "settings", value: draft.settings.map { [
+            "setting_key": JSONValue.string($0.key),
+            "value": $0.value
+        ] as [String: JSONValue] })
+
+        for image in draft.images {
+            form.appendFile(
+                name: "images[]",
+                filename: image.filename,
+                mimeType: image.mimeType,
+                data: image.data
+            )
+        }
+
+        let result = form.finalized()
+        return APIRequest(
+            method: method,
+            path: path,
+            body: result.data,
+            contentType: result.contentType
+        )
+    }
 }

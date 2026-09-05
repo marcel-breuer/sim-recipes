@@ -46,6 +46,10 @@ values or ranges, transport identifier, and custom-slot metadata. Clients
 should render controls from this response rather than hard-coding a camera's
 setting list.
 
+`GET /api/v1/categories` returns the predefined recipe categories used by the
+iOS editor. Category IDs from this response are submitted with recipe writes;
+free-form tags remain plain strings.
+
 Recipe image URLs are API URLs rather than direct object-storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images

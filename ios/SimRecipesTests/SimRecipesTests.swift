@@ -46,6 +46,68 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
     }
 
+    func testRecipeTransportDecodesAPIResourceShapeAndStructuredSettings() throws {
+        let data = #"{
+            "id": "recipe-1",
+            "name": "Structured Recipe",
+            "recommendation": "Street",
+            "camera_model": {"id": "camera-1"},
+            "categories": [{"id": "category-1", "name": "Street", "slug": "street"}],
+            "tags": [{"id": "tag-1", "name": "muted", "slug": "muted"}],
+            "status": "private",
+            "settings": [
+                {"key": "highlight_tone", "value": -2},
+                {"key": "grain_effect", "value": {"roughness": "WEAK", "size": "SMALL"}}
+            ],
+            "images": []
+        }"#.data(using: .utf8)!
+
+        let recipe = try JSONDecoder().decode(RecipeTransport.self, from: data)
+
+        XCTAssertEqual(recipe.cameraModelID, "camera-1")
+        XCTAssertEqual(recipe.categories, ["Street"])
+        XCTAssertEqual(recipe.tags, ["muted"])
+        XCTAssertEqual(recipe.settings[0].value, .number(-2))
+        XCTAssertEqual(
+            recipe.settings[1].value,
+            .object(["roughness": .string("WEAK"), "size": .string("SMALL")])
+        )
+    }
+
+    func testMultipartBuilderIncludesJSONFieldsAndImageParts() throws {
+        var builder = MultipartFormDataBuilder(boundary: "test-boundary")
+        builder.append(name: "name", value: "Soft Chrome")
+        try builder.appendJSON(name: "tags", value: ["muted", "daylight"])
+        builder.appendFile(name: "images[]", filename: "example.jpg", mimeType: "image/jpeg", data: Data([1, 2, 3]))
+
+        let result = builder.finalized()
+        let body = String(decoding: result.data, as: UTF8.self)
+
+        XCTAssertEqual(result.contentType, "multipart/form-data; boundary=test-boundary")
+        XCTAssertTrue(body.contains("name=\"name\""))
+        XCTAssertTrue(body.contains("Soft Chrome"))
+        XCTAssertTrue(body.contains("[\"muted\",\"daylight\"]"))
+        XCTAssertTrue(body.contains("filename=\"example.jpg\""))
+    }
+
+    @MainActor
+    func testRecipeDraftStorePersistsImageBackedDrafts() throws {
+        let suiteName = "SimRecipesTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let store = RecipeDraftStore(defaults: defaults)
+        var draft = RecipeDraft()
+        draft.name = "Offline draft"
+        draft.images = [RecipeDraftImage(filename: "example.jpg", data: Data([1, 2, 3]))]
+
+        try store.save(draft)
+
+        XCTAssertEqual(try store.draft(id: "new"), draft)
+    }
+
     func testProfileTransportCodableRoundTrip() throws {
         let profile = ProfileTransport(
             id: "profile-1",
