@@ -48,6 +48,10 @@ struct APIRequest: Sendable {
     }
 }
 
+struct APIResponse<Payload: Decodable>: Decodable {
+    let data: Payload
+}
+
 enum APIClientError: LocalizedError {
     case invalidURL
     case transport(Error)
@@ -106,7 +110,7 @@ final class URLSessionAPIClient: APIClient {
     init(
         baseURL: URL,
         session: URLSession = .shared,
-        decoder: JSONDecoder = JSONDecoder(),
+        decoder: JSONDecoder = .apiDefault,
         accessToken: String? = nil
     ) {
         self.baseURL = baseURL
@@ -169,5 +173,13 @@ final class URLSessionAPIClient: APIClient {
         } catch {
             throw APIClientError.decoding(error)
         }
+    }
+}
+
+private extension JSONDecoder {
+    static var apiDefault: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 }

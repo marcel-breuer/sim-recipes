@@ -22,6 +22,9 @@
 		A00000000000000000000013 /* LocalRecipeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* LocalRecipeStore.swift */; };
 		A00000000000000000000014 /* RecipeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* RecipeRepository.swift */; };
 		A00000000000000000000015 /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* TestDoubles.swift */; };
+		A00000000000000000000016 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* AuthModels.swift */; };
+		A00000000000000000000017 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000020 /* AuthService.swift */; };
+		A00000000000000000000018 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000021 /* AppConfiguration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +56,10 @@
 		B00000000000000000000016 /* LocalRecipeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalRecipeStore.swift; sourceTree = "<group>"; };
 		B00000000000000000000017 /* RecipeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeRepository.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* TestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDoubles.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000020 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		B00000000000000000000021 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		B00000000000000000000022 /* SimRecipes.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimRecipes.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,8 +94,11 @@
 			children = (
 				G00000000000000000000005 /* Camera */,
 				G00000000000000000000006 /* Data */,
+				G00000000000000000000007 /* Auth */,
 				B00000000000000000000001 /* SimRecipesApp.swift */,
 				B00000000000000000000002 /* RootView.swift */,
+				B00000000000000000000021 /* AppConfiguration.swift */,
+				B00000000000000000000022 /* SimRecipes.entitlements */,
 				B00000000000000000000003 /* ExploreView.swift */,
 				B00000000000000000000004 /* LibraryView.swift */,
 				B00000000000000000000005 /* ProfileView.swift */,
@@ -126,6 +136,15 @@
 				B00000000000000000000017 /* RecipeRepository.swift */,
 			);
 			path = Data;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000007 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000019 /* AuthModels.swift */,
+				B00000000000000000000020 /* AuthService.swift */,
+			);
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		G00000000000000000000004 /* Products */ = {
@@ -247,6 +266,9 @@
 				A00000000000000000000012 /* StoredRecipe.swift in Sources */,
 				A00000000000000000000013 /* LocalRecipeStore.swift in Sources */,
 				A00000000000000000000014 /* RecipeRepository.swift in Sources */,
+				A00000000000000000000016 /* AuthModels.swift in Sources */,
+				A00000000000000000000017 /* AuthService.swift in Sources */,
+				A00000000000000000000018 /* AppConfiguration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,6 +317,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = SimRecipes/SimRecipes.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
@@ -319,6 +342,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = SimRecipes/SimRecipes.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;

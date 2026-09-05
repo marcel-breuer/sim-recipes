@@ -28,3 +28,19 @@ final class StubAPIClient: APIClient {
         return response
     }
 }
+
+final class MemoryCredentialStore: CredentialStore {
+    var data: Data?
+
+    func read() throws -> Data? {
+        data
+    }
+
+    func write(_ data: Data) throws {
+        self.data = data
+    }
+
+    func delete() throws {
+        data = nil
+    }
+}

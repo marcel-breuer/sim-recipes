@@ -7,6 +7,8 @@ Simulator.
 The current shell contains the Explore, Library, and Profile product sections.
 The API client, SwiftData recipe metadata store, and repository boundary are
 available for offline-first recipe access under `SimRecipes/Data/`.
+Sign in with Apple and Keychain-backed session restoration are available under
+`SimRecipes/Auth/`; the API base URL is configured through `Info.plist`.
 The read-only camera prototype uses an ImageCaptureCore service boundary for
 USB camera discovery, X-S20 candidate matching, session management, a
 validated `GetDeviceInfo` PTP request, and capability-driven property reads for

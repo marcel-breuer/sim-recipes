@@ -29,6 +29,7 @@ enum AppTab: Hashable, CaseIterable {
 }
 
 struct RootView: View {
+    @ObservedObject var authService: AuthService
     @State private var selectedTab: AppTab = .explore
 
     var body: some View {
@@ -45,15 +46,11 @@ struct RootView: View {
                 }
                 .tag(AppTab.library)
 
-            ProfileView()
+            ProfileView(authService: authService)
                 .tabItem {
                     Label(AppTab.profile.title, systemImage: AppTab.profile.systemImage)
                 }
                 .tag(AppTab.profile)
         }
     }
-}
-
-#Preview {
-    RootView()
 }
