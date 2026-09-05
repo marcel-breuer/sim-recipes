@@ -58,7 +58,7 @@ final class StoredRecipe {
             provenance = nil
         }
 
-        RecipeTransport(
+        return RecipeTransport(
             id: id,
             name: name,
             description: recipeDescription,
