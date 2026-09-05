@@ -291,8 +291,6 @@ extension ImageCaptureCameraService: ICDeviceBrowserDelegate {
     func deviceBrowser(_ browser: ICDeviceBrowser, didRemove device: ICDevice, moreGoing: Bool) {
         removeDescriptor(for: device)
     }
-
-    func deviceBrowserDidEnumerateLocalDevices(_ browser: ICDeviceBrowser) {}
 }
 
 private extension CameraDescriptor {
