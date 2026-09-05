@@ -1,5 +1,5 @@
 import Foundation
-import ImageCaptureCore
+@preconcurrency import ImageCaptureCore
 
 @MainActor
 final class ImageCaptureCameraService: NSObject, CameraService {
