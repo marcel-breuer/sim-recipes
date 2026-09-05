@@ -47,7 +47,8 @@ final class SimRecipesTests: XCTestCase {
     }
 
     func testRecipeTransportDecodesAPIResourceShapeAndStructuredSettings() throws {
-        let data = #"{
+        let data = #"""
+        {
             "id": "recipe-1",
             "name": "Structured Recipe",
             "recommendation": "Street",
@@ -60,7 +61,8 @@ final class SimRecipesTests: XCTestCase {
                 {"key": "grain_effect", "value": {"roughness": "WEAK", "size": "SMALL"}}
             ],
             "images": []
-        }"#.data(using: .utf8)!
+        }
+        """#.data(using: .utf8)!
 
         let recipe = try JSONDecoder().decode(RecipeTransport.self, from: data)
 
