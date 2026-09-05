@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
+use App\Http\Controllers\Api\V1\RecipeEngagementController;
 use App\Http\Controllers\Api\V1\RecipeImageController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.categories.index');
     Route::get('/recipes', [RecipeController::class, 'index'])
         ->name('api.v1.recipes.index');
+    Route::post('/recipes/{recipe}/view', [RecipeEngagementController::class, 'view'])
+        ->name('api.v1.recipes.view');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
     Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])
@@ -45,6 +48,10 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipes.destroy');
         Route::post('/recipes/{recipe}/publish', [RecipeController::class, 'publish'])
             ->name('api.v1.recipes.publish');
+        Route::post('/recipes/{recipe}/like', [RecipeEngagementController::class, 'like'])
+            ->name('api.v1.recipes.like');
+        Route::delete('/recipes/{recipe}/like', [RecipeEngagementController::class, 'unlike'])
+            ->name('api.v1.recipes.unlike');
         Route::delete('/recipe-images/{recipeImage}', [RecipeImageController::class, 'destroy'])
             ->name('api.v1.recipe-images.destroy');
     });
