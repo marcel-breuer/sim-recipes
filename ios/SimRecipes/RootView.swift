@@ -30,6 +30,7 @@ enum AppTab: Hashable, CaseIterable {
 
 struct RootView: View {
     @ObservedObject var authService: AuthService
+    @ObservedObject var profileService: ProfileService
     @State private var selectedTab: AppTab = .explore
 
     var body: some View {
@@ -46,7 +47,7 @@ struct RootView: View {
                 }
                 .tag(AppTab.library)
 
-            ProfileView(authService: authService)
+            ProfileView(authService: authService, profileService: profileService)
                 .tabItem {
                     Label(AppTab.profile.title, systemImage: AppTab.profile.systemImage)
                 }

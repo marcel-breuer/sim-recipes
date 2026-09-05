@@ -3,7 +3,11 @@ import SwiftUI
 
 struct ProfileView: View {
     @ObservedObject var authService: AuthService
+    @ObservedObject var profileService: ProfileService
     @State private var errorMessage: String?
+    @State private var username = ""
+    @State private var biography = ""
+    @State private var hasLoadedProfile = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +23,9 @@ struct ProfileView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(errorMessage ?? "Please try again.")
+            }
+            .task(id: authService.session?.token) {
+                await loadProfile()
             }
         }
     }
@@ -58,22 +65,81 @@ struct ProfileView: View {
     }
 
     private var signedInView: some View {
-        VStack(spacing: 16) {
-            ContentUnavailableView(
-                "Welcome, \(authService.session?.user.name ?? "Photographer")",
-                systemImage: "person.crop.circle.fill",
-                description: Text("Your profile and published recipes will appear here.")
-            )
+        Form {
+            Section("Profile") {
+                TextField("Username", text: $username)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
 
-            Button("Sign Out", role: .destructive) {
-                Task { @MainActor in
-                    do {
-                        try await authService.logout()
-                    } catch {
-                        errorMessage = error.localizedDescription
+                TextEditor(text: $biography)
+                    .frame(minHeight: 100)
+            }
+
+            if let profile = profileService.profile {
+                Section("Published recipes") {
+                    if profile.publishedRecipes.isEmpty {
+                        Text("No published recipes yet.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(profile.publishedRecipes) { recipe in
+                            VStack(alignment: .leading) {
+                                Text(recipe.name)
+                                    .font(.headline)
+                                if let description = recipe.description {
+                                    Text(description)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            Section {
+                Button("Save Profile") {
+                    Task { @MainActor in
+                        do {
+                            try await profileService.updateCurrentProfile(
+                                username: username,
+                                cameraModelID: profileService.profile?.cameraModel?.id,
+                                biography: biography.isEmpty ? nil : biography
+                            )
+                        } catch {
+                            errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+                .disabled(username.isEmpty || profileService.isLoading)
+
+                Button("Sign Out", role: .destructive) {
+                    Task { @MainActor in
+                        do {
+                            try await authService.logout()
+                            hasLoadedProfile = false
+                        } catch {
+                            errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func loadProfile() async {
+        guard authService.session != nil, !hasLoadedProfile else {
+            return
+        }
+
+        do {
+            try await profileService.loadCurrentProfile()
+            username = profileService.profile?.username ?? ""
+            biography = profileService.profile?.biography ?? ""
+            hasLoadedProfile = true
+        } catch let APIClientError.server(statusCode, _) where statusCode == 404 {
+            hasLoadedProfile = true
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

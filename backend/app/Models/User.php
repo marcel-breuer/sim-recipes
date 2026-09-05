@@ -37,6 +37,11 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
+    public function publishedRecipes(): HasMany
+    {
+        return $this->recipes()->where('status', Recipe::STATUS_PUBLISHED);
+    }
+
     public function recipes(): HasMany
     {
         return $this->hasMany(Recipe::class);

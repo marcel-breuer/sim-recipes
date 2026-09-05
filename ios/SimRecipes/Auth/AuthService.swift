@@ -108,6 +108,14 @@ final class AuthService: ObservableObject {
         session = restoredSession
     }
 
+    func authenticatedAPIClient() -> (any APIClient)? {
+        guard let token = session?.token else {
+            return nil
+        }
+
+        return BearerAPIClient(apiClient: apiClient, accessToken: token)
+    }
+
     func signIn(with credential: ASAuthorizationAppleIDCredential) async throws {
         guard
             let identityToken = credential.identityToken,
