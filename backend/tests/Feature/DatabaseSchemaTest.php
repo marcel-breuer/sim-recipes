@@ -15,6 +15,7 @@ use App\Models\RecipeSetting;
 use App\Models\RecipeView;
 use App\Models\Tag;
 use App\Models\User;
+use Database\Seeders\CameraCapabilitySeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -23,6 +24,52 @@ use Tests\TestCase;
 class DatabaseSchemaTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_x_s20_capabilities_are_seeded_with_recipe_settings_and_slot_metadata(): void
+    {
+        $this->seed(CameraCapabilitySeeder::class);
+
+        $camera = CameraModel::where('slug', 'fujifilm-x-s20')->firstOrFail();
+        $capabilities = $camera->capabilities->keyBy('setting_key');
+
+        $this->assertTrue($camera->is_supported);
+        $this->assertSame('Fujifilm', $camera->manufacturer);
+        $this->assertSame('X-S20', $camera->model_identifier);
+        $this->assertEqualsCanonicalizing([
+            'film_simulation',
+            'dynamic_range',
+            'grain_effect',
+            'color_chrome_effect',
+            'color_chrome_fx_blue',
+            'white_balance',
+            'white_balance_shift',
+            'highlight_tone',
+            'shadow_tone',
+            'color',
+            'sharpness',
+            'high_iso_noise_reduction',
+            'clarity',
+            'iso',
+            'exposure_compensation',
+        ], $capabilities->keys()->all());
+
+        $this->assertSame(['AUTO', '100%', '200%', '400%'], $capabilities['dynamic_range']->allowed_values);
+        $this->assertSame(-5.0, (float) $capabilities['exposure_compensation']->minimum);
+        $this->assertSame(5.0, (float) $capabilities['exposure_compensation']->maximum);
+        $this->assertSame(0.333, (float) $capabilities['exposure_compensation']->step);
+        $this->assertSame('object', $capabilities['white_balance_shift']->value_type);
+        $this->assertSame(['C1', 'C2', 'C3', 'C4'], $capabilities['iso']->custom_slot_metadata['slot_names']);
+        $this->assertSame(4, $capabilities['iso']->custom_slot_metadata['slot_count']);
+    }
+
+    public function test_x_s20_capability_seeder_is_idempotent(): void
+    {
+        $this->seed(CameraCapabilitySeeder::class);
+        $this->seed(CameraCapabilitySeeder::class);
+
+        $this->assertDatabaseCount('camera_models', 1);
+        $this->assertDatabaseCount('camera_capabilities', 15);
+    }
 
     public function test_core_recipe_graph_uses_ulids_and_preserves_provenance(): void
     {
