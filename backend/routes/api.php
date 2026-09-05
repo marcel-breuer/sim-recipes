@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CameraController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
@@ -12,6 +13,12 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.auth.apple');
     Route::get('/profiles/{username}', [ProfileController::class, 'show'])
         ->name('api.v1.profiles.show');
+    Route::get('/cameras', [CameraController::class, 'index'])
+        ->name('api.v1.cameras.index');
+    Route::get('/cameras/{camera}/capabilities', [CameraController::class, 'capabilities'])
+        ->name('api.v1.cameras.capabilities');
+    Route::get('/cameras/{camera}', [CameraController::class, 'show'])
+        ->name('api.v1.cameras.show');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
 

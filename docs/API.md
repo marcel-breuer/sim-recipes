@@ -33,3 +33,15 @@ The auth.api middleware alias reserves the API authentication boundary. The
 Sign in with Apple implementation will configure the concrete API guard and
 token/session lifecycle in the authentication issue; public routes must not
 assume an authenticated user.
+
+## Camera capability endpoints
+
+Camera definitions are public and data-driven. `GET /api/v1/cameras` returns
+supported camera models with their capabilities. A single camera can be read
+by ULID or slug through `GET /api/v1/cameras/{camera}`; capabilities can also
+be requested directly with `GET /api/v1/cameras/{camera}/capabilities`.
+
+Each capability includes its setting key, display label, value type, allowed
+values or ranges, transport identifier, and custom-slot metadata. Clients
+should render controls from this response rather than hard-coding a camera's
+setting list.

@@ -29,6 +29,9 @@ class CameraCapability extends Model
         return [
             'allowed_values' => 'array',
             'custom_slot_metadata' => 'array',
+            'minimum' => 'float',
+            'maximum' => 'float',
+            'step' => 'float',
         ];
     }
 
