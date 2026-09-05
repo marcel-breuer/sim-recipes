@@ -206,6 +206,11 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
 struct RecipeProvenanceTransport: Codable, Equatable, Sendable {
     let sourceRecipeID: String?
     let sourceAuthorID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case sourceRecipeID = "source_recipe_id"
+        case sourceAuthorID = "source_author_id"
+    }
 }
 
 struct RecipePageTransport: Codable, Equatable, Sendable {

@@ -2,6 +2,9 @@ import SwiftUI
 
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
+    var copyAction: (() async throws -> RecipeTransport)? = nil
+    @State private var isCopying = false
+    @State private var copyMessage: String?
 
     var body: some View {
         ScrollView {
@@ -54,6 +57,39 @@ struct RecipeDetailView: View {
         }
         .navigationTitle("Recipe")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let copyAction {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task {
+                            isCopying = true
+                            defer { isCopying = false }
+                            do {
+                                _ = try await copyAction()
+                                copyMessage = "The recipe was added to your library."
+                            } catch {
+                                copyMessage = error.localizedDescription
+                            }
+                        }
+                    } label: {
+                        if isCopying {
+                            ProgressView()
+                        } else {
+                            Label("Save", systemImage: "square.and.arrow.down")
+                        }
+                    }
+                    .disabled(isCopying)
+                }
+            }
+        }
+        .alert("Community recipe", isPresented: Binding(
+            get: { copyMessage != nil },
+            set: { if !$0 { copyMessage = nil } }
+        )) {
+            Button("OK") { copyMessage = nil }
+        } message: {
+            Text(copyMessage ?? "")
+        }
     }
 }
 

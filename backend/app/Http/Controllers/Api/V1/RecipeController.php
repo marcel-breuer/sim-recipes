@@ -259,6 +259,7 @@ class RecipeController extends Controller
             'tags',
             'settings',
             'images',
+            'provenance',
         ]);
     }
 }

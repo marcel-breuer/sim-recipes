@@ -19,6 +19,9 @@ class RecipeResource extends JsonResource
     {
         $camera = $this->resource->relationLoaded('cameraModel') ? $this->resource->getRelation('cameraModel') : null;
         $user = $this->resource->relationLoaded('user') ? $this->resource->getRelation('user') : null;
+        $provenance = $this->resource->relationLoaded('provenance')
+            ? $this->resource->getRelation('provenance')
+            : null;
         $publishedAt = $this->resource->getAttribute('published_at');
 
         return [
@@ -37,6 +40,10 @@ class RecipeResource extends JsonResource
             'author' => $user instanceof User ? [
                 'id' => $user->getKey(),
                 'name' => $user->getAttribute('name'),
+            ] : null,
+            'provenance' => $provenance !== null ? [
+                'source_recipe_id' => $provenance->getAttribute('source_recipe_id'),
+                'source_author_id' => $provenance->getAttribute('source_author_id'),
             ] : null,
             'categories' => CategoryResource::collection($this->resource->relationLoaded('categories') ? $this->resource->getRelation('categories') : []),
             'tags' => TagResource::collection($this->resource->relationLoaded('tags') ? $this->resource->getRelation('tags') : []),

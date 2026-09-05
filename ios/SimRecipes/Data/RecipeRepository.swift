@@ -151,6 +151,13 @@ final class RecipeRepository {
         return response.data
     }
 
+    func copy(id: String) async throws -> RecipeTransport {
+        let request = APIRequest(method: .post, path: "recipes/\(id)/copy")
+        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        try localStore.mergeRemote(response.data)
+        return response.data
+    }
+
     private func makeMultipartRequest(
         method: HTTPMethod,
         path: String,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
+use App\Http\Controllers\Api\V1\RecipeCopyController;
 use App\Http\Controllers\Api\V1\RecipeEngagementController;
 use App\Http\Controllers\Api\V1\RecipeImageController;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,8 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipes.destroy');
         Route::post('/recipes/{recipe}/publish', [RecipeController::class, 'publish'])
             ->name('api.v1.recipes.publish');
+        Route::post('/recipes/{recipe}/copy', [RecipeCopyController::class, 'store'])
+            ->name('api.v1.recipes.copy');
         Route::post('/recipes/{recipe}/like', [RecipeEngagementController::class, 'like'])
             ->name('api.v1.recipes.like');
         Route::delete('/recipes/{recipe}/like', [RecipeEngagementController::class, 'unlike'])

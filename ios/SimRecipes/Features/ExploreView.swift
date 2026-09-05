@@ -1,11 +1,20 @@
 import SwiftUI
 
 struct ExploreView: View {
+    @ObservedObject private var authService: AuthService
+    private let apiClient: any APIClient
+    private let localStore: LocalRecipeStore
     @StateObject private var viewModel: ExploreViewModel
     @State private var showingFilters = false
 
-    init(apiClient: any APIClient) {
-        let localStore = try! LocalRecipeStore(inMemory: true)
+    init(
+        authService: AuthService,
+        apiClient: any APIClient,
+        localStore: LocalRecipeStore
+    ) {
+        _authService = ObservedObject(wrappedValue: authService)
+        self.apiClient = apiClient
+        self.localStore = localStore
         let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
         let capabilityService = CameraCapabilityService(apiClient: apiClient)
         _viewModel = StateObject(wrappedValue: ExploreViewModel(
@@ -82,7 +91,7 @@ struct ExploreView: View {
         List {
             ForEach(viewModel.recipes) { recipe in
                 NavigationLink {
-                    RecipeDetailView(recipe: recipe)
+                    detail(for: recipe)
                 } label: {
                     RecipeCard(recipe: recipe)
                 }
@@ -102,6 +111,19 @@ struct ExploreView: View {
         .listStyle(.plain)
         .refreshable {
             await viewModel.refresh()
+        }
+    }
+
+    @ViewBuilder
+    private func detail(for recipe: RecipeTransport) -> some View {
+        if let session = authService.session {
+            let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
+            let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
+            RecipeDetailView(recipe: recipe) {
+                try await repository.copy(id: recipe.id)
+            }
+        } else {
+            RecipeDetailView(recipe: recipe)
         }
     }
 }
@@ -202,5 +224,9 @@ private struct ExploreFilterView: View {
 }
 
 #Preview {
-    ExploreView(apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!))
+    ExploreView(
+        authService: AuthService(apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)),
+        apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!),
+        localStore: try! LocalRecipeStore(inMemory: true)
+    )
 }
