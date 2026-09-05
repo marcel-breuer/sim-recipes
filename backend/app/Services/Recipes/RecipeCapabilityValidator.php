@@ -36,7 +36,8 @@ class RecipeCapabilityValidator
             }
 
             $value = $setting['value'];
-            if (! $this->matchesValueType($value, $capability->value_type)) {
+            $valueType = $capability->getAttribute('value_type');
+            if (! is_string($valueType) || ! $this->matchesValueType($value, $valueType)) {
                 $errors["settings.$index.value"][] = 'The setting value has an invalid type.';
 
                 continue;
@@ -46,16 +47,32 @@ class RecipeCapabilityValidator
             if (is_string($allowedValues)) {
                 $allowedValues = json_decode($allowedValues, true);
             }
-            if (is_array($allowedValues) && ! $this->isAllowedValue($value, $allowedValues)) {
+            if (! $this->matchesAllowedValues($value, $valueType, $allowedValues)) {
                 $errors["settings.$index.value"][] = 'The setting value is not supported by the selected camera.';
             }
 
             if (is_numeric($value)) {
-                if ($capability->minimum !== null && (float) $value < (float) $capability->minimum) {
+                $minimum = $capability->getAttribute('minimum');
+                $maximum = $capability->getAttribute('maximum');
+                if ($minimum !== null && (float) $value < (float) $minimum) {
                     $errors["settings.$index.value"][] = 'The setting value is below the supported range.';
                 }
-                if ($capability->maximum !== null && (float) $value > (float) $capability->maximum) {
+                if ($maximum !== null && (float) $value > (float) $maximum) {
                     $errors["settings.$index.value"][] = 'The setting value is above the supported range.';
+                }
+            } elseif ($valueType === 'object' && is_array($value)) {
+                $minimum = $capability->getAttribute('minimum');
+                $maximum = $capability->getAttribute('maximum');
+                foreach ($value as $objectValue) {
+                    if (! is_numeric($objectValue)) {
+                        continue;
+                    }
+                    if ($minimum !== null && (float) $objectValue < (float) $minimum) {
+                        $errors["settings.$index.value"][] = 'The setting value is below the supported range.';
+                    }
+                    if ($maximum !== null && (float) $objectValue > (float) $maximum) {
+                        $errors["settings.$index.value"][] = 'The setting value is above the supported range.';
+                    }
                 }
             }
         }
@@ -69,11 +86,48 @@ class RecipeCapabilityValidator
     {
         return match ($valueType) {
             'integer' => is_int($value),
-            'number' => is_int($value) || is_float($value),
+            'decimal', 'number' => is_int($value) || is_float($value),
             'boolean' => is_bool($value),
             'object' => is_array($value),
             default => is_string($value),
         };
+    }
+
+    /**
+     * @param  array<int|string, mixed>|null  $allowedValues
+     */
+    private function matchesAllowedValues(mixed $value, string $valueType, mixed $allowedValues): bool
+    {
+        if (! is_array($allowedValues)) {
+            return true;
+        }
+
+        if ($valueType !== 'object') {
+            return $this->isAllowedValue($value, $allowedValues);
+        }
+
+        if (! is_array($value)) {
+            return false;
+        }
+
+        if (isset($allowedValues['axes']) && is_array($allowedValues['axes'])) {
+            foreach (array_keys($value) as $key) {
+                if (! in_array($key, $allowedValues['axes'], true)) {
+                    return false;
+                }
+            }
+        }
+
+        foreach ($allowedValues as $key => $options) {
+            if ($key === 'axes' || ! array_key_exists($key, $value) || ! is_array($options)) {
+                continue;
+            }
+            if (! $this->isAllowedValue($value[$key], $options)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
