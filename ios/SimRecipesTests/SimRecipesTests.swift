@@ -46,6 +46,28 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
     }
 
+    func testProfileTransportCodableRoundTrip() throws {
+        let profile = ProfileTransport(
+            id: "profile-1",
+            username: "marcel",
+            displayName: "Marcel",
+            biography: "Street photography recipes.",
+            cameraModel: CameraModelTransport(id: "camera-1", name: "X-S20", slug: "x-s20"),
+            profileImageURL: URL(string: "https://cdn.example.test/profile.jpg"),
+            publishedRecipes: [
+                PublishedRecipeSummaryTransport(
+                    id: "recipe-1",
+                    name: "Soft Chrome",
+                    description: nil,
+                    cameraModel: nil,
+                    publishedAt: Date(timeIntervalSince1970: 1_700_000_000)
+                )
+            ]
+        )
+
+        XCTAssertEqual(try JSONDecoder().decode(ProfileTransport.self, from: JSONEncoder().encode(profile)), profile)
+    }
+
     func testAPIErrorPayloadPreservesValidationMessages() throws {
         let payload = APIErrorPayload(
             message: "The given data was invalid.",

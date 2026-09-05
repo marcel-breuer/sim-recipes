@@ -176,10 +176,53 @@ final class URLSessionAPIClient: APIClient {
     }
 }
 
+final class BearerAPIClient: APIClient {
+    private let apiClient: any APIClient
+    private let accessToken: String
+
+    init(apiClient: any APIClient, accessToken: String) {
+        self.apiClient = apiClient
+        self.accessToken = accessToken
+    }
+
+    func send<Response: Decodable>(
+        _ request: APIRequest,
+        responseType: Response.Type
+    ) async throws -> Response {
+        var headers = request.headers
+        headers["Authorization"] = "Bearer \(accessToken)"
+        let authenticatedRequest = APIRequest(
+            method: request.method,
+            path: request.path,
+            queryItems: request.queryItems,
+            headers: headers,
+            body: request.body
+        )
+
+        return try await apiClient.send(authenticatedRequest, responseType: responseType)
+    }
+}
+
 private extension JSONDecoder {
     static var apiDefault: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let value = try decoder.singleValueContainer().decode(String.self)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: value) {
+                return date
+            }
+
+            formatter.formatOptions = [.withInternetDateTime]
+            guard let date = formatter.date(from: value) else {
+                throw DecodingError.dataCorruptedError(
+                    in: try decoder.singleValueContainer(),
+                    debugDescription: "Invalid ISO-8601 date."
+                )
+            }
+            return date
+        }
         return decoder
     }
 }
