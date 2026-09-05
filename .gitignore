@@ -1,0 +1,63 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.p12
+*.mobileprovision
+*.cer
+*.key
+
+# Operating-system files
+.DS_Store
+._*
+Thumbs.db
+
+# Editors and local tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Laravel / PHP
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/hot
+backend/storage/app/public/
+backend/storage/framework/cache/data/
+backend/storage/framework/sessions/
+backend/storage/framework/testing/
+backend/storage/framework/views/
+backend/storage/logs/*.log
+backend/bootstrap/cache/*.php
+backend/.phpunit.result.cache
+
+# Composer and frontend tooling caches
+.phpunit.result.cache
+.php-cs-fixer.cache
+.phpunit.cache/
+.npm/
+.yarn/
+.pnpm-store/
+node_modules/
+
+# Xcode / Swift Package Manager
+DerivedData/
+build/
+ios/build/
+ios/DerivedData/
+ios/.build/
+ios/.swiftpm/
+ios/Packages/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcworkspace/xcuserdata/
+ios/**/*.xcodeproj/xcuserdata/
+ios/**/*.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# Coverage, logs, and temporary files
+coverage/
+*.log
+*.tmp
+*.temp
