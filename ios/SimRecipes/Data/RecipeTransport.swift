@@ -178,7 +178,7 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
         _ container: KeyedDecodingContainer<CodingKeys>,
         key: CodingKeys
     ) throws -> [String] {
-        if let names = try container.decodeIfPresent([String].self, forKey: key) {
+        if let names = try? container.decode([String].self, forKey: key) {
             return names
         }
 
