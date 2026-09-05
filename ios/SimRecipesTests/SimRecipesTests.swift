@@ -53,6 +53,54 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testSetDevicePropertyValueCommandAndDataContainerEncodeSeparately() {
+        let command = PTPCommand.setDevicePropValue(propertyCode: 0xD192, transactionID: 7)
+        let data = PTPDataContainer(code: command.code, transactionID: 7, payload: Data([2, 0])).encoded
+
+        XCTAssertEqual(
+            Array(command.encoded),
+            [16, 0, 0, 0, 1, 0, 22, 16, 7, 0, 0, 0, 146, 209, 0, 0]
+        )
+        XCTAssertEqual(
+            Array(data),
+            [14, 0, 0, 0, 2, 0, 22, 16, 7, 0, 0, 0, 2, 0]
+        )
+    }
+
+    func testWriteValidatorRequiresMatchingConfirmationAndSupportedProperties() {
+        let properties = [UInt16(0xD192): Data([1, 0])]
+        let supportedProperties: Set<UInt16> = [0xD192]
+
+        XCTAssertEqual(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: supportedProperties,
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c2)
+            )?.errorDescription,
+            CameraServiceError.confirmationDoesNotMatchSlot.errorDescription
+        )
+
+        XCTAssertNil(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: supportedProperties,
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c1)
+            )
+        )
+
+        XCTAssertEqual(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: [],
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c1)
+            )?.errorDescription,
+            CameraServiceError.unsupportedProperty(0xD192).errorDescription
+        )
+    }
+
     func testPTPResponseHeaderRejectsMalformedResponses() {
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 11)))
         XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 12)))

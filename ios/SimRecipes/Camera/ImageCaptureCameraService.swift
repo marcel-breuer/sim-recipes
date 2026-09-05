@@ -98,7 +98,86 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         return CameraSlotSnapshot(slot: slot, properties: properties)
     }
 
+    func writeRecipe(
+        to slot: CameraSlot,
+        properties: [UInt16: Data],
+        supportedPropertyCodes: Set<UInt16>,
+        confirmation: CameraSlotOverwriteConfirmation
+    ) async throws -> CameraSlotSnapshot {
+        if let validationError = CameraSlotWriteValidator.validationError(
+            slot: slot,
+            properties: properties,
+            supportedPropertyCodes: supportedPropertyCodes,
+            confirmation: confirmation
+        ) {
+            throw validationError
+        }
+
+        let selectedSlotData = try await readProperty(0xD18C)
+        guard let selectedSlot = selectedSlotData.cameraSlotValue else {
+            throw CameraServiceError.invalidSlotValue
+        }
+
+        guard selectedSlot == slot.rawValue else {
+            throw CameraServiceError.requestedSlotIsNotSelected(expected: slot, actual: selectedSlot)
+        }
+
+        var originalValues: [UInt16: Data] = [:]
+
+        do {
+            for propertyCode in properties.keys {
+                originalValues[propertyCode] = try await readProperty(propertyCode)
+            }
+
+            for propertyCode in properties.keys.sorted() {
+                guard let value = properties[propertyCode] else {
+                    continue
+                }
+
+                try await writeProperty(propertyCode, value: value)
+                let readBack = try await readProperty(propertyCode)
+                guard readBack == value else {
+                    throw CameraServiceError.propertyVerificationFailed(propertyCode)
+                }
+            }
+        } catch {
+            do {
+                for propertyCode in originalValues.keys.sorted() {
+                    guard let originalValue = originalValues[propertyCode] else {
+                        continue
+                    }
+
+                    try await writeProperty(propertyCode, value: originalValue)
+                }
+            } catch {
+                throw CameraServiceError.rollbackFailed
+            }
+
+            throw error
+        }
+
+        return try await readSelectedSlot(slot, propertyCodes: Array(properties.keys))
+    }
+
+    private func writeProperty(_ propertyCode: UInt16, value: Data) async throws {
+        let command = PTPCommand.setDevicePropValue(
+            propertyCode: propertyCode,
+            transactionID: nextTransactionID
+        )
+        let dataContainer = PTPDataContainer(
+            code: command.code,
+            transactionID: command.transactionID,
+            payload: value
+        )
+
+        _ = try await sendPTPCommand(command, outData: dataContainer.encoded)
+    }
+
     private func sendReadOnlyPTPCommand(_ command: PTPCommand) async throws -> PTPTransaction {
+        try await sendPTPCommand(command, outData: nil)
+    }
+
+    private func sendPTPCommand(_ command: PTPCommand, outData: Data?) async throws -> PTPTransaction {
         guard let camera = activeCamera, camera.hasOpenSession else {
             throw CameraServiceError.sessionNotOpen
         }
@@ -110,7 +189,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         nextTransactionID = nextTransactionID == .max ? 1 : nextTransactionID + 1
 
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PTPTransaction, Error>) in
-            camera.requestSendPTPCommand(command.encoded, outData: nil) { response, data, error in
+            camera.requestSendPTPCommand(command.encoded, outData: outData) { response, data, error in
                 Task { @MainActor in
                     if let error = error {
                         continuation.resume(throwing: CameraServiceError.underlying(error))

@@ -13,6 +13,14 @@ struct PTPCommand: Equatable, Sendable {
         )
     }
 
+    static func setDevicePropValue(propertyCode: UInt16, transactionID: UInt32) -> PTPCommand {
+        PTPCommand(
+            code: 0x1016,
+            transactionID: transactionID,
+            parameters: [UInt32(propertyCode)]
+        )
+    }
+
     let code: UInt16
     let transactionID: UInt32
     let parameters: [UInt32]
@@ -100,4 +108,20 @@ extension Data {
 struct PTPTransaction: Equatable, Sendable {
     let header: PTPResponseHeader
     let data: Data
+}
+
+struct PTPDataContainer: Equatable, Sendable {
+    let code: UInt16
+    let transactionID: UInt32
+    let payload: Data
+
+    var encoded: Data {
+        var data = Data()
+        data.appendLittleEndian(UInt32(12 + payload.count))
+        data.appendLittleEndian(UInt16(2))
+        data.appendLittleEndian(code)
+        data.appendLittleEndian(transactionID)
+        data.append(contentsOf: payload)
+        return data
+    }
 }

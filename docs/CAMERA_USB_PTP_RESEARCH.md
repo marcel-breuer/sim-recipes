@@ -159,3 +159,12 @@ currently selected on the camera. It validates the response container,
 success code, and transaction ID before returning data. It does not change the
 selected slot, write vendor properties, or write camera settings; automatic
 C1-C4 selection remains part of the later verified transfer work.
+
+The issue #10 write path requires an explicit confirmation for the requested
+slot, a capability set for every property, and caller-provided payloads whose
+encoding has already been learned from the camera. It writes properties in a
+stable order, reads each value back, and attempts to restore the original
+values if a write or verification fails. It reports rollback failure instead
+of claiming a successful transfer. The slot selector itself is rejected from
+recipe writes, so this path cannot silently switch or overwrite a different
+slot.
