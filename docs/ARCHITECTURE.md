@@ -126,6 +126,14 @@ USB-C / protocol implementation
 
 The transport adapter is intentionally isolated because the available Fujifilm USB/PTP behavior must be researched and validated on real hardware.
 
+The initial iOS transport choice is Apple's `ImageCaptureCore` framework:
+`ICDeviceBrowser`/`ICCameraDevice` handles camera discovery and sessions, while
+the Fujifilm adapter sends PTP commands through `requestSendPTPCommand`. The
+adapter must still verify the X-S20 model, supported property list, response
+codes, and read-back values before reporting a transfer as successful. See
+`docs/CAMERA_USB_PTP_RESEARCH.md` for the research record and hardware test
+plan.
+
 ## Deployment
 
 One root-level `docker-compose.yml` is the deployment definition.

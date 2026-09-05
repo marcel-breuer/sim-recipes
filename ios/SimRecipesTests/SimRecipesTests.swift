@@ -1,0 +1,122 @@
+import XCTest
+@testable import SimRecipes
+
+final class SimRecipesTests: XCTestCase {
+    func testRootTabsExposeCoreProductSections() {
+        XCTAssertEqual(
+            AppTab.allCases,
+            [.explore, .library, .profile]
+        )
+    }
+
+    func testOnlyUSBPTPCameraWithX20ModelNameIsCandidate() {
+        let camera = CameraDescriptor(
+            id: "camera-1",
+            name: "FUJIFILM X-S20",
+            productKind: "Camera",
+            serialNumber: "serial-1",
+            transportType: "USB",
+            usbVendorID: 1,
+            usbProductID: 2,
+            supportsPTP: true
+        )
+
+        XCTAssertTrue(camera.isX20Candidate)
+    }
+
+    func testNameAloneDoesNotQualifyCameraCandidate() {
+        let camera = CameraDescriptor(
+            id: "camera-1",
+            name: "X-S20",
+            productKind: "Camera",
+            serialNumber: nil,
+            transportType: "USB",
+            usbVendorID: 0,
+            usbProductID: 0,
+            supportsPTP: true
+        )
+
+        XCTAssertFalse(camera.isX20Candidate)
+    }
+
+    func testGetDeviceInfoCommandIsReadOnlyPTPCommand() {
+        XCTAssertEqual(
+            Array(PTPCommand.getDeviceInfo(transactionID: 1).encoded),
+            [12, 0, 0, 0, 1, 0, 1, 16, 1, 0, 0, 0]
+        )
+    }
+
+    func testGetDevicePropertyValueCommandUsesPropertyParameter() {
+        XCTAssertEqual(
+            Array(PTPCommand.getDevicePropValue(propertyCode: 0xD18C, transactionID: 1).encoded),
+            [16, 0, 0, 0, 1, 0, 21, 16, 1, 0, 0, 0, 140, 209, 0, 0]
+        )
+    }
+
+    func testSetDevicePropertyValueCommandAndDataContainerEncodeSeparately() {
+        let command = PTPCommand.setDevicePropValue(propertyCode: 0xD192, transactionID: 7)
+        let data = PTPDataContainer(code: command.code, transactionID: 7, payload: Data([2, 0])).encoded
+
+        XCTAssertEqual(
+            Array(command.encoded),
+            [16, 0, 0, 0, 1, 0, 22, 16, 7, 0, 0, 0, 146, 209, 0, 0]
+        )
+        XCTAssertEqual(
+            Array(data),
+            [14, 0, 0, 0, 2, 0, 22, 16, 7, 0, 0, 0, 2, 0]
+        )
+    }
+
+    func testWriteValidatorRequiresMatchingConfirmationAndSupportedProperties() {
+        let properties = [UInt16(0xD192): Data([1, 0])]
+        let supportedProperties: Set<UInt16> = [0xD192]
+
+        XCTAssertEqual(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: supportedProperties,
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c2)
+            )?.errorDescription,
+            CameraServiceError.confirmationDoesNotMatchSlot.errorDescription
+        )
+
+        XCTAssertNil(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: supportedProperties,
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c1)
+            )
+        )
+
+        XCTAssertEqual(
+            CameraSlotWriteValidator.validationError(
+                slot: .c1,
+                properties: properties,
+                supportedPropertyCodes: [],
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c1)
+            )?.errorDescription,
+            CameraServiceError.unsupportedProperty(0xD192).errorDescription
+        )
+    }
+
+    func testPTPResponseHeaderRejectsMalformedResponses() {
+        XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 11)))
+        XCTAssertNil(PTPResponseHeader(data: Data(repeating: 0, count: 12)))
+    }
+
+    func testPTPResponseHeaderParsesSuccessfulResponse() {
+        let response = Data([12, 0, 0, 0, 3, 0, 1, 32, 1, 0, 0, 0])
+
+        XCTAssertEqual(
+            PTPResponseHeader(data: response),
+            PTPResponseHeader(
+                length: 12,
+                type: 3,
+                responseCode: PTPResponseHeader.successResponseCode,
+                transactionID: 1
+            )
+        )
+    }
+}
