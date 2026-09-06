@@ -1,5 +1,9 @@
 # Fujifilm X-S20 USB/PTP research
 
+The canonical decision record is now
+[`docs/camera/X-S20-USB-RESEARCH.md`](camera/X-S20-USB-RESEARCH.md). This file
+retains the detailed research notes and hardware test sequence.
+
 Status: research spike completed 2026-09-05
 
 ## Decision
