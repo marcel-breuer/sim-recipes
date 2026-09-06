@@ -25,7 +25,10 @@ The implementation will use a monorepo structure:
 ├── backend/
 ├── docker/
 ├── docs/
-├── docker-compose.yml
+├── docker/
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   └── .env.example
 ├── AGENTS.md
 ├── PROJECT_SPEC.md
 └── README.md
@@ -46,6 +49,7 @@ The implementation will use a monorepo structure:
 
 Private repository. No open-source license is granted.
 
-See `PROJECT_SPEC.md` for the MVP specification and `AGENTS.md` for engineering conventions.
+See `PROJECT_SPEC.md` for the MVP specification, `docker/README.md` for local
+and Coolify deployment, and `AGENTS.md` for engineering conventions.
 Release-candidate checks and known limitations are tracked in
 `docs/RELEASE_VALIDATION.md`.

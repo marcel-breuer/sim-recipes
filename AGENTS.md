@@ -50,7 +50,8 @@ Expected structure:
 ├── docker/
 ├── docs/
 ├── .github/
-├── docker-compose.yml
+├── docker/
+│   └── docker-compose.yml
 ├── AGENTS.md
 ├── PROJECT_SPEC.md
 └── README.md
@@ -137,7 +138,8 @@ Use Laravel Pint and static analysis (Larastan/PHPStan) once configured.
 
 ## 9. Docker and deployment
 
-- Maintain exactly one root `docker-compose.yml` for the current architecture.
+- Maintain exactly one canonical `docker/docker-compose.yml` for the current
+  architecture.
 - The target deployment platform is Coolify.
 - Expected services are `api`, `queue`, `scheduler`, `postgres`, and `redis`.
 - PostgreSQL and Redis must not be exposed publicly in production.

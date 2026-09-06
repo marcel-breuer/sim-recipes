@@ -144,7 +144,7 @@ hardware; it therefore cannot claim a write or silently change camera values.
 
 ## Deployment
 
-One root-level `docker-compose.yml` is the deployment definition.
+`docker/docker-compose.yml` is the deployment definition.
 
 Expected services:
 - `api`

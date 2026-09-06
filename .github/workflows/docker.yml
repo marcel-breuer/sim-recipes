@@ -24,9 +24,9 @@ jobs:
         id: project
         shell: bash
         run: |
-          if [[ -f docker-compose.yml ]]; then
+          if [[ -f docker/docker-compose.yml ]]; then
             echo "type=compose" >> "$GITHUB_OUTPUT"
-          elif [[ -f backend/Dockerfile ]]; then
+          elif [[ -f docker/Dockerfile ]]; then
             echo "type=api" >> "$GITHUB_OUTPUT"
           else
             echo "type=none" >> "$GITHUB_OUTPUT"
@@ -35,19 +35,19 @@ jobs:
 
       - name: Prepare Compose validation environment
         if: ${{ steps.project.outputs.type == 'compose' }}
-        run: cp .env.example .env
+        run: cp docker/.env.example docker/.env
 
       - name: Validate Compose configuration
         if: ${{ steps.project.outputs.type == 'compose' }}
-        run: docker compose config --quiet
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml config --quiet
 
       - name: Build Compose services
         if: ${{ steps.project.outputs.type == 'compose' }}
         env:
           COMPOSE_DOCKER_CLI_BUILD: '1'
           DOCKER_BUILDKIT: '1'
-        run: docker compose build --pull
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml build --pull
 
       - name: Build API image
         if: ${{ steps.project.outputs.type == 'api' }}
-        run: docker build --tag sim-recipes-api:ci backend
+        run: docker build --tag sim-recipes-api:ci -f docker/Dockerfile .
