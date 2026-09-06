@@ -45,6 +45,10 @@ The implementation will use a monorepo structure:
 - Camera transfer must work offline after a recipe is available locally.
 - The backend is the source of truth for public/community data; SwiftData is the offline/local persistence layer.
 
+The Laravel service also serves the public product landing page at `/`. The
+application API remains versioned under `/api/v1`; the landing page is a
+separate public presentation surface and does not expose repository links.
+
 ## Repository status
 
 Private repository. No open-source license is granted.
