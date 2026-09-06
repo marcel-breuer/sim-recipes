@@ -90,7 +90,9 @@ class ProfileController extends Controller
     {
         return Profile::query()
             ->with([
-                'user.publishedRecipes' => fn ($query) => $query->with('cameraModel'),
+                'user' => fn ($query) => $query
+                    ->withCount(['followers', 'following'])
+                    ->with(['publishedRecipes' => fn ($recipeQuery) => $recipeQuery->with('cameraModel')]),
                 'cameraModel',
             ]);
     }

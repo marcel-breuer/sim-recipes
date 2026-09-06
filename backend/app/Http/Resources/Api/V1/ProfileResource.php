@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1;
 
 use App\Models\CameraModel;
 use App\Models\User;
+use App\Models\UserFollow;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +25,12 @@ class ProfileResource extends JsonResource
         $publishedRecipes = $user instanceof User && $user->relationLoaded('publishedRecipes')
             ? $user->getRelation('publishedRecipes')
             : [];
+        $isFollowing = $user instanceof User && $request->user() !== null
+            ? UserFollow::query()
+                ->where('follower_id', $request->user()->getKey())
+                ->where('followed_id', $user->getKey())
+                ->exists()
+            : false;
         $profileImagePath = $this->resource->getAttribute('profile_image_path');
 
         return [
@@ -40,6 +47,9 @@ class ProfileResource extends JsonResource
                 ? null
                 : Storage::disk()->url($profileImagePath),
             'published_recipes' => PublishedRecipeSummaryResource::collection($publishedRecipes),
+            'followers_count' => $user instanceof User ? (int) ($user->getAttribute('followers_count') ?? 0) : 0,
+            'following_count' => $user instanceof User ? (int) ($user->getAttribute('following_count') ?? 0) : 0,
+            'is_following' => $isFollowing,
         ];
     }
 }

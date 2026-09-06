@@ -69,6 +69,16 @@ class User extends Authenticatable
         return $this->hasMany(RecipeComment::class);
     }
 
+    public function followers(): HasMany
+    {
+        return $this->hasMany(UserFollow::class, 'followed_id');
+    }
+
+    public function following(): HasMany
+    {
+        return $this->hasMany(UserFollow::class, 'follower_id');
+    }
+
     public function blocksCreated(): HasMany
     {
         return $this->hasMany(UserBlock::class, 'blocker_id');
