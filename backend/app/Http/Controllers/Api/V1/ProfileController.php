@@ -20,7 +20,10 @@ class ProfileController extends Controller
             ->where('username', $username)
             ->firstOrFail();
 
-        abort_if($profile->user?->is_suspended === true, 404);
+        abort_if(
+            User::query()->whereKey($profile->user_id)->where('is_suspended', true)->exists(),
+            404,
+        );
         abort_if(
             request()->user() instanceof User
                 && UserBlock::query()

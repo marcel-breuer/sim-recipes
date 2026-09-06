@@ -35,10 +35,11 @@ class ModerationReportController extends Controller
 
     public function storeProfile(StoreModerationReportRequest $request, string $username): ModerationReportResource
     {
-        $profile = Profile::query()->with('user')->where('username', $username)->firstOrFail();
-        abort_unless($profile->user !== null && ! $profile->user->is_suspended, 404);
+        $profile = Profile::query()->where('username', $username)->firstOrFail();
+        $user = User::query()->findOrFail($profile->user_id);
+        abort_if($user->is_suspended, 404);
 
-        return $this->store($request, $profile->user);
+        return $this->store($request, $user);
     }
 
     public function storeUser(StoreModerationReportRequest $request, User $user): ModerationReportResource

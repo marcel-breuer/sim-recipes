@@ -47,7 +47,7 @@ class ModerationTest extends TestCase
         $report = $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
             'reason' => 'objectionable_content',
             'details' => 'Please review this recipe.',
-        ])->assertOk()
+        ])->assertCreated()
             ->assertJsonPath('data.status', 'open');
 
         Sanctum::actingAs($admin);

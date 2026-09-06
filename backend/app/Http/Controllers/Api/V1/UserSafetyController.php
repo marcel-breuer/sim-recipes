@@ -48,7 +48,9 @@ class UserSafetyController extends Controller
 
     private function target(string $username): User
     {
-        return Profile::query()->where('username', $username)->firstOrFail()->user()->firstOrFail();
+        $profile = Profile::query()->where('username', $username)->firstOrFail();
+
+        return User::query()->findOrFail($profile->user_id);
     }
 
     private function createBlock(Request $request, User $target): JsonResponse
