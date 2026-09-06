@@ -11,12 +11,9 @@
     <meta property="og:description" content="A considered library of Fujifilm film-simulation recipes.">
     <meta property="og:url" content="https://simrecipes.marcel-breuer.dev/">
     <meta name="theme-color" content="#08090a">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
 </head>
-<body>
+<body class="antialiased selection:bg-slate-200 selection:text-black">
 <header class="site-header">
     <a class="brand" href="#top" aria-label="SimRecipes home">
         <span class="brand-mark">SR</span>
