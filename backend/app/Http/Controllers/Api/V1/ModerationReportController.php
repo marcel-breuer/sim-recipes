@@ -13,6 +13,7 @@ use App\Models\Recipe;
 use App\Models\RecipeComment;
 use App\Models\RecipeImage;
 use App\Models\User;
+use App\Services\Admin\AdminAuditLogger;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -98,14 +99,33 @@ class ModerationReportController extends Controller
         return ModerationReportResource::collection($reports);
     }
 
-    public function update(UpdateModerationReportRequest $request, ModerationReport $report): ModerationReportResource
-    {
+    public function update(
+        UpdateModerationReportRequest $request,
+        ModerationReport $report,
+        AdminAuditLogger $auditLogger,
+    ): ModerationReportResource {
         Gate::authorize('update', $report);
         $data = $request->validated();
 
-        DB::transaction(function () use ($report, $data, $request): void {
+        $outcome = 'succeeded';
+        DB::transaction(function () use ($auditLogger, $report, $data, $request, &$outcome): void {
             $report->refresh();
+            $previousStatus = $report->status;
             if (in_array($report->status, [ModerationReport::STATUS_RESOLVED, ModerationReport::STATUS_REJECTED], true)) {
+                $outcome = 'noop';
+                $auditLogger->record(
+                    $request->user(),
+                    'moderation.report.resolve',
+                    $report,
+                    $data['reviewer_note'] ?? $report->reason,
+                    $outcome,
+                    [
+                        'previous_status' => $previousStatus,
+                        'status' => $report->status,
+                        'resolution' => $report->resolution,
+                    ],
+                );
+
                 return;
             }
 
@@ -118,6 +138,18 @@ class ModerationReportController extends Controller
                 'reviewed_by' => $request->user()->getKey(),
                 'reviewed_at' => now(),
             ])->save();
+            $auditLogger->record(
+                $request->user(),
+                'moderation.report.resolve',
+                $report,
+                $data['reviewer_note'] ?? $report->reason,
+                $outcome,
+                [
+                    'previous_status' => $previousStatus,
+                    'status' => $data['status'],
+                    'resolution' => $resolution,
+                ],
+            );
         });
 
         return new ModerationReportResource($report->fresh()->load(['reporter', 'reportable']));
@@ -187,9 +219,17 @@ class ModerationReportController extends Controller
             }
         } elseif ($target instanceof User) {
             if ($resolution === 'suspend_user') {
-                $target->forceFill(['is_suspended' => true])->save();
+                $target->forceFill([
+                    'is_suspended' => true,
+                    'suspended_at' => now(),
+                    'suspension_reason' => $report->reason,
+                ])->save();
             } elseif ($resolution === 'restore_content') {
-                $target->forceFill(['is_suspended' => false])->save();
+                $target->forceFill([
+                    'is_suspended' => false,
+                    'suspended_at' => null,
+                    'suspension_reason' => null,
+                ])->save();
             }
         }
     }

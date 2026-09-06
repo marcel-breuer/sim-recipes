@@ -7,9 +7,11 @@ use App\Http\Requests\Api\V1\IndexAdminUserRequest;
 use App\Http\Requests\Api\V1\UpdateUserSuspensionRequest;
 use App\Http\Resources\Api\V1\AdminUserResource;
 use App\Models\User;
+use App\Services\Admin\AdminAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class AdminUserController extends Controller
 {
@@ -45,9 +47,24 @@ class AdminUserController extends Controller
         return new AdminUserResource($user->load('profile')->loadCount(['recipes', 'publishedRecipes']));
     }
 
-    public function updateSuspension(UpdateUserSuspensionRequest $request, User $user): AdminUserResource|JsonResponse
-    {
+    public function updateSuspension(
+        UpdateUserSuspensionRequest $request,
+        User $user,
+        AdminAuditLogger $auditLogger,
+    ): AdminUserResource|JsonResponse {
+        $data = $request->validated();
+        $isSuspended = (bool) $data['is_suspended'];
+
         if ($user->is($request->user())) {
+            $auditLogger->record(
+                $request->user(),
+                'user.suspension.update',
+                $user,
+                $data['reason'] ?? null,
+                'rejected',
+                ['is_suspended' => $isSuspended],
+            );
+
             return response()->json([
                 'error' => [
                     'code' => 'self_suspension_forbidden',
@@ -56,13 +73,25 @@ class AdminUserController extends Controller
             ], 422);
         }
 
-        $data = $request->validated();
-        $isSuspended = (bool) $data['is_suspended'];
-        $user->forceFill([
-            'is_suspended' => $isSuspended,
-            'suspended_at' => $isSuspended ? now() : null,
-            'suspension_reason' => $isSuspended ? $data['reason'] : null,
-        ])->save();
+        $previousIsSuspended = (bool) $user->is_suspended;
+        DB::transaction(function () use ($auditLogger, $data, $isSuspended, $previousIsSuspended, $request, $user): void {
+            $user->forceFill([
+                'is_suspended' => $isSuspended,
+                'suspended_at' => $isSuspended ? now() : null,
+                'suspension_reason' => $isSuspended ? $data['reason'] : null,
+            ])->save();
+            $auditLogger->record(
+                $request->user(),
+                'user.suspension.update',
+                $user,
+                $data['reason'] ?? null,
+                'succeeded',
+                [
+                    'previous_is_suspended' => $previousIsSuspended,
+                    'is_suspended' => $isSuspended,
+                ],
+            );
+        });
 
         return new AdminUserResource($user->fresh()->load('profile')->loadCount(['recipes', 'publishedRecipes']));
     }
