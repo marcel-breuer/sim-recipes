@@ -52,6 +52,7 @@ final class MemoryCredentialStore: CredentialStore {
 @MainActor
 final class StubCameraService: CameraService {
     var discoveredCameras: [CameraDescriptor]
+    var sessionState: CameraSessionState = .disconnected
     var slots: [CameraSlot] = CameraSlot.allCases
     var currentSnapshot = CameraSlotSnapshot(slot: .c1, properties: [:])
     var transferError: Error?
@@ -64,7 +65,9 @@ final class StubCameraService: CameraService {
     func requestControlAuthorization() async throws {}
     func startDiscovery() {}
     func stopDiscovery() {}
-    func openSession(for cameraID: String) async throws {}
+    func openSession(for cameraID: String) async throws {
+        sessionState = .connected(cameraID: cameraID)
+    }
     func readDeviceInfo() async throws -> PTPResponseHeader {
         PTPResponseHeader(length: 12, type: 3, responseCode: 0x2001, transactionID: 1)
     }
@@ -95,5 +98,7 @@ final class StubCameraService: CameraService {
     ) async throws -> CameraSlotSnapshot {
         CameraSlotSnapshot(slot: slot, properties: properties)
     }
-    func closeSession() async throws {}
+    func closeSession() async throws {
+        sessionState = .disconnected
+    }
 }

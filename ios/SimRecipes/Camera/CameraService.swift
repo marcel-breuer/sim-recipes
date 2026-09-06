@@ -27,6 +27,12 @@ struct CameraDescriptor: Equatable, Identifiable, Sendable {
     }
 }
 
+enum CameraSessionState: Equatable, Sendable {
+    case disconnected
+    case opening(cameraID: String)
+    case connected(cameraID: String)
+}
+
 enum CameraSlot: UInt8, CaseIterable, Sendable {
     case c1 = 1
     case c2 = 2
@@ -139,6 +145,7 @@ enum CameraServiceError: LocalizedError {
 @MainActor
 protocol CameraService: AnyObject {
     var discoveredCameras: [CameraDescriptor] { get }
+    var sessionState: CameraSessionState { get }
 
     func requestControlAuthorization() async throws
     func startDiscovery()

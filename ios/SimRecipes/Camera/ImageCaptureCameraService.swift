@@ -9,6 +9,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
     private var nextTransactionID: UInt32 = 1
 
     private(set) var discoveredCameras: [CameraDescriptor] = []
+    private(set) var sessionState: CameraSessionState = .disconnected
 
     init(browser: ICDeviceBrowser = ICDeviceBrowser()) {
         self.browser = browser
@@ -47,20 +48,29 @@ final class ImageCaptureCameraService: NSObject, CameraService {
             throw CameraServiceError.unsupportedCamera
         }
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            camera.requestOpenSession(options: nil) { error in
-                Task { @MainActor in
-                    if let error = error {
-                        continuation.resume(throwing: CameraServiceError.underlying(error))
-                    } else if !camera.hasOpenSession {
-                        continuation.resume(throwing: CameraServiceError.sessionNotOpen)
-                    } else {
-                        self.activeCamera = camera
-                        self.nextTransactionID = 1
-                        continuation.resume()
+        sessionState = .opening(cameraID: cameraID)
+
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                camera.requestOpenSession(options: nil) { error in
+                    Task { @MainActor in
+                        if let error = error {
+                            continuation.resume(throwing: CameraServiceError.underlying(error))
+                        } else if !camera.hasOpenSession {
+                            continuation.resume(throwing: CameraServiceError.sessionNotOpen)
+                        } else {
+                            self.activeCamera = camera
+                            self.nextTransactionID = 1
+                            continuation.resume()
+                        }
                     }
                 }
             }
+
+            sessionState = .connected(cameraID: cameraID)
+        } catch {
+            sessionState = .disconnected
+            throw error
         }
     }
 
@@ -247,6 +257,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
 
     func closeSession() async throws {
         guard let camera = activeCamera else {
+            sessionState = .disconnected
             return
         }
 
@@ -254,6 +265,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
             camera.requestCloseSession(options: nil) { error in
                 Task { @MainActor in
                     self.activeCamera = nil
+                    self.sessionState = .disconnected
 
                     if let error = error {
                         continuation.resume(throwing: CameraServiceError.underlying(error))
@@ -284,6 +296,7 @@ final class ImageCaptureCameraService: NSObject, CameraService {
 
         if activeCamera?.uuidString == id {
             activeCamera = nil
+            sessionState = .disconnected
         }
     }
 }
