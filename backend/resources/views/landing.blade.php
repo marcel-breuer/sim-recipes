@@ -39,12 +39,6 @@
             </div>
             <div class="hero-note"><span class="status-dot"></span> Designed for iPhone and Fujifilm X-S20</div>
         </div>
-        <div class="hero-visual" aria-label="Camera preview">
-            <div class="visual-grid"></div>
-            <div class="visual-label visual-label-top">FUJIFILM / X-S20</div>
-            <img src="/images/simrecipes-camera.png" alt="Black mirrorless camera in cool studio light">
-            <div class="visual-label visual-label-bottom">01 / 04 &nbsp;—&nbsp; TRANSFER READY</div>
-        </div>
     </section>
 
     <section class="principles section-wrap" id="discover">
@@ -94,7 +88,7 @@
         <div class="product-copy">
             <p class="eyebrow">Your visual language</p>
             <h2>Less menu. More moment.</h2>
-            <p>Every recipe has a place in the flow: a name you remember, settings you trust, and an image that reminds you why you saved it.</p>
+            <p>Every recipe has a place in the flow: a name you remember, settings you trust, and a library that stays close.</p>
             <div class="metric-line"><span>Built for the details that matter</span><span>01—04</span></div>
             <a class="text-link" href="#community">See how the library works <span aria-hidden="true">↗</span></a>
         </div>

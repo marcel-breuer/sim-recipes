@@ -32,6 +32,7 @@ class CrawlProtectionTest extends TestCase
             ->assertDontSee('src="http://', false)
             ->assertDontSee('fonts.googleapis.com', false)
             ->assertDontSee('fonts.gstatic.com', false)
+            ->assertDontSee('simrecipes-camera.png', false)
             ->assertDontSee('github.com', false);
     }
 }
