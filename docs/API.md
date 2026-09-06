@@ -83,6 +83,11 @@ ID tie-breakers so adjacent pages remain deterministic during normal browsing.
   `provenance.source_author_id`. Metadata, settings, relations, and stored image
   representations are copied transactionally.
 
+Authenticated users can follow and unfollow a public profile with `POST` and
+`DELETE /profiles/{username}/follow`. Profile responses include follower and
+following counts and the authenticated viewer's `is_following` state. Following
+is unavailable when either user has blocked the other.
+
 The default popularity strategy scores likes × 3, downloads × 5, and views ×
 1. It is bound behind a replaceable `PopularityRanking` service so the formula
 can change without a database migration.

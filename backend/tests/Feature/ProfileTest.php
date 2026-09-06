@@ -6,6 +6,7 @@ use App\Models\CameraModel;
 use App\Models\Profile;
 use App\Models\Recipe;
 use App\Models\User;
+use App\Models\UserBlock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -104,5 +105,55 @@ class ProfileTest extends TestCase
             'profile_image' => UploadedFile::fake()->create('profile.jpg', 5121, 'image/jpeg'),
         ])->assertUnprocessable()
             ->assertJsonPath('error.code', 'validation_failed');
+    }
+
+    public function test_users_can_follow_and_unfollow_profiles_idempotently(): void
+    {
+        $creator = User::factory()->create();
+        $follower = User::factory()->create();
+        Profile::create(['user_id' => $creator->id, 'username' => 'creator']);
+
+        $this->getJson('/api/v1/profiles/creator')
+            ->assertOk()
+            ->assertJsonPath('data.followers_count', 0)
+            ->assertJsonPath('data.following_count', 0)
+            ->assertJsonPath('data.is_following', false);
+
+        Sanctum::actingAs($follower);
+        $this->postJson('/api/v1/profiles/creator/follow')
+            ->assertOk()
+            ->assertJsonPath('data.following', true)
+            ->assertJsonPath('data.followers_count', 1);
+        $this->postJson('/api/v1/profiles/creator/follow')
+            ->assertOk()
+            ->assertJsonPath('data.followers_count', 1);
+
+        $this->getJson('/api/v1/profiles/creator')
+            ->assertOk()
+            ->assertJsonPath('data.followers_count', 1)
+            ->assertJsonPath('data.is_following', true);
+
+        $this->deleteJson('/api/v1/profiles/creator/follow')
+            ->assertOk()
+            ->assertJsonPath('data.following', false)
+            ->assertJsonPath('data.followers_count', 0);
+    }
+
+    public function test_following_yourself_or_a_blocked_user_is_rejected(): void
+    {
+        $creator = User::factory()->create();
+        $follower = User::factory()->create();
+        Profile::create(['user_id' => $creator->id, 'username' => 'creator']);
+        Profile::create(['user_id' => $follower->id, 'username' => 'follower']);
+
+        Sanctum::actingAs($creator);
+        $this->postJson('/api/v1/profiles/creator/follow')->assertStatus(422);
+
+        UserBlock::create([
+            'blocker_id' => $follower->id,
+            'blocked_user_id' => $creator->id,
+        ]);
+        Sanctum::actingAs($follower);
+        $this->postJson('/api/v1/profiles/creator/follow')->assertNotFound();
     }
 }

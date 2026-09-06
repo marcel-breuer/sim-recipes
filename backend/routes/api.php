@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\RecipeCopyController;
 use App\Http\Controllers\Api\V1\RecipeEngagementController;
 use App\Http\Controllers\Api\V1\RecipeImageController;
 use App\Http\Controllers\Api\V1\SupportController;
+use App\Http\Controllers\Api\V1\UserFollowController;
 use App\Http\Controllers\Api\V1\UserSafetyController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,10 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.profiles.block');
         Route::delete('/profiles/{username}/block', [UserSafetyController::class, 'unblock'])
             ->name('api.v1.profiles.unblock');
+        Route::post('/profiles/{username}/follow', [UserFollowController::class, 'store'])
+            ->name('api.v1.profiles.follow');
+        Route::delete('/profiles/{username}/follow', [UserFollowController::class, 'destroy'])
+            ->name('api.v1.profiles.unfollow');
         Route::post('/users/{user}/block', [UserSafetyController::class, 'blockUser'])
             ->name('api.v1.users.block');
         Route::delete('/users/{user}/block', [UserSafetyController::class, 'unblockUser'])
