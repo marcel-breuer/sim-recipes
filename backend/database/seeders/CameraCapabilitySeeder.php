@@ -9,27 +9,98 @@ use Illuminate\Database\Seeder;
 class CameraCapabilitySeeder extends Seeder
 {
     /**
-     * Seed the supported Fujifilm X-S20 capability definition.
+     * Seed the supported Fujifilm camera capability definitions.
      *
-     * The transport identifiers are stable application keys. They are not
-     * claims about Fujifilm's USB/PTP property identifiers; those are resolved
-     * by the camera research and transport-adapter work.
+     * Transport identifiers are stable application keys. They are not claims
+     * about Fujifilm USB/PTP property identifiers; those remain adapter-level
+     * concerns and are only enabled after hardware verification.
      */
     public function run(): void
     {
+        $this->seedCamera(
+            slug: 'fujifilm-x-s20',
+            name: 'X-S20',
+            modelIdentifier: 'X-S20',
+            slotNames: ['C1', 'C2', 'C3', 'C4'],
+            filmSimulations: [
+                'AUTO', 'PROVIA/STANDARD', 'Velvia/VIVID', 'ASTIA/SOFT',
+                'CLASSIC CHROME', 'REALA ACE', 'PRO Neg. Hi', 'PRO Neg. Std',
+                'CLASSIC Neg.', 'NOSTALGIC Neg.', 'ETERNA/CINEMA',
+                'ETERNA BLEACH BYPASS', 'ACROS', 'ACROS+Ye FILTER',
+                'ACROS+R FILTER', 'ACROS+G FILTER', 'MONOCHROME',
+                'MONOCHROME+Ye FILTER', 'MONOCHROME+R FILTER',
+                'MONOCHROME+G FILTER', 'SEPIA',
+            ],
+            isoRange: [
+                'minimum' => 80,
+                'manual_minimum' => 160,
+                'manual_maximum' => 12800,
+                'extended_values' => [80, 100, 125, 25600, 51200],
+            ],
+            transportMetadata: [
+                'property_reads' => 'provisional',
+                'recipe_writes' => 'unverified',
+                'note' => 'X-S20 vendor-property encodings require hardware verification.',
+            ],
+        );
+
+        $this->seedCamera(
+            slug: 'fujifilm-x-t5',
+            name: 'X-T5',
+            modelIdentifier: 'X-T5',
+            slotNames: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'],
+            filmSimulations: [
+                'PROVIA/STANDARD', 'Velvia/VIVID', 'ASTIA/SOFT', 'CLASSIC CHROME',
+                'REALA ACE', 'PRO Neg. Hi', 'PRO Neg. Std', 'CLASSIC Neg.',
+                'NOSTALGIC Neg.', 'ETERNA/CINEMA', 'ETERNA BLEACH BYPASS',
+                'ACROS', 'ACROS+Ye FILTER', 'ACROS+R FILTER', 'ACROS+G FILTER',
+                'MONOCHROME', 'MONOCHROME+Ye FILTER', 'MONOCHROME+R FILTER',
+                'MONOCHROME+G FILTER', 'SEPIA',
+            ],
+            isoRange: [
+                'minimum' => 64,
+                'manual_minimum' => 125,
+                'manual_maximum' => 12800,
+                'extended_values' => [64, 80, 100, 25600, 51200],
+            ],
+            transportMetadata: [
+                'property_reads' => 'unverified',
+                'recipe_writes' => 'unverified',
+                'note' => 'No X-T5 vendor-property mapping is enabled until hardware verification.',
+            ],
+        );
+    }
+
+    /**
+     * @param  array<int, string>  $slotNames
+     * @param  array<int, string>  $filmSimulations
+     * @param  array{minimum: int, manual_minimum: int, manual_maximum: int, extended_values: array<int, int>}  $isoRange
+     * @param  array<string, string>  $transportMetadata
+     */
+    private function seedCamera(
+        string $slug,
+        string $name,
+        string $modelIdentifier,
+        array $slotNames,
+        array $filmSimulations,
+        array $isoRange,
+        array $transportMetadata,
+    ): void {
         $camera = CameraModel::updateOrCreate(
-            ['slug' => 'fujifilm-x-s20'],
+            ['slug' => $slug],
             [
                 'manufacturer' => 'Fujifilm',
-                'name' => 'X-S20',
-                'model_identifier' => 'X-S20',
+                'name' => $name,
+                'model_identifier' => $modelIdentifier,
                 'is_supported' => true,
+                'unsupported_recipe_settings' => ['monochromatic_color', 'smooth_skin_effect'],
+                'transport_metadata' => $transportMetadata,
             ],
         );
 
         $customSlotMetadata = [
-            'slot_names' => ['C1', 'C2', 'C3', 'C4'],
-            'slot_count' => 4,
+            'slot_names' => $slotNames,
+            'slot_count' => count($slotNames),
             'supports_overwrite_warning' => true,
         ];
 
@@ -38,29 +109,7 @@ class CameraCapabilitySeeder extends Seeder
                 'setting_key' => 'film_simulation',
                 'display_name' => 'Film Simulation',
                 'value_type' => 'enum',
-                'allowed_values' => [
-                    'AUTO',
-                    'PROVIA/STANDARD',
-                    'Velvia/VIVID',
-                    'ASTIA/SOFT',
-                    'CLASSIC CHROME',
-                    'REALA ACE',
-                    'PRO Neg. Hi',
-                    'PRO Neg. Std',
-                    'CLASSIC Neg.',
-                    'NOSTALGIC Neg.',
-                    'ETERNA/CINEMA',
-                    'ETERNA BLEACH BYPASS',
-                    'ACROS',
-                    'ACROS+Ye FILTER',
-                    'ACROS+R FILTER',
-                    'ACROS+G FILTER',
-                    'MONOCHROME',
-                    'MONOCHROME+Ye FILTER',
-                    'MONOCHROME+R FILTER',
-                    'MONOCHROME+G FILTER',
-                    'SEPIA',
-                ],
+                'allowed_values' => $filmSimulations,
                 'transport_identifier' => 'image_quality.film_simulation',
             ],
             [
@@ -105,20 +154,10 @@ class CameraCapabilitySeeder extends Seeder
                 'display_name' => 'White Balance',
                 'value_type' => 'enum',
                 'allowed_values' => [
-                    'WHITE PRIORITY',
-                    'AUTO',
-                    'AMBIENCE PRIORITY',
-                    'CUSTOM 1',
-                    'CUSTOM 2',
-                    'CUSTOM 3',
-                    'COLOR TEMPERATURE',
-                    'DAYLIGHT',
-                    'SHADE',
-                    'FLUORESCENT LIGHT-1',
-                    'FLUORESCENT LIGHT-2',
-                    'FLUORESCENT LIGHT-3',
-                    'INCANDESCENT',
-                    'UNDERWATER',
+                    'WHITE PRIORITY', 'AUTO', 'AMBIENCE PRIORITY', 'CUSTOM 1',
+                    'CUSTOM 2', 'CUSTOM 3', 'COLOR TEMPERATURE', 'DAYLIGHT',
+                    'SHADE', 'FLUORESCENT LIGHT-1', 'FLUORESCENT LIGHT-2',
+                    'FLUORESCENT LIGHT-3', 'INCANDESCENT', 'UNDERWATER',
                 ],
                 'transport_identifier' => 'image_quality.white_balance',
             ],
@@ -126,9 +165,7 @@ class CameraCapabilitySeeder extends Seeder
                 'setting_key' => 'white_balance_shift',
                 'display_name' => 'White Balance Shift',
                 'value_type' => 'object',
-                'allowed_values' => [
-                    'axes' => ['warm_cool', 'green_magenta'],
-                ],
+                'allowed_values' => ['axes' => ['warm_cool', 'green_magenta']],
                 'minimum' => -9,
                 'maximum' => 9,
                 'step' => 1,
@@ -195,12 +232,16 @@ class CameraCapabilitySeeder extends Seeder
                 'setting_key' => 'iso',
                 'display_name' => 'ISO',
                 'value_type' => 'integer',
-                'minimum' => 80,
+                'minimum' => $isoRange['minimum'],
                 'maximum' => 51200,
                 'step' => 1,
                 'custom_slot_metadata' => [
-                    'manual_range' => ['minimum' => 160, 'maximum' => 12800, 'increment_ev' => '1/3'],
-                    'extended_values' => [80, 100, 125, 25600, 51200],
+                    'manual_range' => [
+                        'minimum' => $isoRange['manual_minimum'],
+                        'maximum' => $isoRange['manual_maximum'],
+                        'increment_ev' => '1/3',
+                    ],
+                    'extended_values' => $isoRange['extended_values'],
                     'auto_modes' => ['AUTO1', 'AUTO2', 'AUTO3'],
                 ],
                 'transport_identifier' => 'shooting.iso',

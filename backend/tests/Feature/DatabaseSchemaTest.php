@@ -60,6 +60,10 @@ class DatabaseSchemaTest extends TestCase
         $this->assertSame('object', $capabilities['white_balance_shift']->value_type);
         $this->assertSame(['C1', 'C2', 'C3', 'C4'], $capabilities['iso']->custom_slot_metadata['slot_names']);
         $this->assertSame(4, $capabilities['iso']->custom_slot_metadata['slot_count']);
+        $this->assertEqualsCanonicalizing(
+            ['monochromatic_color', 'smooth_skin_effect'],
+            $camera->unsupported_recipe_settings,
+        );
     }
 
     public function test_x_s20_capability_seeder_is_idempotent(): void
@@ -67,8 +71,26 @@ class DatabaseSchemaTest extends TestCase
         $this->seed(CameraCapabilitySeeder::class);
         $this->seed(CameraCapabilitySeeder::class);
 
-        $this->assertDatabaseCount('camera_models', 1);
-        $this->assertDatabaseCount('camera_capabilities', 15);
+        $this->assertDatabaseCount('camera_models', 2);
+        $this->assertDatabaseCount('camera_capabilities', 30);
+    }
+
+    public function test_x_t5_capabilities_preserve_model_specific_ranges_and_slots(): void
+    {
+        $this->seed(CameraCapabilitySeeder::class);
+
+        $camera = CameraModel::where('slug', 'fujifilm-x-t5')->firstOrFail();
+        $capabilities = $camera->capabilities->keyBy('setting_key');
+
+        $this->assertTrue($camera->is_supported);
+        $this->assertSame('X-T5', $camera->model_identifier);
+        $this->assertNotContains('AUTO', $capabilities['film_simulation']->allowed_values);
+        $this->assertSame(64.0, (float) $capabilities['iso']->minimum);
+        $this->assertSame(125, $capabilities['iso']->custom_slot_metadata['manual_range']['minimum']);
+        $this->assertSame(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'], $capabilities['iso']->custom_slot_metadata['slot_names']);
+        $this->assertSame(7, $capabilities['iso']->custom_slot_metadata['slot_count']);
+        $this->assertSame('unverified', $camera->transport_metadata['property_reads']);
+        $this->assertSame('unverified', $camera->transport_metadata['recipe_writes']);
     }
 
     public function test_core_recipe_graph_uses_ulids_and_preserves_provenance(): void

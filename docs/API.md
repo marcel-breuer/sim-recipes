@@ -42,9 +42,13 @@ by ULID or slug through `GET /api/v1/cameras/{camera}`; capabilities can also
 be requested directly with `GET /api/v1/cameras/{camera}/capabilities`.
 
 Each capability includes its setting key, display label, value type, allowed
-values or ranges, transport identifier, and custom-slot metadata. Clients
-should render controls from this response rather than hard-coding a camera's
-setting list.
+values or ranges, transport identifier, and custom-slot metadata. Camera
+resources also expose `unsupported_recipe_settings` and `transport_metadata`.
+The current seeded models are the X-S20 (`C1`–`C4`) and X-T5 (`C1`–`C7`).
+Clients should render controls from this response rather than hard-coding a
+camera's setting list. Changing a private recipe's camera model revalidates
+all existing settings against the target model; incompatible values are
+rejected without changing the recipe.
 
 `GET /api/v1/categories` returns the predefined recipe categories used by the
 iOS editor. Category IDs from this response are submitted with recipe writes;

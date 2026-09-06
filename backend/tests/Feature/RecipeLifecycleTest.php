@@ -6,6 +6,7 @@ use App\Models\CameraCapability;
 use App\Models\CameraModel;
 use App\Models\Recipe;
 use App\Models\User;
+use Database\Seeders\CameraCapabilitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -74,6 +75,47 @@ class RecipeLifecycleTest extends TestCase
             ->assertJsonPath('error.code', 'validation_failed');
 
         $this->assertDatabaseMissing('recipes', ['name' => 'Unsupported Recipe']);
+    }
+
+    public function test_private_recipe_camera_migration_revalidates_target_capabilities(): void
+    {
+        $this->seed(CameraCapabilitySeeder::class);
+        $user = User::factory()->create();
+        $xS20 = CameraModel::query()->where('slug', 'fujifilm-x-s20')->firstOrFail();
+        $xT5 = CameraModel::query()->where('slug', 'fujifilm-x-t5')->firstOrFail();
+
+        Sanctum::actingAs($user);
+        $recipe = $this->postJson('/api/v1/recipes', [
+            'name' => 'Migratable Recipe',
+            'camera_model_id' => $xS20->id,
+            'settings' => [
+                ['setting_key' => 'film_simulation', 'value' => 'REALA ACE'],
+            ],
+        ])->assertOk();
+
+        $this->patchJson('/api/v1/recipes/'.$recipe->json('data.id'), [
+            'name' => 'Migrated Recipe',
+            'camera_model_id' => $xT5->id,
+            'settings' => [
+                ['setting_key' => 'film_simulation', 'value' => 'REALA ACE'],
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.camera_model.slug', 'fujifilm-x-t5');
+
+        $this->patchJson('/api/v1/recipes/'.$recipe->json('data.id'), [
+            'name' => 'Invalid Migration',
+            'camera_model_id' => $xT5->id,
+            'settings' => [
+                ['setting_key' => 'film_simulation', 'value' => 'AUTO'],
+            ],
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+
+        $this->assertDatabaseHas('recipes', [
+            'id' => $recipe->json('data.id'),
+            'name' => 'Migrated Recipe',
+            'camera_model_id' => $xT5->id,
+        ]);
     }
 
     public function test_publication_requires_an_image_and_published_recipes_are_immutable(): void
