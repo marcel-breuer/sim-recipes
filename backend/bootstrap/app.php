@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\PreventIndexing;
 use App\Http\Middleware\RejectSuspendedUsers;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.api' => Authenticate::class,
             'active.account' => RejectSuspendedUsers::class,
             'admin' => EnsureAdmin::class,
+            'noindex' => PreventIndexing::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -94,7 +94,7 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.users.block');
         Route::delete('/users/{user}/block', [UserSafetyController::class, 'unblockUser'])
             ->name('api.v1.users.unblock');
-        Route::middleware('admin')->prefix('admin')->group(function (): void {
+        Route::middleware(['admin', 'noindex'])->prefix('admin')->group(function (): void {
             Route::get('/users', [AdminUserController::class, 'index'])
                 ->name('api.v1.admin.users.index');
             Route::get('/users/{user}', [AdminUserController::class, 'show'])
