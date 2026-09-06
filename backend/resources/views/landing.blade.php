@@ -128,6 +128,10 @@
 <footer class="site-footer section-wrap">
     <span>© {{ date('Y') }} SimRecipes</span>
     <span>Recipes for the way you see.</span>
+    <nav class="site-footer-links" aria-label="Legal information">
+        <a href="https://marcel-breuer.dev/impressum" target="_blank" rel="noopener noreferrer">Imprint <span aria-hidden="true">↗</span></a>
+        <a href="https://marcel-breuer.dev/datenschutz" target="_blank" rel="noopener noreferrer">Privacy <span aria-hidden="true">↗</span></a>
+    </nav>
     <a href="#top">Back to top ↑</a>
 </footer>
 </body>
