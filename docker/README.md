@@ -14,7 +14,10 @@ placeholder secrets:
     cp docker/.env.example docker/.env
     docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build
 
-The API is available on the port configured by `API_PORT`, defaulting to 8000.
+The API listens on container port `8080`. For local host access, publish that
+port explicitly in your local Compose setup; production Coolify deployments
+must route the `api` domain to internal port `8080` without publishing a host
+port.
 The API container runs Laravel migrations through Server Side Up's autorun
 configuration before it becomes healthy. The queue and scheduler wait for that
 healthy API container and use the same application image.
@@ -41,7 +44,10 @@ Set `AUTORUN_LARAVEL_MIGRATION_SEED=true`
 for the first deployment only, then set it back to `false`. Do not commit the
 resulting `.env` file.
 
-Route only the `api` service to the public domain on container port 8080.
+Route only the `api` service to the public domain on container port 8080. In
+Coolify, enter the domain for the `api` service with the internal port, for
+example `https://api.example.com:8080`; this selects the container port and
+does not bind port 8080 on the host.
 The queue and scheduler are worker services, while PostgreSQL and Redis have no
 published ports and must remain private to the Compose network. Attach
 persistent volumes to postgres_data, redis_data, and storage_data. The API,

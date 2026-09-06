@@ -46,8 +46,8 @@ x-app-service: &app-service
 services:
   api:
     <<: *app-service
-    ports:
-      - ${API_PORT:-8000}:8080
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
