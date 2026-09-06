@@ -28,6 +28,8 @@ class CrawlProtectionTest extends TestCase
 
         $response->assertOk()
             ->assertSee('https://simrecipes.marcel-breuer.dev/', false)
+            ->assertDontSee('href="http://', false)
+            ->assertDontSee('src="http://', false)
             ->assertDontSee('fonts.googleapis.com', false)
             ->assertDontSee('fonts.gstatic.com', false)
             ->assertDontSee('github.com', false);
