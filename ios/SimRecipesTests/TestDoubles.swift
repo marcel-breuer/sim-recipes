@@ -73,6 +73,9 @@ final class StubCameraService: CameraService {
     }
     func readProperty(_ propertyCode: UInt16) async throws -> Data { Data([0]) }
     func availableSlots() async throws -> [CameraSlot] { slots }
+    func readSlotDescriptors(propertyCodes: [UInt16]) async throws -> [CameraSlotDescriptor] {
+        CameraSlotDescriptorFactory.make(slots: slots, currentSnapshot: currentSnapshot)
+    }
     func readCurrentSlotSnapshot(propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
         currentSnapshot
     }

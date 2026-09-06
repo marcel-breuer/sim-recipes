@@ -44,6 +44,18 @@ struct CameraSlotStatus: Equatable, Identifiable, Sendable {
         }
         return "Available on camera"
     }
+
+    init(descriptor: CameraSlotDescriptor) {
+        slot = descriptor.slot
+        switch descriptor.readState {
+        case let .readable(propertyCount):
+            isCurrent = true
+            self.propertyCount = propertyCount
+        case .notSelected:
+            isCurrent = false
+            propertyCount = nil
+        }
+    }
 }
 
 @MainActor
@@ -61,7 +73,6 @@ final class CameraTransferViewModel: ObservableObject {
 
     private let cameraService: any CameraService
     private var activeCameraID: String?
-    private var currentSnapshot: CameraSlotSnapshot?
 
     init(recipe: RecipeTransport, cameraService: any CameraService) {
         self.recipe = recipe
@@ -112,17 +123,15 @@ final class CameraTransferViewModel: ObservableObject {
             activeCameraID = camera.id
             phase = .loadingSlots
 
-            let availableSlots = try await cameraService.availableSlots()
-            currentSnapshot = try? await cameraService.readCurrentSlotSnapshot(propertyCodes: [])
-            currentSlot = currentSnapshot?.slot
-            slots = availableSlots.map { slot in
-                CameraSlotStatus(
-                    slot: slot,
-                    isCurrent: slot == currentSnapshot?.slot,
-                    propertyCount: slot == currentSnapshot?.slot ? currentSnapshot?.properties.count : nil
-                )
-            }
-            selectedSlot = currentSnapshot?.slot ?? availableSlots.first
+            let slotDescriptors = try await cameraService.readSlotDescriptors(propertyCodes: [])
+            currentSlot = slotDescriptors.first(where: { descriptor in
+                if case .readable = descriptor.readState {
+                    return true
+                }
+                return false
+            })?.slot
+            slots = slotDescriptors.map(CameraSlotStatus.init(descriptor:))
+            selectedSlot = currentSlot ?? slotDescriptors.first?.slot
             phase = .ready
         } catch {
             fail(error)
