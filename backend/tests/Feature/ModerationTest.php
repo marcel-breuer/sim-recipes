@@ -96,6 +96,17 @@ class ModerationTest extends TestCase
         $this->getJson('/api/v1/recipes/'.$recipe->id)->assertNotFound();
     }
 
+    public function test_non_admin_cannot_discover_admin_report_endpoints(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/admin/reports')->assertNotFound();
+        $this->patchJson('/api/v1/admin/reports/'.str()->ulid(), [
+            'status' => 'resolved',
+        ])->assertNotFound();
+    }
+
     public function test_blocked_profile_and_public_recipes_are_hidden_from_blocker(): void
     {
         $author = User::factory()->create();
