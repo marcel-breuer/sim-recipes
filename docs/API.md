@@ -87,6 +87,12 @@ The default popularity strategy scores likes × 3, downloads × 5, and views ×
 1. It is bound behind a replaceable `PopularityRanking` service so the formula
 can change without a database migration.
 
+Authenticated users can create comments on published recipes with `POST
+/recipes/{recipe}/comments`. Comments are listed with page-number pagination
+through `GET /recipes/{recipe}/comments`; hidden, deleted, suspended-user, and
+blocked-user comments are omitted. Authors can soft-delete their own comments
+with `DELETE /comments/{comment}`.
+
 Recipe image URLs are API URLs rather than direct object-storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images
@@ -101,7 +107,9 @@ community-standards URL, and privacy-policy URL.
 Authenticated users can report published recipes, recipe images, and profiles
 with `POST /recipes/{recipe}/reports`,
 `POST /recipe-images/{recipeImage}/reports`, and
-`POST /profiles/{username}/reports`. They can block and unblock profiles with
+`POST /profiles/{username}/reports`. Published recipe comments can be reported
+with `POST /comments/{comment}/reports`; comment text uses the same deterministic
+pre-publication screen as recipe text. They can block and unblock profiles with
 `POST`/`DELETE /profiles/{username}/block` or the equivalent user-ID routes.
 Blocked users and their public recipes are omitted from the blocker's feed and
 detail views.

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ModerationReportController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RecipeCommentController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\RecipeCopyController;
 use App\Http\Controllers\Api\V1\RecipeEngagementController;
@@ -32,6 +33,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.support');
     Route::get('/recipes', [RecipeController::class, 'index'])
         ->name('api.v1.recipes.index');
+    Route::get('/recipes/{recipe}/comments', [RecipeCommentController::class, 'index'])
+        ->name('api.v1.recipes.comments.index');
     Route::post('/recipes/{recipe}/view', [RecipeEngagementController::class, 'view'])
         ->name('api.v1.recipes.view');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
@@ -48,10 +51,14 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.me.profile.update');
         Route::post('/recipes', [RecipeController::class, 'store'])
             ->name('api.v1.recipes.store');
+        Route::post('/recipes/{recipe}/comments', [RecipeCommentController::class, 'store'])
+            ->name('api.v1.recipes.comments.store');
         Route::match(['patch', 'post'], '/recipes/{recipe}', [RecipeController::class, 'update'])
             ->name('api.v1.recipes.update');
         Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])
             ->name('api.v1.recipes.destroy');
+        Route::delete('/comments/{comment}', [RecipeCommentController::class, 'destroy'])
+            ->name('api.v1.comments.destroy');
         Route::post('/recipes/{recipe}/publish', [RecipeController::class, 'publish'])
             ->name('api.v1.recipes.publish');
         Route::post('/recipes/{recipe}/copy', [RecipeCopyController::class, 'store'])
@@ -64,6 +71,8 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipe-images.destroy');
         Route::post('/recipes/{recipe}/reports', [ModerationReportController::class, 'storeRecipe'])
             ->name('api.v1.recipes.reports.store');
+        Route::post('/comments/{comment}/reports', [ModerationReportController::class, 'storeComment'])
+            ->name('api.v1.comments.reports.store');
         Route::post('/recipe-images/{recipeImage}/reports', [ModerationReportController::class, 'storeImage'])
             ->name('api.v1.recipe-images.reports.store');
         Route::post('/profiles/{username}/reports', [ModerationReportController::class, 'storeProfile'])
