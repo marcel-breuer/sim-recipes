@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdminRecipeController;
+use App\Http\Controllers\Api\V1\AdminUserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CameraController;
 use App\Http\Controllers\Api\V1\CategoryController;
@@ -93,6 +95,14 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/users/{user}/block', [UserSafetyController::class, 'unblockUser'])
             ->name('api.v1.users.unblock');
         Route::middleware('admin')->prefix('admin')->group(function (): void {
+            Route::get('/users', [AdminUserController::class, 'index'])
+                ->name('api.v1.admin.users.index');
+            Route::get('/users/{user}', [AdminUserController::class, 'show'])
+                ->name('api.v1.admin.users.show');
+            Route::patch('/users/{user}/suspension', [AdminUserController::class, 'updateSuspension'])
+                ->name('api.v1.admin.users.suspension.update');
+            Route::get('/recipes/{recipe}', [AdminRecipeController::class, 'show'])
+                ->name('api.v1.admin.recipes.show');
             Route::get('/reports', [ModerationReportController::class, 'index'])
                 ->name('api.v1.admin.reports.index');
             Route::patch('/reports/{report}', [ModerationReportController::class, 'update'])
