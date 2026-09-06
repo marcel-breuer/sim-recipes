@@ -47,3 +47,5 @@ The implementation will use a monorepo structure:
 Private repository. No open-source license is granted.
 
 See `PROJECT_SPEC.md` for the MVP specification and `AGENTS.md` for engineering conventions.
+Release-candidate checks and known limitations are tracked in
+`docs/RELEASE_VALIDATION.md`.
