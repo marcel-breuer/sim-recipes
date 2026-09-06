@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\IndexModerationReportRequest;
 use App\Http\Requests\Api\V1\StoreModerationReportRequest;
 use App\Http\Requests\Api\V1\UpdateModerationReportRequest;
 use App\Http\Resources\Api\V1\ModerationReportResource;
@@ -12,7 +13,6 @@ use App\Models\Recipe;
 use App\Models\RecipeComment;
 use App\Models\RecipeImage;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -57,16 +57,45 @@ class ModerationReportController extends Controller
         return $this->store($request, $user);
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(IndexModerationReportRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', ModerationReport::class);
 
-        $query = ModerationReport::query()->latest();
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status')->toString());
+        $filters = $request->validated();
+        $query = ModerationReport::query()
+            ->with(['reporter', 'reportable'])
+            ->orderByRaw("case when status in ('open', 'in_review') then 0 else 1 end")
+            ->latest();
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (isset($filters['reason'])) {
+            $query->where('reason', $filters['reason']);
+        }
+        if (isset($filters['reportable_type'])) {
+            $reportableType = match ($filters['reportable_type']) {
+                'Recipe' => Recipe::class,
+                'RecipeComment' => RecipeComment::class,
+                'RecipeImage' => RecipeImage::class,
+                'User' => User::class,
+            };
+            $query->where('reportable_type', $reportableType);
+        }
+        if (isset($filters['from'])) {
+            $query->whereDate('created_at', '>=', $filters['from']);
+        }
+        if (isset($filters['to'])) {
+            $query->whereDate('created_at', '<=', $filters['to']);
         }
 
-        return ModerationReportResource::collection($query->paginate(50));
+        $reports = $query->paginate($filters['per_page'] ?? 25);
+        $reports->getCollection()->loadMorph('reportable', [
+            Recipe::class => ['user'],
+            RecipeComment::class => ['user'],
+            RecipeImage::class => ['recipe'],
+        ]);
+
+        return ModerationReportResource::collection($reports);
     }
 
     public function update(UpdateModerationReportRequest $request, ModerationReport $report): ModerationReportResource
@@ -75,17 +104,23 @@ class ModerationReportController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($report, $data, $request): void {
+            $report->refresh();
+            if (in_array($report->status, [ModerationReport::STATUS_RESOLVED, ModerationReport::STATUS_REJECTED], true)) {
+                return;
+            }
+
             $resolution = $data['resolution'] ?? 'dismiss';
             $this->applyResolution($report, $resolution);
             $report->forceFill([
                 'status' => $data['status'],
                 'resolution' => $resolution,
+                'reviewer_note' => $data['reviewer_note'] ?? null,
                 'reviewed_by' => $request->user()->getKey(),
                 'reviewed_at' => now(),
             ])->save();
         });
 
-        return new ModerationReportResource($report->fresh());
+        return new ModerationReportResource($report->fresh()->load(['reporter', 'reportable']));
     }
 
     private function store(StoreModerationReportRequest $request, object $reportable): ModerationReportResource

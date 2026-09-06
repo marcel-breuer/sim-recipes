@@ -27,6 +27,7 @@ class UpdateModerationReportRequest extends FormRequest
                 'restore_content',
                 'dismiss',
             ])],
+            'reviewer_note' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ];
     }
 }
