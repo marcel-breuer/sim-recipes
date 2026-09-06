@@ -131,8 +131,8 @@ The initial iOS transport choice is Apple's `ImageCaptureCore` framework:
 the Fujifilm adapter sends PTP commands through `requestSendPTPCommand`. The
 adapter must still verify the X-S20 model, supported property list, response
 codes, and read-back values before reporting a transfer as successful. See
-`docs/CAMERA_USB_PTP_RESEARCH.md` for the research record and hardware test
-plan.
+`docs/camera/X-S20-USB-RESEARCH.md` for the decision record and
+`docs/CAMERA_USB_PTP_RESEARCH.md` for the detailed hardware test plan.
 
 The iOS transfer flow is local-first: it reads a saved recipe, discovers a
 connected X-S20, loads the slots reported by `CameraService`, requires an
