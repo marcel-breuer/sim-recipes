@@ -12,7 +12,6 @@ Create a local environment file from the committed example and replace the
 placeholder secrets:
 
     cp docker/.env.example docker/.env
-    # Use FILESYSTEM_DISK=local for a disposable local stack.
     docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build
 
 The API is available on the port configured by `API_PORT`, defaulting to 8000.
@@ -31,17 +30,23 @@ with `docker compose down`; named PostgreSQL and Redis volumes are retained.
 ## Coolify deployment
 
 Configure the repository as a Docker Compose application in Coolify and select
-`docker/docker-compose.yml`. Import the variable names from
+the repository root (`/`) as the Base Directory and
+`docker/docker-compose.yml` as the Docker Compose Location. The build context
+must remain the repository root because `docker/Dockerfile` copies the Laravel
+application from `backend/`. Import the variable names from
 `docker/.env.example` and provide production values as Coolify runtime
-environment variables, including `APP_KEY`, database/Redis passwords, and
-S3-compatible storage credentials. Set `AUTORUN_LARAVEL_MIGRATION_SEED=true`
+environment variables, including `APP_KEY` and database/Redis passwords. Image
+uploads use the `storage_data` persistent volume through Laravel's local disk.
+Set `AUTORUN_LARAVEL_MIGRATION_SEED=true`
 for the first deployment only, then set it back to `false`. Do not commit the
 resulting `.env` file.
 
 Route only the `api` service to the public domain on container port 8080.
 The queue and scheduler are worker services, while PostgreSQL and Redis have no
 published ports and must remain private to the Compose network. Attach
-persistent volumes to postgres_data and redis_data.
+persistent volumes to postgres_data, redis_data, and storage_data. The API,
+queue, and scheduler share storage_data so uploads and image derivatives are
+available to every application process.
 
 The API image uses Server Side Up's unprivileged `www-data` runtime, PHP 8.4,
 NGINX, PHP-FPM, Composer, PostgreSQL, GD, and Redis extensions. The queue and

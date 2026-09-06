@@ -66,10 +66,10 @@ with runtime values from `docker/README.md`. Confirm that:
 1. `postgres` and `redis` have no public ports.
 2. `api` completes migrations and reports healthy on `/api/v1/health`.
 3. `queue` and `scheduler` reach running state after `api` is healthy.
-4. The API can read and write the configured S3-compatible image storage.
+4. The API can read and write image files in the persistent `storage_data` volume.
 5. A private recipe image is not accessible without authorization.
 6. A published recipe image is accessible through the versioned API endpoint.
-7. A deployment restart preserves PostgreSQL, Redis, and object-storage data.
+7. A deployment restart preserves PostgreSQL, Redis, and image-storage data.
 
 Do not use production credentials in local validation. Coolify secrets belong in
 the deployment environment and must not be copied into this repository.
@@ -91,6 +91,5 @@ successful transfer.
   fully exercised by the local token-verification tests.
 - X-S20 recipe writes remain unavailable until real-device protocol values are
   verified; discovery and safe read-only behavior are still testable separately.
-- Coolify, S3-compatible storage, and real-device smoke tests require protected
-  deployment/hardware environments and are not substitutes for local unit or
-  feature tests.
+- Coolify and real-device smoke tests require protected deployment/hardware
+  environments and are not substitutes for local unit or feature tests.

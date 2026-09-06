@@ -17,7 +17,7 @@
 │ /api/v1                       │
 └───────┬────────┬──────────────┘
         │        │
-        │        └───────────────► S3-compatible object storage
+        │        └───────────────► persistent local storage volume
         │                         original recipe images + derivatives
         │
         ├────────► PostgreSQL
@@ -153,7 +153,7 @@ Expected services:
 - `postgres`
 - `redis`
 
-Only the API service is publicly routable in Coolify. PostgreSQL and Redis remain internal. Persistent data uses Docker/Coolify volumes. Object images live outside the Compose stack in S3-compatible storage.
+Only the API service is publicly routable in Coolify. PostgreSQL and Redis remain internal. PostgreSQL, Redis, and image files use Docker/Coolify persistent volumes. The API, queue, and scheduler share the image-storage volume.
 
 ## API evolution
 
