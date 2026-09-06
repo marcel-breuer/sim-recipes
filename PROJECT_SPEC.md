@@ -189,10 +189,10 @@ Backend stack:
 - PostgreSQL
 - Redis for cache and queues
 - S3-compatible object storage for recipe images
-- Docker Compose
+- Docker Compose (`docker/docker-compose.yml`)
 - Coolify deployment
 
-The root `docker-compose.yml` is the only Compose definition required by the project. It should contain:
+`docker/docker-compose.yml` is the canonical Compose definition. It should contain:
 - API/web service
 - queue worker
 - scheduler

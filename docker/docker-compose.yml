@@ -4,8 +4,8 @@ x-app-environment: &app-environment
   APP_NAME: ${APP_NAME:-SimRecipes}
   APP_ENV: ${APP_ENV:-production}
   APP_DEBUG: ${APP_DEBUG:-false}
-  APP_KEY: ${APP_KEY:-}
-  APP_URL: ${APP_URL:-http://localhost:8000}
+  APP_KEY: ${APP_KEY:?APP_KEY must be set}
+  APP_URL: ${APP_URL:?APP_URL must be set}
   LOG_CHANNEL: ${LOG_CHANNEL:-stack}
   LOG_LEVEL: ${LOG_LEVEL:-info}
   DB_CONNECTION: pgsql
@@ -16,7 +16,7 @@ x-app-environment: &app-environment
   DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
   CACHE_STORE: redis
   QUEUE_CONNECTION: redis
-  SESSION_DRIVER: ${SESSION_DRIVER:-database}
+  SESSION_DRIVER: database
   REDIS_CLIENT: phpredis
   REDIS_HOST: redis
   REDIS_PORT: 6379
@@ -29,14 +29,19 @@ x-app-environment: &app-environment
   AWS_ENDPOINT: ${AWS_ENDPOINT:-}
   AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
   APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
-  APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
-  APPLE_KEY_ID: ${APPLE_KEY_ID:-}
-  APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+  AUTORUN_ENABLED: "true"
+  AUTORUN_LARAVEL_MIGRATION: "true"
+  AUTORUN_LARAVEL_MIGRATION_FORCE: "true"
+  AUTORUN_LARAVEL_MIGRATION_SEED: ${AUTORUN_LARAVEL_MIGRATION_SEED:-false}
+  PHP_OPCACHE_ENABLE: ${PHP_OPCACHE_ENABLE:-1}
+  PHP_UPLOAD_MAX_FILE_SIZE: ${PHP_UPLOAD_MAX_FILE_SIZE:-25M}
+  PHP_POST_MAX_SIZE: ${PHP_POST_MAX_SIZE:-30M}
+  NGINX_CLIENT_MAX_BODY_SIZE: ${NGINX_CLIENT_MAX_BODY_SIZE:-30M}
 
-x-api-service: &api-service
+x-app-service: &app-service
   build:
-    context: ./backend
-    dockerfile: Dockerfile
+    context: ..
+    dockerfile: docker/Dockerfile
   image: ${API_IMAGE:-sim-recipes-api}:${API_IMAGE_TAG:-local}
   restart: unless-stopped
   environment:
@@ -44,13 +49,9 @@ x-api-service: &api-service
 
 services:
   api:
-    <<: *api-service
+    <<: *app-service
     ports:
-      - ${API_PORT:-8000}:8000
-    command:
-      - sh
-      - -c
-      - php artisan migrate --force && exec php artisan serve --host=0.0.0.0 --port=8000
+      - ${API_PORT:-8000}:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,34 +60,39 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - curl --fail --silent http://127.0.0.1:8000/api/v1/health >/dev/null || exit 1
+        - curl --fail --silent http://127.0.0.1:8080/api/v1/health >/dev/null || exit 1
       interval: 30s
       timeout: 5s
-      start_period: 20s
+      start_period: 30s
       retries: 3
 
   queue:
-    <<: *api-service
-    command:
-      - php
-      - artisan
-      - queue:work
-      - --verbose
-      - --tries=3
-      - --timeout=90
+    <<: *app-service
+    command: ["php", "/var/www/html/artisan", "queue:work", "--verbose", "--tries=3", "--timeout=90"]
+    stop_signal: SIGTERM
+    environment:
+      <<: *app-environment
+      AUTORUN_ENABLED: "false"
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
 
   scheduler:
-    <<: *api-service
-    command:
-      - php
-      - artisan
-      - schedule:work
+    <<: *app-service
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    stop_signal: SIGTERM
+    environment:
+      <<: *app-environment
+      AUTORUN_ENABLED: "false"
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s
 
   postgres:
     image: postgres:17-alpine

@@ -35,10 +35,9 @@ docker run --rm \
 Validate the single deployment definition without starting services:
 
 ```sh
-DB_DATABASE=sim_recipes_test \
-DB_USERNAME=sim_recipes \
-DB_PASSWORD=sim_recipes_test_password \
-docker compose config --quiet
+cp docker/.env.example docker/.env
+docker compose --env-file docker/.env \
+  -f docker/docker-compose.yml config --quiet
 ```
 
 The backend suite covers authentication, recipe lifecycle and immutability,
@@ -61,7 +60,7 @@ provenance, moderation, blocking, authorization, and database constraints.
 
 ## Deployment smoke test
 
-For a release candidate, configure the root `docker-compose.yml` in Coolify
+For a release candidate, configure `docker/docker-compose.yml` in Coolify
 with runtime values from `docker/README.md`. Confirm that:
 
 1. `postgres` and `redis` have no public ports.
