@@ -92,9 +92,11 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.users.block');
         Route::delete('/users/{user}/block', [UserSafetyController::class, 'unblockUser'])
             ->name('api.v1.users.unblock');
-        Route::get('/admin/reports', [ModerationReportController::class, 'index'])
-            ->name('api.v1.admin.reports.index');
-        Route::patch('/admin/reports/{report}', [ModerationReportController::class, 'update'])
-            ->name('api.v1.admin.reports.update');
+        Route::middleware('admin')->prefix('admin')->group(function (): void {
+            Route::get('/reports', [ModerationReportController::class, 'index'])
+                ->name('api.v1.admin.reports.index');
+            Route::patch('/reports/{report}', [ModerationReportController::class, 'update'])
+                ->name('api.v1.admin.reports.update');
+        });
     });
 });
