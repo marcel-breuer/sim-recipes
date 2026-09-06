@@ -29,6 +29,37 @@ class ModerationTest extends TestCase
         $this->assertDatabaseMissing('recipes', ['name' => 'Porn recipe']);
     }
 
+    public function test_objectionable_recipe_text_is_rejected_before_publication(): void
+    {
+        $user = User::factory()->create();
+        $recipe = Recipe::create([
+            'user_id' => $user->id,
+            'camera_model_id' => $this->createCamera()->id,
+            'name' => 'Porn recipe',
+            'status' => Recipe::STATUS_PRIVATE,
+        ]);
+        $recipe->images()->create([
+            'storage_disk' => 'local',
+            'original_path' => 'recipes/'.$recipe->id.'/original.jpg',
+            'original_size_bytes' => 1024,
+            'mime_type' => 'image/jpeg',
+            'sort_order' => 0,
+            'processing_status' => 'ready',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/recipes/'.$recipe->id.'/publish')
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+
+        $this->assertDatabaseHas('recipes', [
+            'id' => $recipe->id,
+            'status' => Recipe::STATUS_PRIVATE,
+            'published_at' => null,
+        ]);
+    }
+
     public function test_user_can_report_recipe_and_admin_can_hide_it(): void
     {
         $author = User::factory()->create();

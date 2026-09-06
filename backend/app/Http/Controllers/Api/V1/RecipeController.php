@@ -145,10 +145,17 @@ class RecipeController extends Controller
         return response()->json(['data' => ['deleted' => true]]);
     }
 
-    public function publish(Recipe $recipe): RecipeResource
+    public function publish(Recipe $recipe, UserGeneratedContentSafety $contentSafety): RecipeResource
     {
         Gate::authorize('publish', $recipe);
         abort_if($recipe->images()->count() < 1, 422, 'A recipe must have at least one image before publication.');
+        $contentSafety->assertAllowed([
+            'name' => $recipe->name,
+            'description' => $recipe->description,
+            'recommendation' => $recipe->recommendation,
+            'lens' => $recipe->lens,
+            'tags' => $recipe->tags->pluck('name')->all(),
+        ]);
 
         $recipe = DB::transaction(function () use ($recipe): Recipe {
             $recipe->status = Recipe::STATUS_PUBLISHED;
