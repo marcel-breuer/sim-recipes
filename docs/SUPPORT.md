@@ -10,3 +10,6 @@ other secrets.
 Moderation reports are reviewed through the authenticated admin API. Reported
 content can be hidden and abusive accounts can be suspended while the report
 is resolved.
+
+The moderation queue records report status and review timestamps so the team
+can monitor response time and follow up on unresolved concerns.
