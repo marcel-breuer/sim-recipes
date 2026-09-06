@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignUlid('recipe_id')
                 ->constrained('recipes')
                 ->cascadeOnDelete();
-            $table->string('storage_disk')->default('s3');
+            $table->string('storage_disk')->default('local');
             $table->string('original_path');
             $table->unsignedBigInteger('original_size_bytes');
             $table->string('mime_type', 100);

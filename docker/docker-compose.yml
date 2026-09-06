@@ -21,13 +21,7 @@ x-app-environment: &app-environment
   REDIS_HOST: redis
   REDIS_PORT: 6379
   REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-s3}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-  AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-central-1}
-  AWS_BUCKET: ${AWS_BUCKET:-}
-  AWS_ENDPOINT: ${AWS_ENDPOINT:-}
-  AWS_USE_PATH_STYLE_ENDPOINT: ${AWS_USE_PATH_STYLE_ENDPOINT:-false}
+  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
   APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
   AUTORUN_ENABLED: "true"
   AUTORUN_LARAVEL_MIGRATION: "true"
@@ -44,6 +38,8 @@ x-app-service: &app-service
     dockerfile: docker/Dockerfile
   image: ${API_IMAGE:-sim-recipes-api}:${API_IMAGE_TAG:-local}
   restart: unless-stopped
+  volumes:
+    - storage_data:/var/www/html/storage/app
   environment:
     <<: *app-environment
 
@@ -143,3 +139,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  storage_data:

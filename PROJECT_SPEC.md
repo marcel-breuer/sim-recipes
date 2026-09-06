@@ -97,11 +97,13 @@ Free-form tags exist in addition to categories.
 - Maximum: 5 images per recipe.
 - Maximum original image size: 25 MB per image.
 - Maximum backend image storage quota: 5 GB per user.
-- Original uploaded images are retained in object storage.
+- Original uploaded images are retained in the backend's persistent local storage.
 - The backend may generate optimized thumbnails/derivatives for feeds and detail screens.
 - Saved recipes and suitable image representations are cached locally for offline usage.
 
-The backend uses an S3-compatible object-storage abstraction. Storage-provider-specific behavior must not leak into the iOS domain layer.
+The backend uses Laravel's filesystem abstraction with the local disk for recipe
+images. Storage-provider-specific behavior must not leak into the iOS domain
+layer.
 
 ## 8. Fujifilm X-S20 recipe settings
 
@@ -188,7 +190,7 @@ Backend stack:
 - Laravel REST API
 - PostgreSQL
 - Redis for cache and queues
-- S3-compatible object storage for recipe images
+- Persistent local filesystem storage for recipe images
 - Docker Compose (`docker/docker-compose.yml`)
 - Coolify deployment
 

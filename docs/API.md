@@ -98,7 +98,7 @@ through `GET /recipes/{recipe}/comments`; hidden, deleted, suspended-user, and
 blocked-user comments are omitted. Authors can soft-delete their own comments
 with `DELETE /comments/{comment}`.
 
-Recipe image URLs are API URLs rather than direct object-storage URLs. The
+Recipe image URLs are API URLs rather than direct storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images
 behind the same ownership boundary. Private recipe owners may delete images;

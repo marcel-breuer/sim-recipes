@@ -11,7 +11,7 @@ The MVP targets the Fujifilm X-S20 and iPhone. Users can browse public recipes a
 - Backend: Laravel REST API
 - Database: PostgreSQL
 - Cache and queues: Redis
-- Image storage: S3-compatible object storage
+- Image storage: Laravel local filesystem on a persistent Docker volume
 - Deployment: Docker Compose on Coolify
 - Initial camera: Fujifilm X-S20
 
