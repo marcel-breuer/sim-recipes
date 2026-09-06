@@ -320,6 +320,22 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertFalse(camera.isX20Candidate)
     }
 
+    func testCameraSessionStateIdentifiesConnectionLifecycle() {
+        XCTAssertEqual(CameraSessionState.disconnected, .disconnected)
+        XCTAssertEqual(
+            CameraSessionState.opening(cameraID: "camera-1"),
+            .opening(cameraID: "camera-1")
+        )
+        XCTAssertEqual(
+            CameraSessionState.connected(cameraID: "camera-1"),
+            .connected(cameraID: "camera-1")
+        )
+        XCTAssertNotEqual(
+            CameraSessionState.opening(cameraID: "camera-1"),
+            .connected(cameraID: "camera-1")
+        )
+    }
+
     func testGetDeviceInfoCommandIsReadOnlyPTPCommand() {
         XCTAssertEqual(
             Array(PTPCommand.getDeviceInfo(transactionID: 1).encoded),
