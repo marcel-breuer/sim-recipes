@@ -33,6 +33,8 @@ class CrawlProtectionTest extends TestCase
             ->assertDontSee('fonts.googleapis.com', false)
             ->assertDontSee('fonts.gstatic.com', false)
             ->assertDontSee('simrecipes-camera.png', false)
-            ->assertDontSee('github.com', false);
+            ->assertDontSee('github.com', false)
+            ->assertSee('href="https://marcel-breuer.dev/impressum" target="_blank" rel="noopener noreferrer"', false)
+            ->assertSee('href="https://marcel-breuer.dev/datenschutz" target="_blank" rel="noopener noreferrer"', false);
     }
 }
