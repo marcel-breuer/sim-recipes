@@ -106,6 +106,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'is_suspended' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
     }
 }

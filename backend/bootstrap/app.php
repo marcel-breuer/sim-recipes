@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\RejectSuspendedUsers;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\RejectSuspendedUsers;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
