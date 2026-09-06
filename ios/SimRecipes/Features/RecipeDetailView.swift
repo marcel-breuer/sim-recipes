@@ -7,11 +7,14 @@ struct RecipeDetailView: View {
     var viewAction: (() async throws -> RecipeEngagementTransport)?
     var likeAction: (() async throws -> RecipeEngagementTransport)?
     var unlikeAction: (() async throws -> RecipeEngagementTransport)?
+    var reportAction: (() async throws -> Void)?
+    var blockAction: (() async throws -> Void)?
     @State private var isCopying = false
     @State private var isLiking = false
     @State private var isLiked: Bool
     @State private var likesCount: Int
     @State private var message: String?
+    @State private var isSubmittingSafetyAction = false
 
     init(
         recipe: RecipeTransport,
@@ -19,7 +22,9 @@ struct RecipeDetailView: View {
         copyAction: (() async throws -> RecipeTransport)? = nil,
         viewAction: (() async throws -> RecipeEngagementTransport)? = nil,
         likeAction: (() async throws -> RecipeEngagementTransport)? = nil,
-        unlikeAction: (() async throws -> RecipeEngagementTransport)? = nil
+        unlikeAction: (() async throws -> RecipeEngagementTransport)? = nil,
+        reportAction: (() async throws -> Void)? = nil,
+        blockAction: (() async throws -> Void)? = nil
     ) {
         self.recipe = recipe
         self.transferService = transferService
@@ -27,6 +32,8 @@ struct RecipeDetailView: View {
         self.viewAction = viewAction
         self.likeAction = likeAction
         self.unlikeAction = unlikeAction
+        self.reportAction = reportAction
+        self.blockAction = blockAction
         _isLiked = State(initialValue: recipe.isLiked ?? false)
         _likesCount = State(initialValue: recipe.likesCount)
     }
@@ -155,6 +162,26 @@ struct RecipeDetailView: View {
                     .disabled(isCopying)
                 }
             }
+            if reportAction != nil || blockAction != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        if let reportAction {
+                            Button("Report recipe", role: .destructive) {
+                                Task { await submitSafetyAction(reportAction, success: "Thanks. The recipe was reported for review.") }
+                            }
+                        }
+                        if let blockAction {
+                            Button("Block creator", role: .destructive) {
+                                Task { await submitSafetyAction(blockAction, success: "The creator was blocked.") }
+                            }
+                        }
+                    } label: {
+                        Label("Safety options", systemImage: "ellipsis.circle")
+                    }
+                    .disabled(isSubmittingSafetyAction)
+                    .accessibilityLabel("Safety options")
+                }
+            }
         }
         .task {
             guard let viewAction else { return }
@@ -187,6 +214,22 @@ struct RecipeDetailView: View {
             if let count = response.likesCount {
                 likesCount = count
             }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func submitSafetyAction(
+        _ action: @escaping () async throws -> Void,
+        success: String
+    ) async {
+        guard !isSubmittingSafetyAction else { return }
+        isSubmittingSafetyAction = true
+        defer { isSubmittingSafetyAction = false }
+
+        do {
+            try await action()
+            message = success
         } catch {
             message = error.localizedDescription
         }

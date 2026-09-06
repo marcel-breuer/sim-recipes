@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Recipes\RecipeEngagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class RecipeEngagementController extends Controller
 {
@@ -69,6 +70,11 @@ class RecipeEngagementController extends Controller
 
     private function ensurePublished(Recipe $recipe): void
     {
-        abort_unless($recipe->status === Recipe::STATUS_PUBLISHED, 404);
+        abort_unless(
+            $recipe->status === Recipe::STATUS_PUBLISHED
+                && ! $recipe->is_hidden
+                && Gate::allows('view', $recipe),
+            404,
+        );
     }
 }

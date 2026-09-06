@@ -4,11 +4,14 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CameraController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\ModerationReportController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\RecipeCopyController;
 use App\Http\Controllers\Api\V1\RecipeEngagementController;
 use App\Http\Controllers\Api\V1\RecipeImageController;
+use App\Http\Controllers\Api\V1\SupportController;
+use App\Http\Controllers\Api\V1\UserSafetyController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -25,6 +28,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.cameras.show');
     Route::get('/categories', [CategoryController::class, 'index'])
         ->name('api.v1.categories.index');
+    Route::get('/support', SupportController::class)
+        ->name('api.v1.support');
     Route::get('/recipes', [RecipeController::class, 'index'])
         ->name('api.v1.recipes.index');
     Route::post('/recipes/{recipe}/view', [RecipeEngagementController::class, 'view'])
@@ -34,7 +39,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])
         ->name('api.v1.recipe-images.show');
 
-    Route::middleware('auth.api:sanctum')->group(function (): void {
+    Route::middleware(['auth.api:sanctum', 'active.account'])->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout'])
             ->name('api.v1.auth.logout');
         Route::get('/me/profile', [ProfileController::class, 'mine'])
@@ -57,5 +62,25 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipes.unlike');
         Route::delete('/recipe-images/{recipeImage}', [RecipeImageController::class, 'destroy'])
             ->name('api.v1.recipe-images.destroy');
+        Route::post('/recipes/{recipe}/reports', [ModerationReportController::class, 'storeRecipe'])
+            ->name('api.v1.recipes.reports.store');
+        Route::post('/recipe-images/{recipeImage}/reports', [ModerationReportController::class, 'storeImage'])
+            ->name('api.v1.recipe-images.reports.store');
+        Route::post('/profiles/{username}/reports', [ModerationReportController::class, 'storeProfile'])
+            ->name('api.v1.profiles.reports.store');
+        Route::post('/users/{user}/reports', [ModerationReportController::class, 'storeUser'])
+            ->name('api.v1.users.reports.store');
+        Route::post('/profiles/{username}/block', [UserSafetyController::class, 'block'])
+            ->name('api.v1.profiles.block');
+        Route::delete('/profiles/{username}/block', [UserSafetyController::class, 'unblock'])
+            ->name('api.v1.profiles.unblock');
+        Route::post('/users/{user}/block', [UserSafetyController::class, 'blockUser'])
+            ->name('api.v1.users.block');
+        Route::delete('/users/{user}/block', [UserSafetyController::class, 'unblockUser'])
+            ->name('api.v1.users.unblock');
+        Route::get('/admin/reports', [ModerationReportController::class, 'index'])
+            ->name('api.v1.admin.reports.index');
+        Route::patch('/admin/reports/{report}', [ModerationReportController::class, 'update'])
+            ->name('api.v1.admin.reports.update');
     });
 });

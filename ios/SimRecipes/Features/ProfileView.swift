@@ -123,6 +123,11 @@ struct ProfileView: View {
                     }
                 }
             }
+
+            Section("Safety and support") {
+                Link("Community standards", destination: AppConfiguration.communityStandardsURL)
+                Link("Contact support", destination: AppConfiguration.supportEmailURL)
+            }
         }
     }
 

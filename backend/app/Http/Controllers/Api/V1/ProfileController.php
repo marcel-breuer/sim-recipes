@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\ProfileResource;
 use App\Models\Profile;
+use App\Models\User;
+use App\Models\UserBlock;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +19,19 @@ class ProfileController extends Controller
         $profile = $this->profileQuery()
             ->where('username', $username)
             ->firstOrFail();
+
+        abort_if(
+            User::query()->whereKey($profile->user_id)->where('is_suspended', true)->exists(),
+            404,
+        );
+        abort_if(
+            request()->user() instanceof User
+                && UserBlock::query()
+                    ->where('blocker_id', request()->user()->getKey())
+                    ->where('blocked_user_id', $profile->user_id)
+                    ->exists(),
+            404,
+        );
 
         return new ProfileResource($profile);
     }
