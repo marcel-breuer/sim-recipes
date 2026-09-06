@@ -6,7 +6,7 @@ final class SimRecipesTests: XCTestCase {
     func testRootTabsExposeCoreProductSections() {
         XCTAssertEqual(
             AppTab.allCases,
-            [.explore, .library, .profile]
+            [.explore, .library, .create, .profile]
         )
     }
 
