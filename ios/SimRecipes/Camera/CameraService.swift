@@ -45,6 +45,38 @@ struct CameraSlotSnapshot: Equatable, Sendable {
     let properties: [UInt16: Data]
 }
 
+enum CameraSlotReadState: Equatable, Sendable {
+    case notSelected
+    case readable(propertyCount: Int)
+}
+
+struct CameraSlotDescriptor: Equatable, Identifiable, Sendable {
+    let slot: CameraSlot
+    let name: String?
+    let readState: CameraSlotReadState
+
+    var id: UInt8 { slot.rawValue }
+}
+
+enum CameraSlotDescriptorFactory {
+    static func make(
+        slots: [CameraSlot],
+        currentSnapshot: CameraSlotSnapshot?
+    ) -> [CameraSlotDescriptor] {
+        slots.map { slot in
+            if let currentSnapshot, currentSnapshot.slot == slot {
+                return CameraSlotDescriptor(
+                    slot: slot,
+                    name: nil,
+                    readState: .readable(propertyCount: currentSnapshot.properties.count)
+                )
+            }
+
+            return CameraSlotDescriptor(slot: slot, name: nil, readState: .notSelected)
+        }
+    }
+}
+
 struct CameraSlotOverwriteConfirmation: Equatable, Sendable {
     let slot: CameraSlot
 
@@ -154,6 +186,7 @@ protocol CameraService: AnyObject {
     func readDeviceInfo() async throws -> PTPResponseHeader
     func readProperty(_ propertyCode: UInt16) async throws -> Data
     func availableSlots() async throws -> [CameraSlot]
+    func readSlotDescriptors(propertyCodes: [UInt16]) async throws -> [CameraSlotDescriptor]
     func readCurrentSlotSnapshot(propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot
     func readSelectedSlot(_ slot: CameraSlot, propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot
     func transferRecipe(

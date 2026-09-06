@@ -98,6 +98,13 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         return CameraSlot.allCases
     }
 
+    func readSlotDescriptors(propertyCodes: [UInt16]) async throws -> [CameraSlotDescriptor] {
+        let slots = try await availableSlots()
+        let snapshot = try? await readCurrentSlotSnapshot(propertyCodes: propertyCodes)
+
+        return CameraSlotDescriptorFactory.make(slots: slots, currentSnapshot: snapshot)
+    }
+
     func readCurrentSlotSnapshot(propertyCodes: [UInt16]) async throws -> CameraSlotSnapshot {
         let selectedSlotData = try await readProperty(0xD18C)
         guard let selectedSlot = selectedSlotData.cameraSlotValue,

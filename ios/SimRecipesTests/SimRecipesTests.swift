@@ -336,6 +336,19 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testSlotDescriptorsExposeOnlyTheSelectedSlotAsReadable() {
+        let descriptors = CameraSlotDescriptorFactory.make(
+            slots: CameraSlot.allCases,
+            currentSnapshot: CameraSlotSnapshot(slot: .c2, properties: [0xD192: Data([1, 0])])
+        )
+
+        XCTAssertEqual(descriptors.count, 4)
+        XCTAssertEqual(descriptors[1].slot, .c2)
+        XCTAssertEqual(descriptors[1].name, nil)
+        XCTAssertEqual(descriptors[1].readState, .readable(propertyCount: 1))
+        XCTAssertEqual(descriptors[0].readState, .notSelected)
+    }
+
     func testGetDeviceInfoCommandIsReadOnlyPTPCommand() {
         XCTAssertEqual(
             Array(PTPCommand.getDeviceInfo(transactionID: 1).encoded),
