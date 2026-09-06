@@ -92,6 +92,11 @@ class Recipe extends Model
         return $this->hasMany(RecipeDownload::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(RecipeComment::class);
+    }
+
     public function provenance(): HasOne
     {
         return $this->hasOne(RecipeProvenance::class, 'copied_recipe_id');

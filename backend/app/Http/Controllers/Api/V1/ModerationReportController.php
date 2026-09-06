@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\ModerationReportResource;
 use App\Models\ModerationReport;
 use App\Models\Profile;
 use App\Models\Recipe;
+use App\Models\RecipeComment;
 use App\Models\RecipeImage;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,6 +32,13 @@ class ModerationReportController extends Controller
         abort_unless($recipe instanceof Recipe && $this->isReportableRecipe($recipe), 404);
 
         return $this->store($request, $recipeImage);
+    }
+
+    public function storeComment(StoreModerationReportRequest $request, RecipeComment $comment): ModerationReportResource
+    {
+        abort_unless($this->isReportableComment($comment), 404);
+
+        return $this->store($request, $comment);
     }
 
     public function storeProfile(StoreModerationReportRequest $request, string $username): ModerationReportResource
@@ -128,6 +136,20 @@ class ModerationReportController extends Controller
                 'moderated_at' => now(),
                 'moderation_reason' => $report->reason,
             ])->save();
+        } elseif ($target instanceof RecipeComment) {
+            if ($resolution === 'hide_content') {
+                $target->forceFill([
+                    'is_hidden' => true,
+                    'moderated_at' => now(),
+                    'moderation_reason' => $report->reason,
+                ])->save();
+            } elseif ($resolution === 'restore_content') {
+                $target->forceFill([
+                    'is_hidden' => false,
+                    'moderated_at' => null,
+                    'moderation_reason' => null,
+                ])->save();
+            }
         } elseif ($target instanceof User) {
             if ($resolution === 'suspend_user') {
                 $target->forceFill(['is_suspended' => true])->save();
@@ -135,5 +157,17 @@ class ModerationReportController extends Controller
                 $target->forceFill(['is_suspended' => false])->save();
             }
         }
+    }
+
+    private function isReportableComment(RecipeComment $comment): bool
+    {
+        $recipe = $comment->recipe;
+
+        return $recipe instanceof Recipe
+            && $recipe->status === Recipe::STATUS_PUBLISHED
+            && ! $recipe->is_hidden
+            && ! $comment->is_hidden
+            && ! $recipe->user()->where('is_suspended', true)->exists()
+            && ! $comment->user()->where('is_suspended', true)->exists();
     }
 }
