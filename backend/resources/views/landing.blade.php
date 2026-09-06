@@ -11,7 +11,7 @@
     <meta property="og:description" content="A considered library of Fujifilm film-simulation recipes.">
     <meta property="og:url" content="https://simrecipes.marcel-breuer.dev/">
     <meta name="theme-color" content="#08090a">
-    <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
+    <link rel="stylesheet" href="/css/landing.css">
 </head>
 <body class="antialiased selection:bg-slate-200 selection:text-black">
 <header class="site-header">
@@ -42,7 +42,7 @@
         <div class="hero-visual" aria-label="Camera preview">
             <div class="visual-grid"></div>
             <div class="visual-label visual-label-top">FUJIFILM / X-S20</div>
-            <img src="{{ asset('images/simrecipes-camera.png') }}" alt="Black mirrorless camera in cool studio light">
+            <img src="/images/simrecipes-camera.png" alt="Black mirrorless camera in cool studio light">
             <div class="visual-label visual-label-bottom">01 / 04 &nbsp;—&nbsp; TRANSFER READY</div>
         </div>
     </section>
