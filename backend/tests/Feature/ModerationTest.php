@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CameraModel;
+use App\Models\ModerationReport;
 use App\Models\Profile;
 use App\Models\Recipe;
 use App\Models\User;
@@ -133,6 +134,62 @@ class ModerationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.blocked', false);
         $this->getJson('/api/v1/recipes/'.$recipe->id)->assertOk();
+    }
+
+    public function test_admin_report_queue_returns_context_and_supports_filters(): void
+    {
+        $author = User::factory()->create();
+        $reporter = User::factory()->create();
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $recipe = Recipe::create([
+            'user_id' => $author->id,
+            'camera_model_id' => $this->createCamera()->id,
+            'name' => 'Queue context recipe',
+            'status' => Recipe::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+
+        Sanctum::actingAs($reporter);
+        $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
+            'reason' => 'spam',
+        ])->assertCreated();
+
+        Sanctum::actingAs($admin);
+        $this->getJson('/api/v1/admin/reports?reason=spam&reportable_type=Recipe')
+            ->assertOk()
+            ->assertJsonPath('data.0.context.type', 'recipe')
+            ->assertJsonPath('data.0.context.name', 'Queue context recipe')
+            ->assertJsonPath('data.0.reporter.id', $reporter->id);
+    }
+
+    public function test_resolving_a_report_is_idempotent(): void
+    {
+        $author = User::factory()->create();
+        $reporter = User::factory()->create();
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $recipe = Recipe::create([
+            'user_id' => $author->id,
+            'camera_model_id' => $this->createCamera()->id,
+            'name' => 'Idempotent report recipe',
+            'status' => Recipe::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+
+        Sanctum::actingAs($reporter);
+        $report = $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
+            'reason' => 'objectionable_content',
+        ])->json('data.id');
+
+        Sanctum::actingAs($admin);
+        $payload = ['status' => 'resolved', 'resolution' => 'hide_content', 'reviewer_note' => 'Hidden.'];
+        $this->patchJson('/api/v1/admin/reports/'.$report, $payload)->assertOk();
+        $firstReviewedAt = ModerationReport::query()->findOrFail($report)->reviewed_at;
+        $this->patchJson('/api/v1/admin/reports/'.$report, $payload)
+            ->assertOk()
+            ->assertJsonPath('data.reviewer_note', 'Hidden.');
+        $this->assertEquals($firstReviewedAt?->toISOString(), ModerationReport::query()->findOrFail($report)->reviewed_at?->toISOString());
     }
 
     private function createCamera(): CameraModel

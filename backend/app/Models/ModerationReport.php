@@ -29,6 +29,7 @@ class ModerationReport extends Model
         'reviewed_by',
         'reviewed_at',
         'resolution',
+        'reviewer_note',
     ];
 
     protected function casts(): array
