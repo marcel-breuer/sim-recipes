@@ -16,11 +16,17 @@ class CameraModel extends Model
         'slug',
         'model_identifier',
         'is_supported',
+        'unsupported_recipe_settings',
+        'transport_metadata',
     ];
 
     protected function casts(): array
     {
-        return ['is_supported' => 'boolean'];
+        return [
+            'is_supported' => 'boolean',
+            'unsupported_recipe_settings' => 'array',
+            'transport_metadata' => 'array',
+        ];
     }
 
     public function capabilities(): HasMany

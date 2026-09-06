@@ -25,6 +25,8 @@ class CameraModelResource extends JsonResource
             'slug' => $this->resource->getAttribute('slug'),
             'model_identifier' => $this->resource->getAttribute('model_identifier'),
             'is_supported' => $this->resource->getAttribute('is_supported'),
+            'unsupported_recipe_settings' => $this->resource->getAttribute('unsupported_recipe_settings'),
+            'transport_metadata' => $this->resource->getAttribute('transport_metadata'),
             'capabilities' => CameraCapabilityResource::collection(
                 $capabilities instanceof Collection
                     ? $capabilities->filter(static fn (mixed $capability): bool => $capability instanceof CameraCapability)

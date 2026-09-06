@@ -22,9 +22,11 @@ class CameraCapabilityApiTest extends TestCase
 
         $this->getJson('/api/v1/cameras')
             ->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.slug', 'fujifilm-x-s20')
             ->assertJsonCount(15, 'data.0.capabilities')
+            ->assertJsonPath('data.1.slug', 'fujifilm-x-t5')
+            ->assertJsonPath('data.1.unsupported_recipe_settings.0', 'monochromatic_color')
             ->assertJsonFragment([
                 'key' => 'film_simulation',
                 'display_name' => 'Film Simulation',
@@ -35,12 +37,29 @@ class CameraCapabilityApiTest extends TestCase
             ->assertJsonPath('data.model_identifier', 'X-S20')
             ->assertJsonCount(15, 'data.capabilities');
 
+        $xT5 = CameraModel::query()->where('slug', 'fujifilm-x-t5')->firstOrFail();
+
+        $this->getJson('/api/v1/cameras/'.$xT5->id)
+            ->assertOk()
+            ->assertJsonPath('data.model_identifier', 'X-T5')
+            ->assertJsonPath('data.transport_metadata.property_reads', 'unverified')
+            ->assertJsonCount(15, 'data.capabilities');
+
         $this->getJson('/api/v1/cameras/fujifilm-x-s20/capabilities')
             ->assertOk()
             ->assertJsonCount(15, 'data')
             ->assertJsonFragment([
                 'key' => 'dynamic_range',
                 'allowed_values' => ['AUTO', '100%', '200%', '400%'],
+            ]);
+
+        $this->getJson('/api/v1/cameras/fujifilm-x-t5/capabilities')
+            ->assertOk()
+            ->assertJsonCount(15, 'data')
+            ->assertJsonFragment([
+                'key' => 'iso',
+                'minimum' => 64,
+                'maximum' => 51200,
             ]);
     }
 
@@ -110,5 +129,31 @@ class CameraCapabilityApiTest extends TestCase
             'name' => 'Valid X-S20 Recipe',
             'status' => Recipe::STATUS_PRIVATE,
         ]);
+    }
+
+    public function test_x_t5_has_model_specific_film_simulation_and_iso_values(): void
+    {
+        $this->seed(CameraCapabilitySeeder::class);
+        $camera = CameraModel::query()->where('slug', 'fujifilm-x-t5')->firstOrFail();
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/recipes', [
+            'name' => 'Valid X-T5 Recipe',
+            'camera_model_id' => $camera->id,
+            'settings' => [
+                ['setting_key' => 'film_simulation', 'value' => 'REALA ACE'],
+                ['setting_key' => 'iso', 'value' => 64],
+            ],
+        ])->assertOk();
+
+        $this->postJson('/api/v1/recipes', [
+            'name' => 'X-T5 AUTO Simulation',
+            'camera_model_id' => $camera->id,
+            'settings' => [
+                ['setting_key' => 'film_simulation', 'value' => 'AUTO'],
+            ],
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
     }
 }
