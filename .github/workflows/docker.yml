@@ -46,14 +46,14 @@ jobs:
 
       - name: Validate Compose configuration
         if: ${{ steps.project.outputs.type == 'compose' }}
-        run: docker compose --env-file docker/.env -f docker/docker-compose.yml config --quiet
+        run: docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml config --quiet
 
       - name: Build Compose services
         if: ${{ steps.project.outputs.type == 'compose' }}
         env:
           COMPOSE_DOCKER_CLI_BUILD: '1'
           DOCKER_BUILDKIT: '1'
-        run: docker compose --env-file docker/.env -f docker/docker-compose.yml build
+        run: docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml build
 
       - name: Start Compose stack
         if: ${{ steps.project.outputs.type == 'compose' }}
@@ -65,7 +65,7 @@ jobs:
           DB_PASSWORD: sim_recipes_ci_password
           REDIS_PASSWORD: ''
           AUTORUN_LARAVEL_MIGRATION_SEED: 'false'
-        run: docker compose --env-file docker/.env -f docker/docker-compose.yml up -d
+        run: docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml up -d
 
       - name: Smoke test Compose stack
         if: ${{ steps.project.outputs.type == 'compose' }}
@@ -79,14 +79,14 @@ jobs:
           AUTORUN_LARAVEL_MIGRATION_SEED: 'false'
         run: |
           set -euo pipefail
-          docker compose --env-file docker/.env -f docker/docker-compose.yml ps
-          docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T api curl --fail --silent http://127.0.0.1:8080/api/v1/health
-          docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T api php artisan db:seed --force
-          docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T api curl --fail --silent http://127.0.0.1:8080/api/v1/cameras
+          docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml ps
+          docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec -T api curl --fail --silent http://127.0.0.1:8080/api/v1/health
+          docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec -T api php artisan db:seed --force
+          docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec -T api curl --fail --silent http://127.0.0.1:8080/api/v1/cameras
 
       - name: Stop Compose stack
         if: ${{ always() && steps.project.outputs.type == 'compose' }}
-        run: docker compose --env-file docker/.env -f docker/docker-compose.yml down -v
+        run: docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml down -v
 
       - name: Build API image
         if: ${{ steps.project.outputs.type == 'api' }}

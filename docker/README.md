@@ -12,7 +12,7 @@ Create a local environment file from the committed example and replace the
 placeholder secrets:
 
     cp docker/.env.example docker/.env
-    docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build
+    docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml up -d --build
 
 The API listens on container port `8080`. For local host access, publish that
 port explicitly in your local Compose setup; production Coolify deployments
@@ -24,7 +24,7 @@ healthy API container and use the same application image.
 
 Seed the X-S20 camera catalog explicitly on a new database:
 
-    docker compose --env-file docker/.env -f docker/docker-compose.yml \
+    docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml \
         exec api php artisan db:seed --force
 
 Use `docker compose ps` and `docker compose logs` to inspect the stack. Stop it
