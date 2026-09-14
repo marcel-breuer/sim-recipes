@@ -302,7 +302,31 @@ enum RecipeSyncState: String, Codable, Sendable {
     case localOnly
     case synced
     case pendingUpload
+    case retrying
+    case failed
     case conflict
+
+    var title: String {
+        switch self {
+        case .localOnly: "Local only"
+        case .synced: "Synced"
+        case .pendingUpload: "Pending upload"
+        case .retrying: "Retrying"
+        case .failed: "Sync failed"
+        case .conflict: "Needs review"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .localOnly: "iphone"
+        case .synced: "checkmark.icloud"
+        case .pendingUpload: "arrow.up.circle"
+        case .retrying: "arrow.clockwise.icloud"
+        case .failed: "exclamationmark.icloud"
+        case .conflict: "exclamationmark.triangle"
+        }
+    }
 }
 
 struct RecipeSettingTransport: Codable, Equatable, Sendable {

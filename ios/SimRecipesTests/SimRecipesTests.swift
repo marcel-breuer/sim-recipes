@@ -240,6 +240,22 @@ final class SimRecipesTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalStoreOffersExplicitServerConflictResolution() throws {
+        let localRecipe = makeRecipe(id: "resolution", name: "Keep local", isPublished: false)
+        let serverRecipe = makeRecipe(id: "resolution", name: "Keep server", isPublished: false)
+        let localStore = try LocalRecipeStore(inMemory: true)
+
+        try localStore.saveLocally(localRecipe)
+        XCTAssertEqual(try localStore.mergeRemote(serverRecipe), .conflict)
+        XCTAssertEqual(try localStore.conflictServerRecipe(for: localRecipe.id)?.name, "Keep server")
+
+        try localStore.resolveConflict(id: localRecipe.id, resolution: .keepServer)
+
+        XCTAssertEqual(try localStore.recipe(id: localRecipe.id)?.name, "Keep server")
+        XCTAssertEqual(try localStore.syncState(for: localRecipe.id), .synced)
+    }
+
+    @MainActor
     func testRepositorySynchronizesPaginatedRecipes() async throws {
         let firstRecipe = makeRecipe(id: "page-1")
         let secondRecipe = makeRecipe(id: "page-2")
