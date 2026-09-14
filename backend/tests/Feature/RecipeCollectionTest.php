@@ -36,7 +36,7 @@ class RecipeCollectionTest extends TestCase
         $response = $this->postJson('/api/v1/collections', [
             'name' => 'Street set',
             'is_public' => false,
-        ])->assertOk()
+        ])->assertCreated()
             ->assertJsonPath('data.name', 'Street set')
             ->assertJsonPath('data.sort_order', 1);
         $collectionID = $response->json('data.id');

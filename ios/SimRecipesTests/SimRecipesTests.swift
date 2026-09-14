@@ -56,6 +56,25 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(APIContract.recipes, "recipes")
     }
 
+    func testRecipeImagePreparerResizesAndCompressesImagesForUpload() throws {
+        let source = UIGraphicsImageRenderer(size: CGSize(width: 6000, height: 3000)).image { _ in
+            UIColor.systemBlue.setFill()
+            UIRectFill(CGRect(x: 0, y: 0, width: 6000, height: 3000))
+        }
+        let sourceData = try XCTUnwrap(source.jpegData(compressionQuality: 1))
+
+        let prepared = try RecipeImagePreparer.prepare(sourceData, filename: "camera-original.heic")
+        let preparedImage = try XCTUnwrap(UIImage(data: prepared.data))
+
+        XCTAssertEqual(prepared.mimeType, "image/jpeg")
+        XCTAssertEqual(prepared.filename, "camera-original.jpg")
+        XCTAssertLessThanOrEqual(prepared.data.count, RecipeImagePreparer.maxUploadBytes)
+        XCTAssertLessThanOrEqual(
+            max(preparedImage.size.width * preparedImage.scale, preparedImage.size.height * preparedImage.scale),
+            RecipeImagePreparer.maxPixelDimension
+        )
+    }
+
     func testRootTabsExposeCoreProductSections() {
         XCTAssertEqual(
             AppTab.allCases,
@@ -398,6 +417,10 @@ final class SimRecipesTests: XCTestCase {
             try JSONDecoder().decode(APIErrorPayload.self, from: JSONEncoder().encode(payload)),
             payload
         )
+
+        let nestedPayload = #"{"error":{"code":"validation_failed","message":"The given data was invalid.","details":{"images":["The user image storage quota has been exceeded."]}}}"#.data(using: .utf8)!
+        let decodedNestedPayload = try JSONDecoder().decode(APIErrorPayload.self, from: nestedPayload)
+        XCTAssertEqual(decodedNestedPayload.userMessage, "The user image storage quota has been exceeded.")
     }
 
     @MainActor

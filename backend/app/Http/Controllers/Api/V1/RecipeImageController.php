@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Recipe;
 use App\Models\RecipeImage;
 use App\Services\Recipes\RecipeImageStorage;
 use Illuminate\Http\JsonResponse;
@@ -24,10 +25,14 @@ class RecipeImageController extends Controller
         abort_unless(is_string($diskName), 404);
         abort_unless(Storage::disk($diskName)->exists($path), 404);
 
+        $isPublished = $this->recipeFor($recipeImage)->status === Recipe::STATUS_PUBLISHED;
+
         return Storage::disk($diskName)->response(
             $path,
             basename($path),
-            ['Cache-Control' => 'private, max-age=300'],
+            ['Cache-Control' => $isPublished
+                ? 'public, max-age=86400, immutable'
+                : 'private, max-age=300'],
         );
     }
 
@@ -43,7 +48,14 @@ class RecipeImageController extends Controller
 
     private function pathForVariant(RecipeImage $recipeImage, ?string $variant): string
     {
-        if ($variant === null) {
+        $recipe = $this->recipeFor($recipeImage);
+        $variant ??= $recipe->status === Recipe::STATUS_PUBLISHED
+            ? 'detail'
+            : 'original';
+
+        if ($variant === 'original') {
+            abort_unless($recipe->status === Recipe::STATUS_PRIVATE, 404);
+
             return (string) $recipeImage->getAttribute('original_path');
         }
 
@@ -53,5 +65,10 @@ class RecipeImageController extends Controller
         abort_unless(is_array($derivatives) && is_string($derivatives[$variant] ?? null), 404);
 
         return $derivatives[$variant];
+    }
+
+    private function recipeFor(RecipeImage $recipeImage): Recipe
+    {
+        return Recipe::query()->findOrFail($recipeImage->getAttribute('recipe_id'));
     }
 }

@@ -57,6 +57,7 @@ class Recipe extends Model
         return $this->belongsTo(CameraModel::class);
     }
 
+    /** @return HasMany<RecipeSetting, $this> */
     public function settings(): HasMany
     {
         return $this->hasMany(RecipeSetting::class);
@@ -99,7 +100,7 @@ class Recipe extends Model
 
     public function recipeCollections(): BelongsToMany
     {
-        return $this->belongsToMany(RecipeCollection::class, 'recipe_collection_recipe')
+        return $this->belongsToMany(RecipeCollection::class, 'recipe_collection_recipe', 'recipe_id', 'collection_id')
             ->withPivot('sort_order');
     }
 

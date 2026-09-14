@@ -8,8 +8,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\Encoders\WebpEncoder;
+use Intervention\Image\ImageManager;
 use Throwable;
 
 class GenerateRecipeImageDerivatives implements ShouldQueue
@@ -35,8 +38,18 @@ class GenerateRecipeImageDerivatives implements ShouldQueue
 
         try {
             $disk = Storage::disk($diskName);
-            $original = Image::fromStorage($originalPath, $diskName)->orient();
-            [$width, $height] = $original->dimensions();
+            $contents = $disk->get($originalPath);
+            if (! is_string($contents)) {
+                throw new \RuntimeException('The original image could not be read.');
+            }
+
+            $manager = ImageManager::usingDriver(match ((string) config('images.default', 'gd')) {
+                'imagick' => ImagickDriver::class,
+                default => GdDriver::class,
+            });
+            $original = $manager->decode($contents)->orient();
+            $width = $original->width();
+            $height = $original->height();
             $derivativePaths = [];
 
             foreach (config('recipes.images.derivatives', []) as $name => $maxWidth) {
@@ -44,13 +57,13 @@ class GenerateRecipeImageDerivatives implements ShouldQueue
                     continue;
                 }
 
-                $derivative = Image::fromStorage($originalPath, $diskName)->orient();
+                $derivative = $manager->decode($contents)->orient();
                 if ($derivative->width() > $maxWidth) {
                     $derivative->scale($maxWidth);
                 }
 
                 $derivativePath = 'recipes/'.$imageRecord->getAttribute('recipe_id').'/derivatives/'.$imageRecord->getKey().'/'.$name.'.webp';
-                $disk->put($derivativePath, $derivative->toWebp()->quality(82)->toBytes());
+                $disk->put($derivativePath, $derivative->encode(new WebpEncoder(82, true))->toString());
                 $derivativePaths[$name] = $derivativePath;
             }
 

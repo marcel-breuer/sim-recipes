@@ -161,7 +161,7 @@ class RecipeImageStorage
                     }
                 }
 
-                RecipeImage::create([
+                $copiedImage = RecipeImage::create([
                     'recipe_id' => $target->getKey(),
                     'storage_disk' => $diskName,
                     'original_path' => $originalPath,
@@ -173,6 +173,10 @@ class RecipeImageStorage
                     'derivatives' => $derivatives === [] ? null : $derivatives,
                     'processing_status' => $sourceImage->getAttribute('processing_status'),
                 ]);
+
+                if ($copiedImage->processing_status === 'pending') {
+                    GenerateRecipeImageDerivatives::dispatch($copiedImage->getKey())->afterCommit();
+                }
             }
         } catch (Throwable $exception) {
             Storage::disk($diskName ?? config('filesystems.default'))->delete($copiedPaths);
