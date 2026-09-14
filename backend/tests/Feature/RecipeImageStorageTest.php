@@ -151,6 +151,13 @@ class RecipeImageStorageTest extends TestCase
             'original_size_bytes' => Storage::disk('local')->size($originalPath),
             'mime_type' => 'image/jpeg',
         ]);
+        $originalBytes = Storage::disk('local')->get($originalPath);
+        $metadataSegment = "\xFF\xE1".pack('n', 12).'Exif'."\x00\x00".'GPS!';
+        Storage::disk('local')->put(
+            $originalPath,
+            substr($originalBytes, 0, 2).$metadataSegment.substr($originalBytes, 2),
+        );
+        $this->assertStringContainsString('Exif', Storage::disk('local')->get($originalPath));
 
         (new GenerateRecipeImageDerivatives($image->id))->handle();
 
