@@ -7,6 +7,10 @@ struct LibraryView: View {
     let cameraService: any CameraService
     @State private var recipes: [RecipeTransport] = []
     @State private var searchText = ""
+    @State private var showingImporter = false
+    @State private var exportDocument: SimRecipeFileDocument?
+    @State private var showingExporter = false
+    @State private var exportFilename = "recipe.simrecipe"
     @State private var message: String?
 
     private var filteredRecipes: [RecipeTransport] {
@@ -48,6 +52,16 @@ struct LibraryView: View {
                             }
                         }
                         .contextMenu {
+                            Button {
+                                beginExport(recipe)
+                            } label: {
+                                Label("Export recipe", systemImage: "square.and.arrow.up")
+                            }
+                            if let shareURL = RecipeShareLink.url(for: recipe) {
+                                ShareLink(item: shareURL) {
+                                    Label("Share public link", systemImage: "link")
+                                }
+                            }
                             let state = syncState(for: recipe)
                             if state == .failed {
                                 Button {
@@ -63,7 +77,7 @@ struct LibraryView: View {
                                 if (try? localStore.conflictServerRecipe(for: recipe.id)) != nil {
                                     Button("Keep server version") {
                                         resolve(recipe, as: .keepServer)
-                                    }
+                            }
                                 }
                             }
                             NavigationLink {
@@ -87,6 +101,13 @@ struct LibraryView: View {
             .searchable(text: $searchText, prompt: "Search your library")
             .toolbar {
                 if authService.session != nil {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            showingImporter = true
+                        } label: {
+                            Label("Import recipe", systemImage: "square.and.arrow.down")
+                        }
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink {
                             editor(for: nil)
@@ -99,7 +120,23 @@ struct LibraryView: View {
             .task(id: authService.session?.token) {
                 await syncAndReload()
             }
-            .alert("Library sync", isPresented: Binding(
+            .fileImporter(
+                isPresented: $showingImporter,
+                allowedContentTypes: [.simRecipe]
+            ) { result in
+                Task { await importRecipe(result) }
+            }
+            .fileExporter(
+                isPresented: $showingExporter,
+                document: exportDocument,
+                contentType: .simRecipe,
+                defaultFilename: exportFilename
+            ) { result in
+                if case let .failure(error) = result {
+                    message = error.localizedDescription
+                }
+            }
+            .alert("Library", isPresented: Binding(
                 get: { message != nil },
                 set: { if !$0 { message = nil } }
             )) {
@@ -170,6 +207,30 @@ struct LibraryView: View {
             message = "Sync failed. Retry individual recipes from their context menu."
         }
         reloadRecipes()
+    }
+
+    private func beginExport(_ recipe: RecipeTransport) {
+        do {
+            exportDocument = SimRecipeFileDocument(data: try RecipePortabilityService.exportData(recipe: recipe))
+            exportFilename = "\(recipe.name.replacingOccurrences(of: " ", with: "-")).simrecipe"
+            showingExporter = true
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func importRecipe(_ result: Result<URL, Error>) async {
+        do {
+            let url = try result.get()
+            let data = try Data(contentsOf: url)
+            let cameras = try await CameraCapabilityService(apiClient: apiClient).supportedCameras()
+            let draft = try RecipePortabilityService.importDraft(from: data, supportedCameras: cameras)
+            try localStore.saveLocally(draft.transport())
+            reloadRecipes()
+            message = "The recipe was imported as a local draft."
+        } catch {
+            message = error.localizedDescription
+        }
     }
 
     private func syncState(for recipe: RecipeTransport) -> RecipeSyncState {

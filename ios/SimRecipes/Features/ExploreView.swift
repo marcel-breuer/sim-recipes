@@ -6,7 +6,9 @@ struct ExploreView: View {
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
     private let cameraService: any CameraService
+    private let deepLinkRecipeID: String?
     @StateObject private var viewModel: ExploreViewModel
+    @State private var deepLinkedRecipe: RecipeTransport?
     @State private var showingFilters = false
 
     init(
@@ -14,13 +16,15 @@ struct ExploreView: View {
         profileService: ProfileService,
         apiClient: any APIClient,
         localStore: LocalRecipeStore,
-        cameraService: any CameraService
+        cameraService: any CameraService,
+        deepLinkRecipeID: String? = nil
     ) {
         _authService = ObservedObject(wrappedValue: authService)
         _profileService = ObservedObject(wrappedValue: profileService)
         self.apiClient = apiClient
         self.localStore = localStore
         self.cameraService = cameraService
+        self.deepLinkRecipeID = deepLinkRecipeID
         let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
         let capabilityService = CameraCapabilityService(apiClient: apiClient)
         _viewModel = StateObject(wrappedValue: ExploreViewModel(
@@ -90,6 +94,16 @@ struct ExploreView: View {
             .task {
                 await viewModel.loadInitial()
                 try? await profileService.loadCollections()
+            }
+            .task(id: deepLinkRecipeID) {
+                guard let deepLinkRecipeID else { return }
+                let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+                deepLinkedRecipe = try? await repository.recipe(id: deepLinkRecipeID)
+            }
+            .sheet(item: $deepLinkedRecipe) { recipe in
+                NavigationStack {
+                    detail(for: recipe)
+                }
             }
         }
     }

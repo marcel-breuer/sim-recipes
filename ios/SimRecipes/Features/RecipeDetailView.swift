@@ -186,6 +186,14 @@ struct RecipeDetailView: View {
                     .disabled(isCopying)
                 }
             }
+            if let shareURL = RecipeShareLink.url(for: recipe) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: shareURL) {
+                        Label("Share public recipe link", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Share public recipe link")
+                }
+            }
             if let addToCollectionAction, !collections.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

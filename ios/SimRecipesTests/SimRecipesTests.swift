@@ -80,6 +80,59 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
     }
 
+    func testRecipePortabilityExportsAndValidatesCameraSettings() throws {
+        let camera = SupportedCameraTransport(
+            id: "camera-1",
+            manufacturer: "Fujifilm",
+            name: "X-S20",
+            slug: "x-s20",
+            capabilities: [
+                CameraCapabilityTransport(
+                    id: "film",
+                    key: "film_simulation",
+                    displayName: "Film Simulation",
+                    valueType: "enum",
+                    allowedValues: .array([.string("Classic Chrome")]),
+                    minimum: nil,
+                    maximum: nil,
+                    step: nil
+                )
+            ]
+        )
+        let recipe = RecipeTransport(
+            id: "recipe-1",
+            name: "Portable recipe",
+            description: "A portable look.",
+            styleRecommendation: nil,
+            cameraModelID: camera.id,
+            lens: "23mm",
+            categories: ["Street"],
+            tags: ["muted"],
+            isPublished: false,
+            provenance: nil,
+            updatedAt: Date(),
+            settings: [RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome")]
+        )
+
+        let data = try RecipePortabilityService.exportData(recipe: recipe)
+        let draft = try RecipePortabilityService.importDraft(from: data, supportedCameras: [camera])
+
+        XCTAssertEqual(draft.name, recipe.name)
+        XCTAssertEqual(draft.cameraModelID, camera.id)
+        XCTAssertEqual(draft.settings, recipe.settings)
+    }
+
+    func testRecipeShareLinkNeverExposesPrivateRecipe() {
+        let privateRecipe = makeRecipe(id: "private", isPublished: false)
+        let publicRecipe = makeRecipe(id: "public", isPublished: true)
+
+        XCTAssertNil(RecipeShareLink.url(for: privateRecipe))
+        XCTAssertEqual(
+            RecipeShareLink.url(for: publicRecipe)?.path,
+            "/recipes/public"
+        )
+    }
+
     func testRecipeTransportDecodesAPIResourceShapeAndStructuredSettings() throws {
         let data = #"""
         {
