@@ -4,62 +4,132 @@ struct RecipeDetailView: View {
     let recipe: RecipeTransport
     var transferService: (any CameraService)?
     var similarRecipesRepository: RecipeRepository?
+    var capabilityService: CameraCapabilityService?
+    var collections: [RecipeCollectionTransport] = []
+    var addToCollectionAction: ((String) async throws -> Void)?
     var copyAction: (() async throws -> RecipeTransport)?
     var viewAction: (() async throws -> RecipeEngagementTransport)?
     var likeAction: (() async throws -> RecipeEngagementTransport)?
     var unlikeAction: (() async throws -> RecipeEngagementTransport)?
+    var followAction: (() async throws -> FollowResponse)?
+    var unfollowAction: (() async throws -> FollowResponse)?
     var reportAction: (() async throws -> Void)?
+    var reportImageAction: (() async throws -> Void)?
+    var reportAuthorAction: (() async throws -> Void)?
     var blockAction: (() async throws -> Void)?
+    var unblockAction: (() async throws -> Void)?
+    var commentsService: RecipeCommentsService?
+    var commentsModerationService: ModerationService?
+    var commentBlockAction: ((String) async throws -> Void)?
     @State private var isCopying = false
     @State private var isLiking = false
     @State private var isLiked: Bool
     @State private var likesCount: Int
+    @State private var isFollowingAuthor: Bool
     @State private var message: String?
     @State private var isSubmittingSafetyAction = false
+    @State private var isCreatorBlocked = false
+    @State private var showingCreatorBlockConfirmation = false
 
     init(
         recipe: RecipeTransport,
         transferService: (any CameraService)? = nil,
         similarRecipesRepository: RecipeRepository? = nil,
+        capabilityService: CameraCapabilityService? = nil,
+        collections: [RecipeCollectionTransport] = [],
+        addToCollectionAction: ((String) async throws -> Void)? = nil,
         copyAction: (() async throws -> RecipeTransport)? = nil,
         viewAction: (() async throws -> RecipeEngagementTransport)? = nil,
         likeAction: (() async throws -> RecipeEngagementTransport)? = nil,
         unlikeAction: (() async throws -> RecipeEngagementTransport)? = nil,
+        followAction: (() async throws -> FollowResponse)? = nil,
+        unfollowAction: (() async throws -> FollowResponse)? = nil,
         reportAction: (() async throws -> Void)? = nil,
-        blockAction: (() async throws -> Void)? = nil
+        reportImageAction: (() async throws -> Void)? = nil,
+        reportAuthorAction: (() async throws -> Void)? = nil,
+        blockAction: (() async throws -> Void)? = nil,
+        unblockAction: (() async throws -> Void)? = nil,
+        commentsService: RecipeCommentsService? = nil,
+        commentsModerationService: ModerationService? = nil,
+        commentBlockAction: ((String) async throws -> Void)? = nil
     ) {
         self.recipe = recipe
         self.transferService = transferService
         self.similarRecipesRepository = similarRecipesRepository
+        self.capabilityService = capabilityService
+        self.collections = collections
+        self.addToCollectionAction = addToCollectionAction
         self.copyAction = copyAction
         self.viewAction = viewAction
         self.likeAction = likeAction
         self.unlikeAction = unlikeAction
+        self.followAction = followAction
+        self.unfollowAction = unfollowAction
         self.reportAction = reportAction
+        self.reportImageAction = reportImageAction
+        self.reportAuthorAction = reportAuthorAction
         self.blockAction = blockAction
+        self.unblockAction = unblockAction
+        self.commentsService = commentsService
+        self.commentsModerationService = commentsModerationService
+        self.commentBlockAction = commentBlockAction
         _isLiked = State(initialValue: recipe.isLiked ?? false)
         _likesCount = State(initialValue: recipe.likesCount)
+        _isFollowingAuthor = State(initialValue: false)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if let imageURL = recipe.images.first?.localURL ?? recipe.images.first?.url {
-                    AsyncImage(url: imageURL) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Rectangle().fill(.quaternary)
+                if let image = recipe.images.first,
+                   let imageURL = image.localURL ?? image.url {
+                    ZStack(alignment: .topTrailing) {
+                        AsyncImage(url: imageURL) { loadedImage in
+                            loadedImage.resizable().scaledToFill()
+                        } placeholder: {
+                            Rectangle().fill(.quaternary)
+                        }
+                        .frame(height: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                        if let reportImageAction {
+                            Menu {
+                                Button("Report image", role: .destructive) {
+                                    Task {
+                                        await submitSafetyAction(
+                                            reportImageAction,
+                                            success: "Thanks. The image was reported for review."
+                                        )
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle.fill")
+                                    .font(.title2)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(.white)
+                                    .padding(10)
+                            }
+                            .accessibilityLabel("Image safety options")
+                        }
                     }
-                    .frame(height: 240)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(recipe.name)
                         .font(.largeTitle.bold())
                     if let author = recipe.author {
-                        Text("By \(author.name)")
-                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("By \(author.name)")
+                                .foregroundStyle(.secondary)
+                            if followAction != nil || unfollowAction != nil {
+                                Button(isFollowingAuthor ? "Following" : "Follow") {
+                                    Task { await toggleFollow() }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(isLiking)
+                            }
+                        }
                     }
                     if let publishedAt = recipe.publishedAt {
                         Text(publishedAt, style: .date)
@@ -133,6 +203,14 @@ struct RecipeDetailView: View {
                         repository: similarRecipesRepository
                     )
                 }
+                if let commentsService {
+                    RecipeCommentsView(
+                        recipeID: recipe.id,
+                        service: commentsService,
+                        moderationService: commentsModerationService,
+                        blockUserAction: commentBlockAction
+                    )
+                }
             }
             .padding()
         }
@@ -142,7 +220,11 @@ struct RecipeDetailView: View {
             if let transferService {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
-                        CameraTransferView(recipe: recipe, cameraService: transferService)
+                        CameraTransferView(
+                            recipe: recipe,
+                            cameraService: transferService,
+                            capabilityService: capabilityService
+                        )
                     } label: {
                         Label("Transfer to Camera", systemImage: "arrow.down.to.line.compact")
                     }
@@ -172,7 +254,35 @@ struct RecipeDetailView: View {
                     .disabled(isCopying)
                 }
             }
-            if reportAction != nil || blockAction != nil {
+            if let shareURL = RecipeShareLink.url(for: recipe) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: shareURL) {
+                        Label("Share public recipe link", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Share public recipe link")
+                }
+            }
+            if let addToCollectionAction, !collections.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        ForEach(collections) { collection in
+                            Button(collection.name) {
+                                Task {
+                                    do {
+                                        try await addToCollectionAction(collection.id)
+                                        message = "Added to \(collection.name)."
+                                    } catch {
+                                        message = error.localizedDescription
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Add to collection", systemImage: "folder.badge.plus")
+                    }
+                }
+            }
+            if reportAction != nil || reportAuthorAction != nil || blockAction != nil || unblockAction != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         if let reportAction {
@@ -180,9 +290,29 @@ struct RecipeDetailView: View {
                                 Task { await submitSafetyAction(reportAction, success: "Thanks. The recipe was reported for review.") }
                             }
                         }
-                        if let blockAction {
+                        if let reportAuthorAction {
+                            Button("Report creator", role: .destructive) {
+                                Task {
+                                    await submitSafetyAction(
+                                        reportAuthorAction,
+                                        success: "Thanks. The creator was reported for review."
+                                    )
+                                }
+                            }
+                        }
+                        if let unblockAction, isCreatorBlocked {
+                            Button("Unblock creator") {
+                                Task {
+                                    await submitCreatorAction(
+                                        unblockAction,
+                                        blocked: false,
+                                        success: "The creator was unblocked."
+                                    )
+                                }
+                            }
+                        } else if blockAction != nil {
                             Button("Block creator", role: .destructive) {
-                                Task { await submitSafetyAction(blockAction, success: "The creator was blocked.") }
+                                showingCreatorBlockConfirmation = true
                             }
                         }
                     } label: {
@@ -204,6 +334,25 @@ struct RecipeDetailView: View {
             Button("OK") { message = nil }
         } message: {
             Text(message ?? "")
+        }
+        .confirmationDialog(
+            "Block creator?",
+            isPresented: $showingCreatorBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Block creator", role: .destructive) {
+                guard let blockAction else { return }
+                Task {
+                    await submitCreatorAction(
+                        blockAction,
+                        blocked: true,
+                        success: "The creator was blocked."
+                    )
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Their recipes and comments will be hidden after the feed refreshes. You can unblock them from this screen.")
         }
     }
 
@@ -229,6 +378,22 @@ struct RecipeDetailView: View {
         }
     }
 
+    private func toggleFollow() async {
+        do {
+            let response: FollowResponse
+            if isFollowingAuthor, let unfollowAction {
+                response = try await unfollowAction()
+            } else if let followAction {
+                response = try await followAction()
+            } else {
+                return
+            }
+            isFollowingAuthor = response.following
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
     private func submitSafetyAction(
         _ action: @escaping () async throws -> Void,
         success: String
@@ -242,6 +407,17 @@ struct RecipeDetailView: View {
             message = success
         } catch {
             message = error.localizedDescription
+        }
+    }
+
+    private func submitCreatorAction(
+        _ action: @escaping () async throws -> Void,
+        blocked: Bool,
+        success: String
+    ) async {
+        await submitSafetyAction(action, success: success)
+        if message == success {
+            isCreatorBlocked = blocked
         }
     }
 }

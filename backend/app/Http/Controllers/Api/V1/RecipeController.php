@@ -35,7 +35,7 @@ class RecipeController extends Controller
             ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('is_suspended', false))
             ->with([
                 'cameraModel',
-                'user',
+                'user.profile',
                 'categories',
                 'tags',
                 'settings',
@@ -344,7 +344,7 @@ class RecipeController extends Controller
     {
         return Recipe::query()->with([
             'cameraModel',
-            'user',
+            'user.profile',
             'categories',
             'tags',
             'settings',

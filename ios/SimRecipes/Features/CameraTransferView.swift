@@ -66,17 +66,25 @@ final class CameraTransferViewModel: ObservableObject {
     @Published private(set) var cameras: [CameraDescriptor] = []
     @Published private(set) var slots: [CameraSlotStatus] = []
     @Published private(set) var currentSlot: CameraSlot?
+    @Published private(set) var preflight: CameraPreflightResult?
+    @Published private(set) var preflightError: String?
     @Published private(set) var resultMessage: String?
     @Published private(set) var errorMessage: String?
     @Published var selectedSlot: CameraSlot?
     @Published var showingOverwriteConfirmation = false
 
     private let cameraService: any CameraService
+    private let capabilityService: CameraCapabilityService?
     private var activeCameraID: String?
 
-    init(recipe: RecipeTransport, cameraService: any CameraService) {
+    init(
+        recipe: RecipeTransport,
+        cameraService: any CameraService,
+        capabilityService: CameraCapabilityService? = nil
+    ) {
         self.recipe = recipe
         self.cameraService = cameraService
+        self.capabilityService = capabilityService
     }
 
     var connectedCamera: CameraDescriptor? {
@@ -85,16 +93,18 @@ final class CameraTransferViewModel: ObservableObject {
     }
 
     var canTransfer: Bool {
-        phase == .ready && selectedSlot != nil
+        phase == .ready && selectedSlot != nil && (capabilityService == nil || preflight?.isTransferSafe == true)
     }
 
     func start() async {
         guard phase == .idle || isFailed else { return }
         phase = .requestingAccess
         errorMessage = nil
+        preflightError = nil
         resultMessage = nil
 
         do {
+            await loadPreflight()
             try await cameraService.requestControlAuthorization()
             cameraService.startDiscovery()
             phase = .discovering
@@ -172,6 +182,7 @@ final class CameraTransferViewModel: ObservableObject {
     func retry() async {
         guard !phase.isBusy else { return }
         if activeCameraID != nil {
+            await loadPreflight()
             phase = .ready
             errorMessage = nil
             resultMessage = nil
@@ -206,16 +217,41 @@ final class CameraTransferViewModel: ObservableObject {
         errorMessage = error.localizedDescription
         phase = .failed(error.localizedDescription)
     }
+
+    private func loadPreflight() async {
+        guard let capabilityService else { return }
+
+        do {
+            let cameras = try await capabilityService.supportedCameras()
+            guard let camera = cameras.first(where: {
+                $0.id == recipe.cameraModelID || $0.slug == recipe.cameraModelID
+            }) else {
+                preflight = nil
+                preflightError = "No capability catalog is available for \(recipe.cameraModelName ?? recipe.cameraModelID)."
+                return
+            }
+            preflight = CameraCompatibilityEvaluator.evaluate(recipe: recipe, camera: camera)
+            preflightError = nil
+        } catch {
+            preflight = nil
+            preflightError = "Compatibility could not be verified: \(error.localizedDescription)"
+        }
+    }
 }
 
 struct CameraTransferView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: CameraTransferViewModel
 
-    init(recipe: RecipeTransport, cameraService: any CameraService) {
+    init(
+        recipe: RecipeTransport,
+        cameraService: any CameraService,
+        capabilityService: CameraCapabilityService? = nil
+    ) {
         _viewModel = StateObject(wrappedValue: CameraTransferViewModel(
             recipe: recipe,
-            cameraService: cameraService
+            cameraService: cameraService,
+            capabilityService: capabilityService
         ))
     }
 
@@ -257,9 +293,48 @@ struct CameraTransferView: View {
     private var transferList: some View {
         List {
             recipeSection
+            preflightSection
             connectionSection
             slotSection
             actionSection
+        }
+    }
+
+    @ViewBuilder
+    private var preflightSection: some View {
+        Section("Transfer preflight") {
+            if let preflight = viewModel.preflight {
+                if preflight.isTransferSafe {
+                    Label(
+                        "All recipe settings are supported by \(preflight.cameraName).",
+                        systemImage: "checkmark.shield.fill"
+                    )
+                    .foregroundStyle(.green)
+                } else {
+                    Label(
+                        "Transfer blocked until incompatible settings are removed.",
+                        systemImage: "exclamationmark.shield.fill"
+                    )
+                    .foregroundStyle(.red)
+                    ForEach(preflight.issues) { issue in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(issue.displayName)
+                                .font(.headline)
+                            Text(issue.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } else if let preflightError = viewModel.preflightError {
+                Label(preflightError, systemImage: "questionmark.diamond")
+                    .foregroundStyle(.orange)
+                Text("The transfer stays disabled until the capability catalog can be verified.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView("Checking recipe compatibility…")
+            }
         }
     }
 

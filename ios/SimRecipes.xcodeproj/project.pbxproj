@@ -38,8 +38,14 @@
 		A00000000000000000000029 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000033 /* ImageCache.swift */; };
 		A00000000000000000000030 /* CameraTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000034 /* CameraTransferView.swift */; };
 		A00000000000000000000031 /* ModerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000035 /* ModerationService.swift */; };
-		A00000000000000000000032 /* SavedFilterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000036 /* SavedFilterStore.swift */; };
-		A00000000000000000000033 /* SimilarRecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000037 /* SimilarRecipesView.swift */; };
+		A00000000000000000000032 /* CameraCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000036 /* CameraCompatibility.swift */; };
+		A00000000000000000000033 /* CameraCompatibilityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000037 /* CameraCompatibilityView.swift */; };
+		A00000000000000000000038 /* RecipePortability.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000038 /* RecipePortability.swift */; };
+		A00000000000000000000039 /* RecipePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000039 /* RecipePreview.swift */; };
+		A00000000000000000000040 /* RecipeCommentsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000040 /* RecipeCommentsService.swift */; };
+		A00000000000000000000041 /* RecipeCommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000041 /* RecipeCommentsView.swift */; };
+		A00000000000000000000042 /* SavedFilterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000042 /* SavedFilterStore.swift */; };
+		A00000000000000000000043 /* SimilarRecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000043 /* SimilarRecipesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,8 +94,14 @@
 		B00000000000000000000033 /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		B00000000000000000000034 /* CameraTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CameraTransferView.swift; sourceTree = "<group>"; };
 		B00000000000000000000035 /* ModerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationService.swift; sourceTree = "<group>"; };
-		B00000000000000000000036 /* SavedFilterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFilterStore.swift; sourceTree = "<group>"; };
-		B00000000000000000000037 /* SimilarRecipesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SimilarRecipesView.swift; sourceTree = "<group>"; };
+		B00000000000000000000036 /* CameraCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCompatibility.swift; sourceTree = "<group>"; };
+		B00000000000000000000037 /* CameraCompatibilityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CameraCompatibilityView.swift; sourceTree = "<group>"; };
+		B00000000000000000000038 /* RecipePortability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipePortability.swift; sourceTree = "<group>"; };
+		B00000000000000000000039 /* RecipePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipePreview.swift; sourceTree = "<group>"; };
+		B00000000000000000000040 /* RecipeCommentsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCommentsService.swift; sourceTree = "<group>"; };
+		B00000000000000000000041 /* RecipeCommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeCommentsView.swift; sourceTree = "<group>"; };
+		B00000000000000000000042 /* SavedFilterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFilterStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000043 /* SimilarRecipesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SimilarRecipesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,7 +150,10 @@
 				B00000000000000000000031 /* ExploreViewModel.swift */,
 				B00000000000000000000032 /* RecipeDetailView.swift */,
 				B00000000000000000000034 /* CameraTransferView.swift */,
-				B00000000000000000000037 /* SimilarRecipesView.swift */,
+				B00000000000000000000037 /* CameraCompatibilityView.swift */,
+				B00000000000000000000039 /* RecipePreview.swift */,
+				B00000000000000000000041 /* RecipeCommentsView.swift */,
+				B00000000000000000000043 /* SimilarRecipesView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -177,7 +192,10 @@
 				B00000000000000000000030 /* CommunityFeedModels.swift */,
 				B00000000000000000000033 /* ImageCache.swift */,
 				B00000000000000000000035 /* ModerationService.swift */,
-				B00000000000000000000036 /* SavedFilterStore.swift */,
+				B00000000000000000000036 /* CameraCompatibility.swift */,
+				B00000000000000000000038 /* RecipePortability.swift */,
+				B00000000000000000000040 /* RecipeCommentsService.swift */,
+				B00000000000000000000042 /* SavedFilterStore.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -335,8 +353,14 @@
 				A00000000000000000000029 /* ImageCache.swift in Sources */,
 				A00000000000000000000030 /* CameraTransferView.swift in Sources */,
 				A00000000000000000000031 /* ModerationService.swift in Sources */,
-				A00000000000000000000032 /* SavedFilterStore.swift in Sources */,
-				A00000000000000000000033 /* SimilarRecipesView.swift in Sources */,
+				A00000000000000000000032 /* CameraCompatibility.swift in Sources */,
+				A00000000000000000000033 /* CameraCompatibilityView.swift in Sources */,
+				A00000000000000000000038 /* RecipePortability.swift in Sources */,
+				A00000000000000000000039 /* RecipePreview.swift in Sources */,
+				A00000000000000000000040 /* RecipeCommentsService.swift in Sources */,
+				A00000000000000000000041 /* RecipeCommentsView.swift in Sources */,
+				A00000000000000000000042 /* SavedFilterStore.swift in Sources */,
+				A00000000000000000000043 /* SimilarRecipesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

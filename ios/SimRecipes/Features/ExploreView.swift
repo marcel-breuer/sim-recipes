@@ -2,22 +2,29 @@ import SwiftUI
 
 struct ExploreView: View {
     @ObservedObject private var authService: AuthService
+    @ObservedObject private var profileService: ProfileService
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
     private let cameraService: any CameraService
+    private let deepLinkRecipeID: String?
     @StateObject private var viewModel: ExploreViewModel
+    @State private var deepLinkedRecipe: RecipeTransport?
     @State private var showingFilters = false
 
     init(
         authService: AuthService,
+        profileService: ProfileService,
         apiClient: any APIClient,
         localStore: LocalRecipeStore,
-        cameraService: any CameraService
+        cameraService: any CameraService,
+        deepLinkRecipeID: String? = nil
     ) {
         _authService = ObservedObject(wrappedValue: authService)
+        _profileService = ObservedObject(wrappedValue: profileService)
         self.apiClient = apiClient
         self.localStore = localStore
         self.cameraService = cameraService
+        self.deepLinkRecipeID = deepLinkRecipeID
         let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
         let capabilityService = CameraCapabilityService(apiClient: apiClient)
         _viewModel = StateObject(wrappedValue: ExploreViewModel(
@@ -86,6 +93,17 @@ struct ExploreView: View {
             }
             .task {
                 await viewModel.loadInitial()
+                try? await profileService.loadCollections()
+            }
+            .task(id: deepLinkRecipeID) {
+                guard let deepLinkRecipeID else { return }
+                let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
+                deepLinkedRecipe = try? await repository.recipe(id: deepLinkRecipeID)
+            }
+            .sheet(item: $deepLinkedRecipe) { recipe in
+                NavigationStack {
+                    detail(for: recipe)
+                }
             }
         }
     }
@@ -126,28 +144,87 @@ struct ExploreView: View {
             RecipeDetailView(
                 recipe: recipe,
                 transferService: transferService(for: recipe),
-                similarRecipesRepository: repository
-            ) {
-                try await repository.copy(id: recipe.id)
-            } viewAction: {
-                try await repository.recordView(id: recipe.id)
-            } likeAction: {
-                try await repository.like(id: recipe.id)
-            } unlikeAction: {
-                try await repository.unlike(id: recipe.id)
-            } reportAction: {
-                try await moderationService.reportRecipe(id: recipe.id)
-            } blockAction: {
-                if let author = recipe.author {
-                    try await moderationService.blockUser(id: author.id)
+                similarRecipesRepository: repository,
+                capabilityService: CameraCapabilityService(apiClient: apiClient),
+                collections: profileService.collections,
+                addToCollectionAction: { collectionID in
+                    let recipeSummary = CollectionRecipeTransport(
+                        id: recipe.id,
+                        name: recipe.name,
+                        description: recipe.description,
+                        cameraModel: recipe.cameraModelName.map {
+                            CameraModelTransport(id: recipe.cameraModelID, name: $0, slug: recipe.cameraModelID)
+                        },
+                        publishedAt: recipe.publishedAt
+                    )
+                    try await profileService.addRecipe(recipeSummary, to: collectionID)
+                },
+                copyAction: {
+                    try await repository.copy(id: recipe.id)
+                },
+                viewAction: {
+                    try await repository.recordView(id: recipe.id)
+                },
+                likeAction: {
+                    try await repository.like(id: recipe.id)
+                },
+                unlikeAction: {
+                    try await repository.unlike(id: recipe.id)
+                },
+                followAction: {
+                    guard let username = recipe.author?.username else {
+                        throw APIClientError.invalidResponse
+                    }
+                    return try await authenticatedClient.send(
+                        APIRequest(method: .post, path: "profiles/\(username)/follow"),
+                        responseType: APIResponse<FollowResponse>.self
+                    ).data
+                },
+                unfollowAction: {
+                    guard let username = recipe.author?.username else {
+                        throw APIClientError.invalidResponse
+                    }
+                    return try await authenticatedClient.send(
+                        APIRequest(method: .delete, path: "profiles/\(username)/follow"),
+                        responseType: APIResponse<FollowResponse>.self
+                    ).data
+                },
+                reportAction: {
+                    try await moderationService.reportRecipe(id: recipe.id)
+                },
+                reportImageAction: {
+                    if let imageID = recipe.images.first?.id {
+                        try await moderationService.reportImage(id: imageID)
+                    }
+                },
+                reportAuthorAction: {
+                    if let authorID = recipe.author?.id {
+                        try await moderationService.reportUser(id: authorID)
+                    }
+                },
+                blockAction: {
+                    if let author = recipe.author {
+                        try await moderationService.blockUser(id: author.id)
+                    }
+                },
+                unblockAction: {
+                    if let author = recipe.author {
+                        try await moderationService.unblockUser(id: author.id)
+                    }
+                },
+                commentsService: RecipeCommentsService(apiClient: authenticatedClient),
+                commentsModerationService: moderationService,
+                commentBlockAction: { userID in
+                    try await moderationService.blockUser(id: userID)
                 }
-            }
+            )
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
             RecipeDetailView(
                 recipe: recipe,
                 transferService: transferService(for: recipe),
                 similarRecipesRepository: repository,
+                capabilityService: CameraCapabilityService(apiClient: apiClient),
                 viewAction: {
                 try await repository.recordView(id: recipe.id)
                 }
@@ -316,8 +393,12 @@ private struct ExploreFilterView: View {
 }
 
 #Preview {
+    let authService = AuthService(
+        apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)
+    )
     ExploreView(
-        authService: AuthService(apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)),
+        authService: authService,
+        profileService: ProfileService(authService: authService),
         apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!),
         localStore: try! LocalRecipeStore(inMemory: true),
         cameraService: ImageCaptureCameraService()
