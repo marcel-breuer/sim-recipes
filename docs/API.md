@@ -1,5 +1,9 @@
 # API conventions
 
+The machine-readable core contract is maintained in [`docs/openapi.json`](openapi.json).
+Changes to versioned paths, error envelopes, or pagination must update that
+contract and the client transport tests in the same change.
+
 The Laravel application exposes JSON endpoints under /api/v1. The version
 prefix is part of the public contract and must be retained for compatible
 changes.

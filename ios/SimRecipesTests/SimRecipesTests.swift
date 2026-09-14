@@ -9,6 +9,15 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertTrue(OnboardingInterest.allCases.contains(.everyday))
     }
 
+    func testAPIContractUsesVersionedCorePaths() {
+        XCTAssertEqual(APIContract.version, "v1")
+        XCTAssertEqual(APIContract.health, "health")
+        XCTAssertEqual(APIContract.authApple, "auth/apple")
+        XCTAssertEqual(APIContract.cameras, "cameras")
+        XCTAssertEqual(APIContract.categories, "categories")
+        XCTAssertEqual(APIContract.recipes, "recipes")
+    }
+
     func testRootTabsExposeCoreProductSections() {
         XCTAssertEqual(
             AppTab.allCases,
