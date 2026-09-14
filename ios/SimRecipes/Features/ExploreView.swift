@@ -123,21 +123,50 @@ struct ExploreView: View {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
             let moderationService = ModerationService(apiClient: authenticatedClient)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
-                try await repository.copy(id: recipe.id)
-            } viewAction: {
-                try await repository.recordView(id: recipe.id)
-            } likeAction: {
-                try await repository.like(id: recipe.id)
-            } unlikeAction: {
-                try await repository.unlike(id: recipe.id)
-            } reportAction: {
-                try await moderationService.reportRecipe(id: recipe.id)
-            } blockAction: {
-                if let author = recipe.author {
-                    try await moderationService.blockUser(id: author.id)
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                copyAction: {
+                    try await repository.copy(id: recipe.id)
+                },
+                viewAction: {
+                    try await repository.recordView(id: recipe.id)
+                },
+                likeAction: {
+                    try await repository.like(id: recipe.id)
+                },
+                unlikeAction: {
+                    try await repository.unlike(id: recipe.id)
+                },
+                reportAction: {
+                    try await moderationService.reportRecipe(id: recipe.id)
+                },
+                reportImageAction: {
+                    if let imageID = recipe.images.first?.id {
+                        try await moderationService.reportImage(id: imageID)
+                    }
+                },
+                reportAuthorAction: {
+                    if let authorID = recipe.author?.id {
+                        try await moderationService.reportUser(id: authorID)
+                    }
+                },
+                blockAction: {
+                    if let author = recipe.author {
+                        try await moderationService.blockUser(id: author.id)
+                    }
+                },
+                unblockAction: {
+                    if let author = recipe.author {
+                        try await moderationService.unblockUser(id: author.id)
+                    }
+                },
+                commentsService: RecipeCommentsService(apiClient: authenticatedClient),
+                commentsModerationService: moderationService,
+                commentBlockAction: { userID in
+                    try await moderationService.blockUser(id: userID)
                 }
-            }
+            )
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
             RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe), viewAction: {
