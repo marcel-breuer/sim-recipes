@@ -91,7 +91,11 @@ struct RootView: View {
                 }
                 .tag(AppTab.create)
 
-            ProfileView(authService: authService, profileService: profileService)
+            ProfileView(
+                authService: authService,
+                profileService: profileService,
+                apiClient: apiClient
+            )
                 .tabItem {
                     Label(AppTab.profile.title, systemImage: AppTab.profile.systemImage)
                 }

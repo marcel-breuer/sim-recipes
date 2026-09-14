@@ -3,6 +3,7 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
     var transferService: (any CameraService)?
+    var capabilityService: CameraCapabilityService?
     var collections: [RecipeCollectionTransport] = []
     var addToCollectionAction: ((String) async throws -> Void)?
     var copyAction: (() async throws -> RecipeTransport)?
@@ -24,6 +25,7 @@ struct RecipeDetailView: View {
     init(
         recipe: RecipeTransport,
         transferService: (any CameraService)? = nil,
+        capabilityService: CameraCapabilityService? = nil,
         collections: [RecipeCollectionTransport] = [],
         addToCollectionAction: ((String) async throws -> Void)? = nil,
         copyAction: (() async throws -> RecipeTransport)? = nil,
@@ -37,6 +39,7 @@ struct RecipeDetailView: View {
     ) {
         self.recipe = recipe
         self.transferService = transferService
+        self.capabilityService = capabilityService
         self.collections = collections
         self.addToCollectionAction = addToCollectionAction
         self.copyAction = copyAction
@@ -156,7 +159,11 @@ struct RecipeDetailView: View {
             if let transferService {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
-                        CameraTransferView(recipe: recipe, cameraService: transferService)
+                        CameraTransferView(
+                            recipe: recipe,
+                            cameraService: transferService,
+                            capabilityService: capabilityService
+                        )
                     } label: {
                         Label("Transfer to Camera", systemImage: "arrow.down.to.line.compact")
                     }

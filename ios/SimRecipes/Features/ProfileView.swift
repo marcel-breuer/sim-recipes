@@ -4,6 +4,7 @@ import SwiftUI
 struct ProfileView: View {
     @ObservedObject var authService: AuthService
     @ObservedObject var profileService: ProfileService
+    let apiClient: any APIClient
     @State private var errorMessage: String?
     @State private var username = ""
     @State private var biography = ""
@@ -62,6 +63,14 @@ struct ProfileView: View {
             .signInWithAppleButtonStyle(.black)
             .frame(height: 48)
             .padding(.horizontal)
+
+            NavigationLink {
+                CameraCompatibilityView(
+                    capabilityService: CameraCapabilityService(apiClient: apiClient)
+                )
+            } label: {
+                Label("Browse camera compatibility", systemImage: "camera.aperture")
+            }
         }
     }
 
@@ -184,6 +193,16 @@ struct ProfileView: View {
             Section("Safety and support") {
                 Link("Community standards", destination: AppConfiguration.communityStandardsURL)
                 Link("Contact support", destination: AppConfiguration.supportEmailURL)
+            }
+
+            Section("Camera") {
+                NavigationLink {
+                    CameraCompatibilityView(
+                        capabilityService: CameraCapabilityService(apiClient: apiClient)
+                    )
+                } label: {
+                    Label("Camera compatibility", systemImage: "camera.aperture")
+                }
             }
         }
     }

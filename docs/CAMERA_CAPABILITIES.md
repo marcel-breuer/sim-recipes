@@ -25,6 +25,16 @@ Transport identifiers are application-level logical keys. The X-T5 has no
 enabled USB/PTP property mapping, and X-S20 property reads remain provisional;
 recipe writes must continue to report the existing unverified limitation.
 
+The iOS Camera compatibility screen presents the supported cameras, setting
+types, allowed values, and ranges from this catalog. Before a transfer, the
+client evaluates every recipe setting against the selected camera catalog and
+blocks unsupported, malformed, or out-of-range values. If the catalog cannot
+be verified, transfer remains disabled until it is available again.
+
+This preflight does not certify the physical transfer protocol. The current
+adapter still refuses unverified recipe encodings, and the UI only reports
+success after the adapter returns verified read-back evidence.
+
 Run `php artisan db:seed --class=CameraCapabilitySeeder` to seed or refresh
 the camera definition. The seeder uses stable natural keys and is safe to run
 more than once.

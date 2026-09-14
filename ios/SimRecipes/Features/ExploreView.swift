@@ -144,6 +144,7 @@ struct ExploreView: View {
             RecipeDetailView(
                 recipe: recipe,
                 transferService: transferService(for: recipe),
+                capabilityService: CameraCapabilityService(apiClient: apiClient),
                 collections: profileService.collections,
                 addToCollectionAction: { collectionID in
                     let recipeSummary = CollectionRecipeTransport(
@@ -190,9 +191,14 @@ struct ExploreView: View {
             }
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe), viewAction: {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                capabilityService: CameraCapabilityService(apiClient: apiClient),
+                viewAction: {
                 try await repository.recordView(id: recipe.id)
-            })
+                }
+            )
         }
     }
 
