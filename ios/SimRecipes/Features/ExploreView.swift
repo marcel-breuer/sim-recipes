@@ -157,38 +157,66 @@ struct ExploreView: View {
                         publishedAt: recipe.publishedAt
                     )
                     try await profileService.addRecipe(recipeSummary, to: collectionID)
-                }
-            ) {
-                try await repository.copy(id: recipe.id)
-            } viewAction: {
-                try await repository.recordView(id: recipe.id)
-            } likeAction: {
-                try await repository.like(id: recipe.id)
-            } unlikeAction: {
-                try await repository.unlike(id: recipe.id)
-            } followAction: {
-                guard let username = recipe.author?.username else {
-                    throw APIClientError.invalidResponse
-                }
-                return try await authenticatedClient.send(
-                    APIRequest(method: .post, path: "profiles/\(username)/follow"),
-                    responseType: APIResponse<FollowResponse>.self
-                ).data
-            } unfollowAction: {
-                guard let username = recipe.author?.username else {
-                    throw APIClientError.invalidResponse
-                }
-                return try await authenticatedClient.send(
-                    APIRequest(method: .delete, path: "profiles/\(username)/follow"),
-                    responseType: APIResponse<FollowResponse>.self
-                ).data
-            } reportAction: {
-                try await moderationService.reportRecipe(id: recipe.id)
-            } blockAction: {
+                },
+                copyAction: {
+                    try await repository.copy(id: recipe.id)
+                },
+                viewAction: {
+                    try await repository.recordView(id: recipe.id)
+                },
+                likeAction: {
+                    try await repository.like(id: recipe.id)
+                },
+                unlikeAction: {
+                    try await repository.unlike(id: recipe.id)
+                },
+                followAction: {
+                    guard let username = recipe.author?.username else {
+                        throw APIClientError.invalidResponse
+                    }
+                    return try await authenticatedClient.send(
+                        APIRequest(method: .post, path: "profiles/\(username)/follow"),
+                        responseType: APIResponse<FollowResponse>.self
+                    ).data
+                },
+                unfollowAction: {
+                    guard let username = recipe.author?.username else {
+                        throw APIClientError.invalidResponse
+                    }
+                    return try await authenticatedClient.send(
+                        APIRequest(method: .delete, path: "profiles/\(username)/follow"),
+                        responseType: APIResponse<FollowResponse>.self
+                    ).data
+                },
+                reportAction: {
+                    try await moderationService.reportRecipe(id: recipe.id)
+                },
+                reportImageAction: {
+                    if let imageID = recipe.images.first?.id {
+                        try await moderationService.reportImage(id: imageID)
+                    }
+                },
+                reportAuthorAction: {
+                    if let authorID = recipe.author?.id {
+                        try await moderationService.reportUser(id: authorID)
+                    }
+                },
+                blockAction: {
                 if let author = recipe.author {
                     try await moderationService.blockUser(id: author.id)
+                    }
+                },
+                unblockAction: {
+                    if let author = recipe.author {
+                        try await moderationService.unblockUser(id: author.id)
+                    }
+                },
+                commentsService: RecipeCommentsService(apiClient: authenticatedClient),
+                commentsModerationService: moderationService,
+                commentBlockAction: { userID in
+                    try await moderationService.blockUser(id: userID)
                 }
-            }
+            )
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
             RecipeDetailView(

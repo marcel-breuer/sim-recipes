@@ -4,6 +4,43 @@ import XCTest
 @testable import SimRecipes
 
 final class SimRecipesTests: XCTestCase {
+    func testRecipeCommentTransportPreservesAuthorAndDeletionPermission() throws {
+        let comment = RecipeCommentTransport(
+            id: "comment-1",
+            body: "A thoughtful comment.",
+            author: RecipeCommentAuthorTransport(id: "user-1", name: "Marcel"),
+            canDelete: true,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        XCTAssertEqual(
+            try JSONDecoder().decode(RecipeCommentTransport.self, from: JSONEncoder().encode(comment)),
+            comment
+        )
+    }
+
+    func testModerationServiceSupportsCommentReportsAndUserBlocks() async throws {
+        let report = ModerationReportTransport(
+            id: "report-1",
+            reportableType: "comment",
+            reportableID: "comment-1",
+            reason: "objectionable_content",
+            details: nil,
+            status: "pending",
+            resolution: nil
+        )
+        let client = StubAPIClient(responses: [
+            APIResponse(data: report),
+            APIResponse(data: ModerationActionResponse(blocked: true))
+        ])
+        let service = ModerationService(apiClient: client)
+
+        try await service.reportComment(id: "comment-1")
+        try await service.blockUser(id: "user-1")
+
+        XCTAssertEqual(client.requests, ["comments/comment-1/reports", "users/user-1/block"])
+    }
+
     func testOnboardingOffersSupportedCameraAndInterestChoices() {
         XCTAssertEqual(OnboardingInterest.allCases.count, 5)
         XCTAssertTrue(OnboardingInterest.allCases.contains(.street))

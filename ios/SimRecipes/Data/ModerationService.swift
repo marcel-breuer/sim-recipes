@@ -36,6 +36,10 @@ struct ModerationService {
         try await report(path: "recipe-images/\(id)/reports", reason: reason, details: details)
     }
 
+    func reportComment(id: String, reason: String = "objectionable_content", details: String? = nil) async throws {
+        try await report(path: "comments/\(id)/reports", reason: reason, details: details)
+    }
+
     func reportUser(id: String, reason: String = "objectionable_content", details: String? = nil) async throws {
         try await report(path: "users/\(id)/reports", reason: reason, details: details)
     }
