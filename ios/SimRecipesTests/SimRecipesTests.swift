@@ -3,6 +3,12 @@ import XCTest
 @testable import SimRecipes
 
 final class SimRecipesTests: XCTestCase {
+    func testOnboardingOffersSupportedCameraAndInterestChoices() {
+        XCTAssertEqual(OnboardingInterest.allCases.count, 5)
+        XCTAssertTrue(OnboardingInterest.allCases.contains(.street))
+        XCTAssertTrue(OnboardingInterest.allCases.contains(.everyday))
+    }
+
     func testRootTabsExposeCoreProductSections() {
         XCTAssertEqual(
             AppTab.allCases,
