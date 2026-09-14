@@ -57,3 +57,17 @@ See `PROJECT_SPEC.md` for the MVP specification, `docker/README.md` for local
 and Coolify deployment, and `AGENTS.md` for engineering conventions.
 Release-candidate checks and known limitations are tracked in
 `docs/RELEASE_VALIDATION.md`.
+
+## Example photography
+
+The public landing page uses the approved example photograph
+[`example-street.jpg`](backend/public/images/example-street.jpg), also shown
+in the product preview above. It is original SimRecipes artwork, cleared for
+use and modification in this repository and its landing page; it contains no
+third-party logos, identifiable people, or location metadata. The asset is
+stored as an optimized JPEG derivative rather than an unnecessary original.
+
+![A quiet stone street at blue hour with warm window light](backend/public/images/example-street.jpg)
+
+See [`docs/EXAMPLE_PHOTOS.md`](docs/EXAMPLE_PHOTOS.md) for the source, rights,
+alt text, and validation record.
