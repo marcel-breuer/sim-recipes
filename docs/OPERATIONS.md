@@ -11,7 +11,7 @@ Run a PostgreSQL logical backup from the Compose network using a protected
 destination outside the repository:
 
 ```sh
-docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T postgres \
+docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec -T postgres \
   sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
   > sim-recipes-$(date +%Y%m%d).dump
 ```
@@ -25,10 +25,10 @@ ports to perform backups.
 Restore into an isolated database and volume before replacing production data:
 
 ```sh
-docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T postgres \
+docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec -T postgres \
   sh -lc 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < backup.dump
-docker compose --env-file docker/.env -f docker/docker-compose.yml exec api php artisan migrate:status
-docker compose --env-file docker/.env -f docker/docker-compose.yml exec api php artisan storage:link
+docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec api php artisan migrate:status
+docker compose --project-directory . --env-file docker/.env -f docker/docker-compose.yml exec api php artisan storage:link
 ```
 
 After restore, verify `/api/v1/health/ready`, a public recipe, a private image
