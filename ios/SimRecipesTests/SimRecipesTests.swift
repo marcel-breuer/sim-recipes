@@ -216,6 +216,54 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(ProfileTransport.self, from: JSONEncoder().encode(profile)), profile)
     }
 
+    @MainActor
+    func testLocalCollectionStorePersistsOfflineMembershipAndSyncState() throws {
+        let suiteName = "SimRecipesCollectionsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = LocalCollectionStore(defaults: defaults)
+        let recipe = CollectionRecipeTransport(id: "recipe-1", name: "Soft Chrome")
+        let collection = RecipeCollectionTransport(
+            id: "collection-1",
+            name: "Street set",
+            isPublic: false,
+            sortOrder: 0,
+            recipes: [recipe],
+            syncState: .pendingMembership
+        )
+
+        try store.save([collection])
+
+        XCTAssertEqual(try store.collections(), [collection])
+        XCTAssertEqual(try store.collections().first?.syncState, .pendingMembership)
+        XCTAssertEqual(try store.collections().first?.recipes.first?.id, "recipe-1")
+    }
+
+    func testProfileTransportDecodesCommunityCountsAndCollections() throws {
+        let data = #"""
+        {
+            "id": "profile-1",
+            "username": "creator",
+            "display_name": "Creator",
+            "published_recipes": [],
+            "collections": [
+                {"id": "collection-1", "name": "Street set", "is_public": true, "sort_order": 0, "recipes": []}
+            ],
+            "followers_count": 4,
+            "following_count": 2,
+            "is_following": true
+        }
+        """#.data(using: .utf8)!
+
+        let profile = try JSONDecoder().decode(ProfileTransport.self, from: data)
+
+        XCTAssertEqual(profile.collections.first?.name, "Street set")
+        XCTAssertEqual(profile.followersCount, 4)
+        XCTAssertEqual(profile.followingCount, 2)
+        XCTAssertTrue(profile.isFollowing)
+    }
+
     func testAPIErrorPayloadPreservesValidationMessages() throws {
         let payload = APIErrorPayload(
             message: "The given data was invalid.",

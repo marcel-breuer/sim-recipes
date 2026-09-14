@@ -25,6 +25,9 @@ class ProfileResource extends JsonResource
         $publishedRecipes = $user instanceof User && $user->relationLoaded('publishedRecipes')
             ? $user->getRelation('publishedRecipes')
             : [];
+        $publicCollections = $user instanceof User && $user->relationLoaded('publicRecipeCollections')
+            ? $user->getRelation('publicRecipeCollections')
+            : [];
         $isFollowing = $user instanceof User && $request->user() !== null
             ? UserFollow::query()
                 ->where('follower_id', $request->user()->getKey())
@@ -47,6 +50,7 @@ class ProfileResource extends JsonResource
                 ? null
                 : Storage::disk()->url($profileImagePath),
             'published_recipes' => PublishedRecipeSummaryResource::collection($publishedRecipes),
+            'collections' => RecipeCollectionResource::collection($publicCollections),
             'followers_count' => $user instanceof User ? (int) ($user->getAttribute('followers_count') ?? 0) : 0,
             'following_count' => $user instanceof User ? (int) ($user->getAttribute('following_count') ?? 0) : 0,
             'is_following' => $isFollowing,

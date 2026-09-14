@@ -262,6 +262,24 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
 struct RecipeAuthorTransport: Codable, Equatable, Sendable {
     let id: String
     let name: String
+    let username: String?
+
+    init(id: String, name: String, username: String? = nil) {
+        self.id = id
+        self.name = name
+        self.username = username
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, username
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        username = try container.decodeIfPresent(String.self, forKey: .username)
+    }
 }
 
 struct RecipeProvenanceTransport: Codable, Equatable, Sendable {
