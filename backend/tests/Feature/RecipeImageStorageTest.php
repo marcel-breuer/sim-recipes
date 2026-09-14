@@ -79,17 +79,53 @@ class RecipeImageStorageTest extends TestCase
             'images' => [UploadedFile::fake()->image('private.jpg')],
         ])->assertOk();
         $imageURL = $response->json('data.images.0.url');
+        $imageID = $response->json('data.images.0.id');
+
+        (new GenerateRecipeImageDerivatives($imageID))->handle();
 
         $this->get($imageURL)->assertOk();
+        $this->get($imageURL.'?variant=thumbnail')->assertOk();
+        $this->get($imageURL.'?variant=detail')->assertOk();
 
         Sanctum::actingAs($otherUser);
         $this->get($imageURL)->assertForbidden();
+        $this->get($imageURL.'?variant=thumbnail')->assertForbidden();
+        $this->get($imageURL.'?variant=detail')->assertForbidden();
 
         Sanctum::actingAs($owner);
         $this->postJson('/api/v1/recipes/'.$response->json('data.id').'/publish')->assertOk();
 
         Sanctum::actingAs($otherUser);
         $this->get($imageURL)->assertOk();
+    }
+
+    public function test_published_images_never_serve_the_original_variant(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        config(['filesystems.default' => 'local']);
+
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $camera = $this->createCamera();
+        Sanctum::actingAs($owner);
+
+        $response = $this->post('/api/v1/recipes', [
+            'name' => 'Variant Access',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('variant.jpg', 2000, 1000)],
+        ])->assertOk();
+        $imageID = $response->json('data.images.0.id');
+        $imageURL = $response->json('data.images.0.url');
+
+        (new GenerateRecipeImageDerivatives($imageID))->handle();
+        $this->postJson('/api/v1/recipes/'.$response->json('data.id').'/publish')->assertOk();
+
+        Sanctum::actingAs($otherUser);
+        $this->get($imageURL)->assertOk();
+        $this->get($imageURL.'?variant=thumbnail')->assertOk();
+        $this->get($imageURL.'?variant=detail')->assertOk();
+        $this->get($imageURL.'?variant=original')->assertNotFound();
     }
 
     public function test_derivative_job_keeps_the_original_and_records_derivative_paths(): void
@@ -129,6 +165,22 @@ class RecipeImageStorageTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($derivatives['detail']));
         $this->assertSame(2000, $image->width);
         $this->assertSame(1000, $image->height);
+        $this->assertStringNotContainsString('Exif', Storage::disk('local')->get($derivatives['thumbnail']));
+        $this->assertStringNotContainsString('GPS', Storage::disk('local')->get($derivatives['thumbnail']));
+    }
+
+    public function test_metadata_policy_is_explicit_for_originals_and_derivatives(): void
+    {
+        $metadata = config('recipes.images.metadata');
+
+        $this->assertSame(
+            'retained privately while a recipe is private; never served after publication',
+            $metadata['originals'],
+        );
+        $this->assertSame(
+            'EXIF and GPS metadata stripped during WebP encoding',
+            $metadata['derivatives'],
+        );
     }
 
     public function test_deleting_a_recipe_removes_originals_and_derivatives(): void

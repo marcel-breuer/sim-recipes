@@ -39,7 +39,7 @@ struct RecipeEditorView: View {
             titleVisibility: .visible
         ) {
             Button("Publish", role: .destructive) {
-                Task { await viewModel.publish() }
+                viewModel.startPublish()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -209,13 +209,41 @@ struct RecipeEditorView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if viewModel.isUploadInProgress {
+                Section("Upload") {
+                    if case .preparing = viewModel.uploadState {
+                        ProgressView("Preparing images…")
+                    } else {
+                        ProgressView(value: viewModel.uploadProgress) {
+                            Text("Uploading images…")
+                        }
+                        Text("\(Int(viewModel.uploadProgress * 100))% complete")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button("Cancel upload", role: .cancel) {
+                        viewModel.cancelUpload()
+                    }
+                }
+            } else if viewModel.canRetryUpload {
+                Section("Upload") {
+                    Text("The upload failed. Check your connection or storage quota and try again.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button("Retry upload") {
+                        viewModel.retryUpload()
+                    }
+                }
+            }
+
             Section {
                 Button("Save Draft Offline") {
                     viewModel.saveDraftLocally()
                 }
 
                 Button("Save Private Recipe") {
-                    Task { await viewModel.save() }
+                    viewModel.startSave()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(viewModel.isSaving || viewModel.isLoading)

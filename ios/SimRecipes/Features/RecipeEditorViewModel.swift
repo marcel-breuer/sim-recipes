@@ -1,6 +1,14 @@
 import Foundation
 import Combine
 
+enum RecipeUploadState: Equatable {
+    case idle
+    case preparing
+    case uploading(progress: Double)
+    case succeeded
+    case failed(message: String)
+}
+
 @MainActor
 final class RecipeEditorViewModel: ObservableObject {
     @Published private(set) var cameras: [SupportedCameraTransport] = []
@@ -9,11 +17,19 @@ final class RecipeEditorViewModel: ObservableObject {
     @Published var draft: RecipeDraft
     @Published private(set) var isLoading = false
     @Published private(set) var isSaving = false
+    @Published private(set) var uploadState: RecipeUploadState = .idle
     @Published var errorMessage: String?
 
     private let repository: RecipeRepository
     private let capabilityService: CameraCapabilityService
     private let draftStore: RecipeDraftStore
+    private var activeUploadTask: Task<Void, Never>?
+    private var lastUploadAction: UploadAction?
+
+    private enum UploadAction: Equatable {
+        case save
+        case publish
+    }
 
     init(
         draft: RecipeDraft = RecipeDraft(),
@@ -70,12 +86,14 @@ final class RecipeEditorViewModel: ObservableObject {
         }
 
         for data in images.prefix(remaining) {
-            draft.images.append(
-                RecipeDraftImage(
-                    filename: "recipe-\(draft.images.count + 1).jpg",
-                    data: data
-                )
-            )
+            do {
+                draft.images.append(try RecipeImagePreparer.prepare(
+                    data,
+                    filename: "recipe-\(draft.images.count + 1).jpg"
+                ))
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
@@ -105,43 +123,97 @@ final class RecipeEditorViewModel: ObservableObject {
     }
 
     func save() async {
+        await upload(.save)
+    }
+
+    func startSave() {
+        startUpload(.save)
+    }
+
+    func startPublish() {
+        startUpload(.publish)
+    }
+
+    func cancelUpload() {
+        activeUploadTask?.cancel()
+        activeUploadTask = nil
+        isSaving = false
+        uploadState = .idle
+        errorMessage = "Upload cancelled."
+    }
+
+    func retryUpload() {
+        guard let lastUploadAction else { return }
+        startUpload(lastUploadAction)
+    }
+
+    var uploadProgress: Double {
+        guard case let .uploading(progress) = uploadState else { return 0 }
+        return progress
+    }
+
+    var isUploadInProgress: Bool {
+        switch uploadState {
+        case .preparing, .uploading:
+            true
+        case .idle, .succeeded, .failed:
+            false
+        }
+    }
+
+    var canRetryUpload: Bool {
+        if case .failed = uploadState { return lastUploadAction != nil }
+        return false
+    }
+
+    private func startUpload(_ action: UploadAction) {
+        activeUploadTask?.cancel()
+        lastUploadAction = action
+        activeUploadTask = Task { [weak self] in
+            await self?.upload(action)
+        }
+    }
+
+    private func upload(_ action: UploadAction) async {
         do {
             try validate(requireImage: true)
             isSaving = true
             defer { isSaving = false }
+            uploadState = .preparing
             let categoryIDs = categories.filter { draft.categories.contains($0.name) }.map(\.id)
             let recipe: RecipeTransport
-            if draft.id == nil {
-                recipe = try await repository.create(draft, categoryIDs: categoryIDs)
-            } else {
-                recipe = try await repository.update(draft, categoryIDs: categoryIDs)
+            let progress: APIUploadProgressHandler = { [weak self] value in
+                Task { @MainActor [weak self] in
+                    guard let self, self.isSaving else { return }
+                    self.uploadState = .uploading(progress: value)
+                }
             }
-            draft = RecipeDraft(recipe: recipe)
-            try draftStore.save(draft)
-            errorMessage = "Private recipe saved."
+            if draft.id == nil {
+                recipe = try await repository.create(draft, categoryIDs: categoryIDs, progress: progress)
+            } else {
+                recipe = try await repository.update(draft, categoryIDs: categoryIDs, progress: progress)
+            }
+            if action == .publish {
+                let published = try await repository.publish(id: recipe.id)
+                draft = RecipeDraft(recipe: published)
+                try draftStore.delete(id: published.id)
+            } else {
+                draft = RecipeDraft(recipe: recipe)
+                try draftStore.save(draft)
+            }
+            uploadState = .succeeded
+            errorMessage = action == .publish ? "Recipe published." : "Private recipe saved."
+        } catch is CancellationError {
+            uploadState = .idle
+            errorMessage = "Upload cancelled."
         } catch {
+            uploadState = .failed(message: error.localizedDescription)
             errorMessage = error.localizedDescription
         }
     }
 
     func publish() async {
-        do {
-            try validate(requireImage: true)
-            isSaving = true
-            defer { isSaving = false }
-            let categoryIDs = categories.filter { draft.categories.contains($0.name) }.map(\.id)
-            let recipe: RecipeTransport
-            if draft.id == nil {
-                recipe = try await repository.create(draft, categoryIDs: categoryIDs)
-            } else {
-                recipe = try await repository.update(draft, categoryIDs: categoryIDs)
-            }
-            let published = try await repository.publish(id: recipe.id)
-            draft = RecipeDraft(recipe: published)
-            try draftStore.delete(id: published.id)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        await upload(.publish)
     }
 
     private func validate(requireImage: Bool) throws {

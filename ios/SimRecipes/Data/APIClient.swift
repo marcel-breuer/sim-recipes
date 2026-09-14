@@ -106,6 +106,8 @@ struct APIResponse<Payload: Decodable>: Decodable {
     let data: Payload
 }
 
+typealias APIUploadProgressHandler = @Sendable (Double) -> Void
+
 enum APIClientError: LocalizedError {
     case invalidURL
     case transport(Error)
@@ -128,8 +130,8 @@ enum APIClientError: LocalizedError {
             "The API request requires authentication."
         case .forbidden:
             "The authenticated user is not allowed to perform this request."
-        case .validation:
-            "The API rejected the request because its data was invalid."
+        case let .validation(payload):
+            payload?.userMessage ?? "The API rejected the request because its data was invalid."
         case let .server(statusCode, _):
             "The API request failed with status code \(statusCode)."
         case let .decoding(error):
@@ -146,6 +148,39 @@ struct APIErrorPayload: Codable, Equatable, Sendable {
         self.message = message
         self.errors = errors
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let directMessage = try container.decodeIfPresent(String.self, forKey: .message)
+        let directErrors = try container.decodeIfPresent([String: [String]].self, forKey: .errors)
+
+        if let error = try container.decodeIfPresent(NestedError.self, forKey: .error) {
+            message = error.message ?? directMessage
+            errors = error.details ?? directErrors
+        } else {
+            message = directMessage
+            errors = directErrors
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message
+        case errors
+        case error
+    }
+
+    private struct NestedError: Decodable {
+        let message: String?
+        let details: [String: [String]]?
+    }
+
+    var userMessage: String? {
+        if let error = errors?.values.flatMap({ $0 }).first, !error.isEmpty {
+            return error
+        }
+
+        return message
+    }
 }
 
 protocol APIClient {
@@ -154,7 +189,26 @@ protocol APIClient {
         responseType: Response.Type
     ) async throws -> Response
 
+    func sendWithProgress<Response: Decodable>(
+        _ request: APIRequest,
+        responseType: Response.Type,
+        progress: APIUploadProgressHandler?
+    ) async throws -> Response
+
     func download(_ request: APIRequest) async throws -> Data
+}
+
+extension APIClient {
+    func sendWithProgress<Response: Decodable>(
+        _ request: APIRequest,
+        responseType: Response.Type,
+        progress: APIUploadProgressHandler?
+    ) async throws -> Response {
+        progress?(request.body == nil ? 1 : 0)
+        let response = try await send(request, responseType: responseType)
+        progress?(1)
+        return response
+    }
 }
 
 final class URLSessionAPIClient: APIClient {
@@ -178,6 +232,14 @@ final class URLSessionAPIClient: APIClient {
     func send<Response: Decodable>(
         _ request: APIRequest,
         responseType: Response.Type
+    ) async throws -> Response {
+        try await sendWithProgress(request, responseType: responseType, progress: nil)
+    }
+
+    func sendWithProgress<Response: Decodable>(
+        _ request: APIRequest,
+        responseType: Response.Type,
+        progress: APIUploadProgressHandler?
     ) async throws -> Response {
         let url = try request.url(relativeTo: baseURL)
         var urlRequest = URLRequest(url: url)
@@ -203,34 +265,22 @@ final class URLSessionAPIClient: APIClient {
         let response: URLResponse
 
         do {
-            (data, response) = try await session.data(for: urlRequest)
+            if let progress, let body = request.body {
+                (data, response) = try await upload(urlRequest, body: body, progress: progress)
+            } else {
+                progress?(request.body == nil ? 1 : 0)
+                (data, response) = try await session.data(for: urlRequest)
+                progress?(1)
+            }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as APIClientError {
+            throw error
         } catch {
             throw APIClientError.transport(error)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIClientError.invalidResponse
-        }
-
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            let payload = try? decoder.decode(APIErrorPayload.self, from: data)
-            switch httpResponse.statusCode {
-            case 401:
-                throw APIClientError.unauthorized(payload)
-            case 403:
-                throw APIClientError.forbidden(payload)
-            case 422:
-                throw APIClientError.validation(payload)
-            default:
-                throw APIClientError.server(statusCode: httpResponse.statusCode, payload: payload)
-            }
-        }
-
-        do {
-            return try decoder.decode(Response.self, from: data)
-        } catch {
-            throw APIClientError.decoding(error)
-        }
+        return try decode(data: data, response: response)
     }
 
     func download(_ request: APIRequest) async throws -> Data {
@@ -270,6 +320,111 @@ final class URLSessionAPIClient: APIClient {
 
         return data
     }
+
+    private func upload(
+        _ request: URLRequest,
+        body: Data,
+        progress: @escaping APIUploadProgressHandler
+    ) async throws -> (Data, URLResponse) {
+        let delegate = UploadTaskDelegate(progress: progress)
+        let uploadSession = URLSession(
+            configuration: session.configuration,
+            delegate: delegate,
+            delegateQueue: nil
+        )
+        defer { uploadSession.finishTasksAndInvalidate() }
+
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                delegate.continuation = continuation
+                let task = uploadSession.uploadTask(with: request, from: body)
+                delegate.task = task
+                task.resume()
+            }
+        } onCancel: {
+            delegate.cancel()
+        }
+    }
+
+    private func decode<Response: Decodable>(data: Data, response: URLResponse) throws -> Response {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let payload = try? decoder.decode(APIErrorPayload.self, from: data)
+            switch httpResponse.statusCode {
+            case 401:
+                throw APIClientError.unauthorized(payload)
+            case 403:
+                throw APIClientError.forbidden(payload)
+            case 422:
+                throw APIClientError.validation(payload)
+            default:
+                throw APIClientError.server(statusCode: httpResponse.statusCode, payload: payload)
+            }
+        }
+
+        do {
+            return try decoder.decode(Response.self, from: data)
+        } catch {
+            throw APIClientError.decoding(error)
+        }
+    }
+}
+
+private final class UploadTaskDelegate: NSObject, URLSessionDataDelegate, URLSessionTaskDelegate {
+    let progress: APIUploadProgressHandler
+    var continuation: CheckedContinuation<(Data, URLResponse), Error>?
+    var task: URLSessionUploadTask?
+    private var data = Data()
+    private var cancelled = false
+
+    init(progress: @escaping APIUploadProgressHandler) {
+        self.progress = progress
+    }
+
+    func cancel() {
+        cancelled = true
+        task?.cancel()
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didSendBodyData bytesSent: Int64,
+        totalBytesSent: Int64,
+        totalBytesExpectedToSend: Int64
+    ) {
+        guard totalBytesExpectedToSend > 0 else { return }
+        progress(min(1, Double(totalBytesSent) / Double(totalBytesExpectedToSend)))
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        self.data.append(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard let continuation else { return }
+        self.continuation = nil
+
+        if let error {
+            if cancelled || (error as? URLError)?.code == .cancelled {
+                continuation.resume(throwing: CancellationError())
+            } else {
+                continuation.resume(throwing: error)
+            }
+            return
+        }
+
+        guard let response = task.response else {
+            continuation.resume(throwing: APIClientError.invalidResponse)
+            return
+        }
+
+        progress(1)
+        continuation.resume(returning: (data, response))
+    }
 }
 
 final class BearerAPIClient: APIClient {
@@ -297,6 +452,29 @@ final class BearerAPIClient: APIClient {
         )
 
         return try await apiClient.send(authenticatedRequest, responseType: responseType)
+    }
+
+    func sendWithProgress<Response: Decodable>(
+        _ request: APIRequest,
+        responseType: Response.Type,
+        progress: APIUploadProgressHandler?
+    ) async throws -> Response {
+        var headers = request.headers
+        headers["Authorization"] = "Bearer \(accessToken)"
+        let authenticatedRequest = APIRequest(
+            method: request.method,
+            path: request.path,
+            queryItems: request.queryItems,
+            headers: headers,
+            body: request.body,
+            contentType: request.contentType
+        )
+
+        return try await apiClient.sendWithProgress(
+            authenticatedRequest,
+            responseType: responseType,
+            progress: progress
+        )
     }
 
     func download(_ request: APIRequest) async throws -> Data {

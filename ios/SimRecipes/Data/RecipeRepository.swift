@@ -160,22 +160,34 @@ final class RecipeRepository {
         return try await refreshRecipe(id: id)
     }
 
-    func create(_ draft: RecipeDraft, categoryIDs: [String]) async throws -> RecipeTransport {
+    func create(
+        _ draft: RecipeDraft,
+        categoryIDs: [String],
+        progress: APIUploadProgressHandler? = nil
+    ) async throws -> RecipeTransport {
         let request = try makeMultipartRequest(
             method: .post,
             path: "recipes",
             draft: draft,
             categoryIDs: categoryIDs
         )
-        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        let response = try await apiClient.sendWithProgress(
+            request,
+            responseType: APIResponse<RecipeTransport>.self,
+            progress: progress
+        )
         let cachedRecipe = await cacheImages(for: response.data)
         try localStore.mergeRemote(cachedRecipe)
         return cachedRecipe
     }
 
-    func update(_ draft: RecipeDraft, categoryIDs: [String]) async throws -> RecipeTransport {
+    func update(
+        _ draft: RecipeDraft,
+        categoryIDs: [String],
+        progress: APIUploadProgressHandler? = nil
+    ) async throws -> RecipeTransport {
         guard let id = draft.id else {
-            return try await create(draft, categoryIDs: categoryIDs)
+            return try await create(draft, categoryIDs: categoryIDs, progress: progress)
         }
 
         let request = try makeMultipartRequest(
@@ -184,7 +196,11 @@ final class RecipeRepository {
             draft: draft,
             categoryIDs: categoryIDs
         )
-        let response = try await apiClient.send(request, responseType: APIResponse<RecipeTransport>.self)
+        let response = try await apiClient.sendWithProgress(
+            request,
+            responseType: APIResponse<RecipeTransport>.self,
+            progress: progress
+        )
         let cachedRecipe = await cacheImages(for: response.data)
         try localStore.mergeRemote(cachedRecipe)
         return cachedRecipe

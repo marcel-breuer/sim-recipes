@@ -54,7 +54,8 @@ separate public presentation surface and does not expose repository links.
 Private repository. No open-source license is granted.
 
 See `PROJECT_SPEC.md` for the MVP specification, `docker/README.md` for local
-and Coolify deployment, and `AGENTS.md` for engineering conventions.
+and Coolify deployment, `docs/IMAGE_HANDLING.md` for image privacy and upload
+behavior, and `AGENTS.md` for engineering conventions.
 Release-candidate checks and known limitations are tracked in
 `docs/RELEASE_VALIDATION.md`.
 

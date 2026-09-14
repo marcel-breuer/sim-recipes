@@ -1,4 +1,72 @@
 import Foundation
+import UIKit
+
+enum RecipeImagePreparationError: LocalizedError, Equatable {
+    case invalidImage
+    case unableToEncode
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidImage:
+            "The selected file is not a supported image."
+        case .unableToEncode:
+            "The selected image could not be prepared for upload."
+        }
+    }
+}
+
+enum RecipeImagePreparer {
+    static let maxUploadBytes = 8 * 1024 * 1024
+    static let maxPixelDimension: CGFloat = 4096
+
+    static func prepare(
+        _ data: Data,
+        filename: String,
+        id: UUID = UUID()
+    ) throws -> RecipeDraftImage {
+        guard let image = UIImage(data: data) else {
+            throw RecipeImagePreparationError.invalidImage
+        }
+
+        let pixelWidth = image.size.width * image.scale
+        let pixelHeight = image.size.height * image.scale
+        let largestDimension = max(pixelWidth, pixelHeight)
+        let initialScale = min(1, maxPixelDimension / max(largestDimension, 1))
+        var size = CGSize(
+            width: max(1, pixelWidth * initialScale),
+            height: max(1, pixelHeight * initialScale)
+        )
+
+        for _ in 0..<5 {
+            let rendered = render(image, size: size)
+            for quality in [0.82, 0.70, 0.55, 0.40] {
+                if let jpegData = rendered.jpegData(compressionQuality: quality),
+                   jpegData.count <= maxUploadBytes {
+                    return RecipeDraftImage(
+                        id: id,
+                        filename: URL(fileURLWithPath: filename).deletingPathExtension().lastPathComponent + ".jpg",
+                        mimeType: "image/jpeg",
+                        data: jpegData
+                    )
+                }
+            }
+            size = CGSize(width: size.width * 0.75, height: size.height * 0.75)
+        }
+
+        throw RecipeImagePreparationError.unableToEncode
+    }
+
+    private static func render(_ image: UIImage, size: CGSize) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            UIColor.white.setFill()
+            UIRectFill(CGRect(origin: .zero, size: size))
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+}
 
 struct CategoryTransport: Codable, Equatable, Identifiable, Sendable {
     let id: String
