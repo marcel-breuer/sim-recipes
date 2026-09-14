@@ -33,7 +33,7 @@ class RecipeCollection extends Model
 
     public function recipes(): BelongsToMany
     {
-        return $this->belongsToMany(Recipe::class, 'recipe_collection_recipe')
+        return $this->belongsToMany(Recipe::class, 'recipe_collection_recipe', 'collection_id', 'recipe_id')
             ->withPivot('sort_order')
             ->orderByPivot('sort_order');
     }
