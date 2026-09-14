@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use LogicException;
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\IndexModerationReportRequest;
 use App\Http\Requests\Api\V1\StoreModerationReportRequest;
@@ -19,6 +17,7 @@ use App\Services\Admin\AdminAuditLogger;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use LogicException;
 
 class ModerationReportController extends Controller
 {
