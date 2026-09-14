@@ -2,9 +2,15 @@ name: Docker quality
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    paths:
+      - 'backend/**'
+      - 'docker/**'
+      - '.github/workflows/docker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,6 +19,7 @@ jobs:
   docker:
     name: Compose configuration and build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -46,7 +53,7 @@ jobs:
         env:
           COMPOSE_DOCKER_CLI_BUILD: '1'
           DOCKER_BUILDKIT: '1'
-        run: docker compose --env-file docker/.env -f docker/docker-compose.yml build --pull
+        run: docker compose --env-file docker/.env -f docker/docker-compose.yml build
 
       - name: Start Compose stack
         if: ${{ steps.project.outputs.type == 'compose' }}

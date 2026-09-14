@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\ProfileResource;
 use App\Models\Profile;
+use App\Models\Recipe;
 use App\Models\User;
 use App\Models\UserBlock;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,7 +93,14 @@ class ProfileController extends Controller
             ->with([
                 'user' => fn ($query) => $query
                     ->withCount(['followers', 'following'])
-                    ->with(['publishedRecipes' => fn ($recipeQuery) => $recipeQuery->with('cameraModel')]),
+                    ->with([
+                        'publishedRecipes' => fn ($recipeQuery) => $recipeQuery->with('cameraModel'),
+                        'publicRecipeCollections' => fn ($collectionQuery) => $collectionQuery
+                            ->with(['recipes' => fn ($recipeQuery) => $recipeQuery
+                                ->where('status', Recipe::STATUS_PUBLISHED)
+                                ->where('is_hidden', false)
+                                ->with('cameraModel')]),
+                    ]),
                 'cameraModel',
             ]);
     }

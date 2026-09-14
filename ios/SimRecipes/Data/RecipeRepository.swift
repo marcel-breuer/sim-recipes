@@ -56,13 +56,28 @@ final class RecipeRepository {
     }
 
     func refreshRecipe(id: String) async throws -> RecipeTransport {
+        try? localStore.markSyncState(.retrying, for: id)
         let request = APIRequest(method: .get, path: "recipes/\(id)")
-        let recipe = try await apiClient.send(request, responseType: RecipeTransport.self)
+        let recipe: RecipeTransport
+        do {
+            recipe = try await apiClient.send(request, responseType: RecipeTransport.self)
+        } catch {
+            try? localStore.markSyncState(.failed, for: id, error: error.localizedDescription)
+            throw error
+        }
         let cachedRecipe = await cacheImages(for: recipe)
         if try localStore.mergeRemote(cachedRecipe) == .conflict {
             throw RecipeSyncError.conflict(recipeID: recipe.id)
         }
         return cachedRecipe
+    }
+
+    func retryRecipe(id: String) async throws -> RecipeTransport {
+        try await refreshRecipe(id: id)
+    }
+
+    func resolveConflict(id: String, resolution: RecipeConflictResolution) throws {
+        try localStore.resolveConflict(id: id, resolution: resolution)
     }
 
     func refreshRecipes(page: Int = 1) async throws -> RecipePageSyncResult {

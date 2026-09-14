@@ -3,10 +3,15 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
     var transferService: (any CameraService)?
+    var capabilityService: CameraCapabilityService?
+    var collections: [RecipeCollectionTransport] = []
+    var addToCollectionAction: ((String) async throws -> Void)?
     var copyAction: (() async throws -> RecipeTransport)?
     var viewAction: (() async throws -> RecipeEngagementTransport)?
     var likeAction: (() async throws -> RecipeEngagementTransport)?
     var unlikeAction: (() async throws -> RecipeEngagementTransport)?
+    var followAction: (() async throws -> FollowResponse)?
+    var unfollowAction: (() async throws -> FollowResponse)?
     var reportAction: (() async throws -> Void)?
     var reportImageAction: (() async throws -> Void)?
     var reportAuthorAction: (() async throws -> Void)?
@@ -19,6 +24,7 @@ struct RecipeDetailView: View {
     @State private var isLiking = false
     @State private var isLiked: Bool
     @State private var likesCount: Int
+    @State private var isFollowingAuthor: Bool
     @State private var message: String?
     @State private var isSubmittingSafetyAction = false
     @State private var isCreatorBlocked = false
@@ -27,10 +33,15 @@ struct RecipeDetailView: View {
     init(
         recipe: RecipeTransport,
         transferService: (any CameraService)? = nil,
+        capabilityService: CameraCapabilityService? = nil,
+        collections: [RecipeCollectionTransport] = [],
+        addToCollectionAction: ((String) async throws -> Void)? = nil,
         copyAction: (() async throws -> RecipeTransport)? = nil,
         viewAction: (() async throws -> RecipeEngagementTransport)? = nil,
         likeAction: (() async throws -> RecipeEngagementTransport)? = nil,
         unlikeAction: (() async throws -> RecipeEngagementTransport)? = nil,
+        followAction: (() async throws -> FollowResponse)? = nil,
+        unfollowAction: (() async throws -> FollowResponse)? = nil,
         reportAction: (() async throws -> Void)? = nil,
         reportImageAction: (() async throws -> Void)? = nil,
         reportAuthorAction: (() async throws -> Void)? = nil,
@@ -42,10 +53,15 @@ struct RecipeDetailView: View {
     ) {
         self.recipe = recipe
         self.transferService = transferService
+        self.capabilityService = capabilityService
+        self.collections = collections
+        self.addToCollectionAction = addToCollectionAction
         self.copyAction = copyAction
         self.viewAction = viewAction
         self.likeAction = likeAction
         self.unlikeAction = unlikeAction
+        self.followAction = followAction
+        self.unfollowAction = unfollowAction
         self.reportAction = reportAction
         self.reportImageAction = reportImageAction
         self.reportAuthorAction = reportAuthorAction
@@ -56,6 +72,7 @@ struct RecipeDetailView: View {
         self.commentBlockAction = commentBlockAction
         _isLiked = State(initialValue: recipe.isLiked ?? false)
         _likesCount = State(initialValue: recipe.likesCount)
+        _isFollowingAuthor = State(initialValue: false)
     }
 
     var body: some View {
@@ -98,8 +115,18 @@ struct RecipeDetailView: View {
                     Text(recipe.name)
                         .font(.largeTitle.bold())
                     if let author = recipe.author {
-                        Text("By \(author.name)")
-                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("By \(author.name)")
+                                .foregroundStyle(.secondary)
+                            if followAction != nil || unfollowAction != nil {
+                                Button(isFollowingAuthor ? "Following" : "Follow") {
+                                    Task { await toggleFollow() }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(isLiking)
+                            }
+                        }
                     }
                     if let publishedAt = recipe.publishedAt {
                         Text(publishedAt, style: .date)
@@ -184,7 +211,11 @@ struct RecipeDetailView: View {
             if let transferService {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink {
-                        CameraTransferView(recipe: recipe, cameraService: transferService)
+                        CameraTransferView(
+                            recipe: recipe,
+                            cameraService: transferService,
+                            capabilityService: capabilityService
+                        )
                     } label: {
                         Label("Transfer to Camera", systemImage: "arrow.down.to.line.compact")
                     }
@@ -212,6 +243,34 @@ struct RecipeDetailView: View {
                         }
                     }
                     .disabled(isCopying)
+                }
+            }
+            if let shareURL = RecipeShareLink.url(for: recipe) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: shareURL) {
+                        Label("Share public recipe link", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Share public recipe link")
+                }
+            }
+            if let addToCollectionAction, !collections.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        ForEach(collections) { collection in
+                            Button(collection.name) {
+                                Task {
+                                    do {
+                                        try await addToCollectionAction(collection.id)
+                                        message = "Added to \(collection.name)."
+                                    } catch {
+                                        message = error.localizedDescription
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Add to collection", systemImage: "folder.badge.plus")
+                    }
                 }
             }
             if reportAction != nil || reportAuthorAction != nil || blockAction != nil || unblockAction != nil {
@@ -305,6 +364,22 @@ struct RecipeDetailView: View {
             if let count = response.likesCount {
                 likesCount = count
             }
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func toggleFollow() async {
+        do {
+            let response: FollowResponse
+            if isFollowingAuthor, let unfollowAction {
+                response = try await unfollowAction()
+            } else if let followAction {
+                response = try await followAction()
+            } else {
+                return
+            }
+            isFollowingAuthor = response.following
         } catch {
             message = error.localizedDescription
         }

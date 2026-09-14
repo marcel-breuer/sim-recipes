@@ -43,6 +43,8 @@ docker compose --env-file docker/.env \
 The backend suite covers authentication, recipe lifecycle and immutability,
 images and quotas, community discovery, engagement accounting, copying and
 provenance, moderation, blocking, authorization, and database constraints.
+It also covers collection lifecycle, ordered membership, and public-profile
+privacy filtering.
 
 ## Functional MVP checklist
 
