@@ -4,7 +4,9 @@ The iOS client is a SwiftUI application targeting iOS 17 and later. The shared
 `SimRecipes` scheme builds the app and its unit-test target on an iPhone
 Simulator.
 
-The current shell contains the Explore, Library, and Profile product sections.
+The current shell contains onboarding plus the Explore, Library, and Profile
+product sections. Onboarding stores the preferred supported camera locally and
+offers offline-safe photography interest defaults.
 The API client, SwiftData recipe metadata store, and repository boundary are
 available for offline-first recipe access under `SimRecipes/Data/`.
 Sign in with Apple and Keychain-backed session restoration are available under
