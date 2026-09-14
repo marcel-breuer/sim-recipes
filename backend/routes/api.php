@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ModerationReportController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReadinessController;
 use App\Http\Controllers\Api\V1\RecipeCommentController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\RecipeCopyController;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('/health', HealthController::class)->name('api.v1.health');
+    Route::get('/health/ready', ReadinessController::class)->name('api.v1.health.ready');
     Route::post('/auth/apple', [AuthController::class, 'apple'])
         ->name('api.v1.auth.apple');
     Route::get('/profiles/{username}', [ProfileController::class, 'show'])

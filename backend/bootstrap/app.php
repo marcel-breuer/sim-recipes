@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\PreventIndexing;
+use App\Http\Middleware\RequestId;
 use App\Http\Middleware\RejectSuspendedUsers;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(RequestId::class);
         $middleware->alias([
             'auth.api' => Authenticate::class,
             'active.account' => RejectSuspendedUsers::class,

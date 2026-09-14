@@ -9,8 +9,10 @@ class HealthEndpointTest extends TestCase
 {
     public function test_the_versioned_health_endpoint_returns_a_resource(): void
     {
-        $this->getJson('/api/v1/health')
+        $this->withHeader('X-Request-ID', 'health-test-1')
+            ->getJson('/api/v1/health')
             ->assertOk()
+            ->assertHeader('X-Request-ID', 'health-test-1')
             ->assertJsonPath('data.service', 'sim-recipes-api')
             ->assertJsonPath('data.status', 'ok')
             ->assertJsonPath('data.version', 'v1');
