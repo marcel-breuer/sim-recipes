@@ -2,8 +2,8 @@
 
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\PreventIndexing;
-use App\Http\Middleware\RequestId;
 use App\Http\Middleware\RejectSuspendedUsers;
+use App\Http\Middleware\RequestId;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
