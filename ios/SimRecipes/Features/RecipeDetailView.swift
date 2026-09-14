@@ -3,6 +3,7 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
     var transferService: (any CameraService)?
+    var similarRecipesRepository: RecipeRepository?
     var capabilityService: CameraCapabilityService?
     var collections: [RecipeCollectionTransport] = []
     var addToCollectionAction: ((String) async throws -> Void)?
@@ -33,6 +34,7 @@ struct RecipeDetailView: View {
     init(
         recipe: RecipeTransport,
         transferService: (any CameraService)? = nil,
+        similarRecipesRepository: RecipeRepository? = nil,
         capabilityService: CameraCapabilityService? = nil,
         collections: [RecipeCollectionTransport] = [],
         addToCollectionAction: ((String) async throws -> Void)? = nil,
@@ -53,6 +55,7 @@ struct RecipeDetailView: View {
     ) {
         self.recipe = recipe
         self.transferService = transferService
+        self.similarRecipesRepository = similarRecipesRepository
         self.capabilityService = capabilityService
         self.collections = collections
         self.addToCollectionAction = addToCollectionAction
@@ -194,6 +197,12 @@ struct RecipeDetailView: View {
                     }
                 }
 
+                if let similarRecipesRepository {
+                    SimilarRecipesView(
+                        recipeID: recipe.id,
+                        repository: similarRecipesRepository
+                    )
+                }
                 if let commentsService {
                     RecipeCommentsView(
                         recipeID: recipe.id,

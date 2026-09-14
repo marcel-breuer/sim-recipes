@@ -89,6 +89,55 @@ class CommunityRecipeFeedTest extends TestCase
             ->assertJsonPath('data.0.name', 'Muted Street');
     }
 
+    public function test_similar_recipes_use_deterministic_camera_metadata_and_settings(): void
+    {
+        $user = User::factory()->create();
+        $camera = $this->createCamera('x-s20');
+        $otherCamera = $this->createCamera('x-t5');
+        $category = Category::create(['name' => 'Street', 'slug' => 'street']);
+        $tag = Tag::create(['name' => 'Muted', 'slug' => 'muted']);
+        $capability = CameraCapability::create([
+            'camera_model_id' => $camera->id,
+            'setting_key' => 'film_simulation',
+            'display_name' => 'Film Simulation',
+            'value_type' => 'enum',
+            'allowed_values' => ['Classic Chrome', 'Velvia'],
+        ]);
+
+        $source = $this->createPublishedRecipe($user, $camera, 'Source', 'Source recipe.');
+        $source->categories()->attach($category);
+        $source->tags()->attach($tag);
+        RecipeSetting::create([
+            'recipe_id' => $source->id,
+            'camera_capability_id' => $capability->id,
+            'setting_key' => 'film_simulation',
+            'value' => 'Classic Chrome',
+        ]);
+
+        $matching = $this->createPublishedRecipe($user, $camera, 'Matching', 'Matching recipe.');
+        $matching->categories()->attach($category);
+        $matching->tags()->attach($tag);
+        RecipeSetting::create([
+            'recipe_id' => $matching->id,
+            'camera_capability_id' => $capability->id,
+            'setting_key' => 'film_simulation',
+            'value' => 'Classic Chrome',
+        ]);
+
+        $sameCamera = $this->createPublishedRecipe($user, $camera, 'Same camera', 'Different metadata.');
+        $wrongCamera = $this->createPublishedRecipe($user, $otherCamera, 'Wrong camera', 'Matching tags, wrong camera.');
+        $source->refresh();
+
+        $response = $this->getJson('/api/v1/recipes/'.$source->id.'/similar')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $matching->id);
+
+        $ids = collect($response->json('data'))->pluck('id');
+        $this->assertContains($sameCamera->id, $ids);
+        $this->assertNotContains($source->id, $ids);
+        $this->assertNotContains($wrongCamera->id, $ids);
+    }
+
     private function createCamera(string $slug): CameraModel
     {
         return CameraModel::create([

@@ -12,18 +12,25 @@ final class ExploreViewModel: ObservableObject {
     @Published private(set) var recipes: [RecipeTransport] = []
     @Published private(set) var cameras: [SupportedCameraTransport] = []
     @Published private(set) var categories: [CategoryTransport] = []
+    @Published private(set) var savedFilters: [SavedRecipeFilter] = []
     @Published private(set) var isLoading = false
     @Published private(set) var hasLoadedFilters = false
     @Published var errorMessage: String?
 
     private let repository: RecipeRepository
     private let capabilityService: CameraCapabilityService
+    private let savedFilterStore: SavedFilterStore
     private var currentPage = 0
     private var lastPage = 1
 
-    init(repository: RecipeRepository, capabilityService: CameraCapabilityService) {
+    init(
+        repository: RecipeRepository,
+        capabilityService: CameraCapabilityService,
+        savedFilterStore: SavedFilterStore = SavedFilterStore()
+    ) {
         self.repository = repository
         self.capabilityService = capabilityService
+        self.savedFilterStore = savedFilterStore
     }
 
     var hasMorePages: Bool {
@@ -53,6 +60,7 @@ final class ExploreViewModel: ObservableObject {
             return
         }
 
+        savedFilters = savedFilterStore.load()
         async let cameraResult = capabilityService.supportedCameras()
         async let categoryResult = capabilityService.categories()
 
@@ -82,6 +90,44 @@ final class ExploreViewModel: ObservableObject {
 
     func applyFilters() async {
         await refresh()
+    }
+
+    func applySavedFilter(_ savedFilter: SavedRecipeFilter) async {
+        searchText = savedFilter.filter.search
+        selectedCameraID = savedFilter.filter.cameraModelID
+        selectedFilmSimulation = savedFilter.filter.filmSimulation
+        selectedCategorySlugs = Set(savedFilter.filter.categorySlugs)
+        tagText = savedFilter.filter.tags.joined(separator: ", ")
+        await refresh()
+    }
+
+    func saveCurrentFilter(named name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        savedFilters.append(SavedRecipeFilter(
+            id: UUID(),
+            name: trimmedName,
+            filter: filter
+        ))
+        savedFilterStore.save(savedFilters)
+    }
+
+    func renameSavedFilter(id: UUID, to name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty,
+              let index = savedFilters.firstIndex(where: { $0.id == id }) else { return }
+        savedFilters[index].name = trimmedName
+        savedFilterStore.save(savedFilters)
+    }
+
+    func deleteSavedFilter(id: UUID) {
+        savedFilters.removeAll { $0.id == id }
+        savedFilterStore.save(savedFilters)
+    }
+
+    func moveSavedFilters(from source: IndexSet, to destination: Int) {
+        savedFilters.move(fromOffsets: source, toOffset: destination)
+        savedFilterStore.save(savedFilters)
     }
 
     private func loadPage(reset: Bool) async {
