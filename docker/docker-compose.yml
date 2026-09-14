@@ -34,7 +34,7 @@ x-app-environment: &app-environment
 
 x-app-service: &app-service
   build:
-    context: .
+    context: ..
     dockerfile: docker/Dockerfile
   image: ${API_IMAGE:-sim-recipes-api}:${API_IMAGE_TAG:-local}
   restart: unless-stopped

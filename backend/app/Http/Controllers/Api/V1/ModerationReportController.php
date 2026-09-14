@@ -17,6 +17,7 @@ use App\Services\Admin\AdminAuditLogger;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use LogicException;
 
 class ModerationReportController extends Controller
 {
@@ -79,6 +80,7 @@ class ModerationReportController extends Controller
                 'RecipeComment' => RecipeComment::class,
                 'RecipeImage' => RecipeImage::class,
                 'User' => User::class,
+                default => throw new LogicException('Unsupported reportable type.'),
             };
             $query->where('reportable_type', $reportableType);
         }
