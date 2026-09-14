@@ -19,6 +19,9 @@ final class RequestId
 
         Log::withContext(['request_id' => $requestID]);
 
-        return $next($request)->header('X-Request-ID', $requestID);
+        $response = $next($request);
+        $response->headers->set('X-Request-ID', $requestID);
+
+        return $response;
     }
 }
