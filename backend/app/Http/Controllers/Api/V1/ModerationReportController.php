@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use LogicException;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\IndexModerationReportRequest;
 use App\Http\Requests\Api\V1\StoreModerationReportRequest;
@@ -79,6 +81,7 @@ class ModerationReportController extends Controller
                 'RecipeComment' => RecipeComment::class,
                 'RecipeImage' => RecipeImage::class,
                 'User' => User::class,
+                default => throw new LogicException('Unsupported reportable type.'),
             };
             $query->where('reportable_type', $reportableType);
         }
