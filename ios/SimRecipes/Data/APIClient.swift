@@ -1,5 +1,14 @@
 import Foundation
 
+enum APIContract {
+    static let version = "v1"
+    static let health = "health"
+    static let authApple = "auth/apple"
+    static let cameras = "cameras"
+    static let categories = "categories"
+    static let recipes = "recipes"
+}
+
 enum HTTPMethod: String, Sendable {
     case get = "GET"
     case post = "POST"
