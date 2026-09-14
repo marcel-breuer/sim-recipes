@@ -57,6 +57,7 @@ class Recipe extends Model
         return $this->belongsTo(CameraModel::class);
     }
 
+    /** @return HasMany<RecipeSetting, $this> */
     public function settings(): HasMany
     {
         return $this->hasMany(RecipeSetting::class);
