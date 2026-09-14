@@ -1,5 +1,9 @@
 # API conventions
 
+The machine-readable core contract is maintained in [`docs/openapi.json`](openapi.json).
+Changes to versioned paths, error envelopes, or pagination must update that
+contract and the client transport tests in the same change.
+
 The Laravel application exposes JSON endpoints under /api/v1. The version
 prefix is part of the public contract and must be retained for compatible
 changes.
@@ -87,10 +91,25 @@ ID tie-breakers so adjacent pages remain deterministic during normal browsing.
   `provenance.source_author_id`. Metadata, settings, relations, and stored image
   representations are copied transactionally.
 
+Retryable authenticated mutations should send a stable `Idempotency-Key` header
+for the logical operation (for example, one key per local draft save or copy
+request). The server contract must treat a repeated key and equivalent payload
+as the original result, so an offline retry cannot create duplicate recipes,
+copies, likes, or engagement events. A changed payload must be rejected rather
+than silently reusing the earlier result.
+
 Authenticated users can follow and unfollow a public profile with `POST` and
 `DELETE /profiles/{username}/follow`. Profile responses include follower and
 following counts and the authenticated viewer's `is_following` state. Following
 is unavailable when either user has blocked the other.
+
+Authenticated users manage their personal collections with `GET` and `POST
+/collections`, `PATCH`/`DELETE /collections/{collection}`, and
+`PATCH /collections/reorder`. Recipe membership is idempotently added or
+removed with `PUT`/`DELETE /collections/{collection}/recipes/{recipe}`. Only
+the owning user can read or mutate personal collections. Public profile
+responses expose only collections marked public and filter their members to
+published, visible recipes, so private drafts never cross the profile boundary.
 
 The default popularity strategy scores likes × 3, downloads × 5, and views ×
 1. It is bound behind a replaceable `PopularityRanking` service so the formula

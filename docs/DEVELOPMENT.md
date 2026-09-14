@@ -42,5 +42,32 @@ Run the checks relevant to the changed area before opening a pull request:
 - iOS formatting/build/tests for affected targets;
 - Docker configuration/build validation when infrastructure changes.
 
+## GitHub Actions cost control
+
+The workflows use path filters so that changes are validated only by the
+checks they can affect:
+
+| Changed paths | Workflow |
+| --- | --- |
+| `backend/**`, Composer/PHPUnit/PHPStan configuration | Backend quality |
+| `backend/**` or `docker/**` | Docker quality |
+| `ios/**` | iOS quality |
+
+Each workflow cancels an older run for the same pull request when a newer
+commit arrives. The Docker check does not force a fresh base-image pull, and
+the iOS check uses the test action as the build-and-test validation because
+tests build the application target first.
+
+Validation is PR-first: merges do not start a duplicate `push` run on `main`
+because the pull request is tested against GitHub's merge revision. Use the
+manual `workflow_dispatch` trigger when a deliberate post-merge validation is
+needed.
+
+When a workflow is intentionally skipped, GitHub still shows the workflow
+trigger decision in the pull request. The repository currently has no branch
+protection rules that require skipped path-specific checks; if required checks
+are introduced later, add a small aggregate check before making these names
+mandatory.
+
 Copy an environment example only for local use and fill it with local values.
 Runtime deployment secrets belong in Coolify or another protected environment.

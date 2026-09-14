@@ -40,6 +40,7 @@ struct RootView: View {
     let localStore: LocalRecipeStore
     let cameraService: any CameraService
     @State private var selectedTab: AppTab = .explore
+    @State private var deepLinkRecipeID: String?
     @AppStorage("simrecipes.onboarding.completed") private var onboardingCompleted = false
     @AppStorage("simrecipes.onboarding.camera-model") private var preferredCameraModelID = "fujifilm-x-s20"
 
@@ -58,9 +59,11 @@ struct RootView: View {
         TabView(selection: $selectedTab) {
             ExploreView(
                 authService: authService,
+                profileService: profileService,
                 apiClient: apiClient,
                 localStore: localStore,
-                cameraService: cameraService
+                cameraService: cameraService,
+                deepLinkRecipeID: deepLinkRecipeID
             )
                 .tabItem {
                     Label(AppTab.explore.title, systemImage: AppTab.explore.systemImage)
@@ -97,6 +100,12 @@ struct RootView: View {
                     Label(AppTab.profile.title, systemImage: AppTab.profile.systemImage)
                 }
                 .tag(AppTab.profile)
+        }
+        .onOpenURL { url in
+            guard let recipesIndex = url.pathComponents.firstIndex(of: "recipes"),
+                  url.pathComponents.indices.contains(recipesIndex + 1) else { return }
+            selectedTab = .explore
+            deepLinkRecipeID = url.pathComponents[recipesIndex + 1]
         }
     }
 }

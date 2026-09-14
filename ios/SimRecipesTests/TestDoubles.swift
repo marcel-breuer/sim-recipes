@@ -33,6 +33,25 @@ final class StubAPIClient: APIClient {
     }
 }
 
+actor BlockingPreviewRenderer: RecipePreviewRendering {
+    private var continuation: CheckedContinuation<RecipePreviewResult, Error>?
+
+    func render(
+        imageData: Data,
+        settings: [RecipeSettingTransport],
+        capabilities: [CameraCapabilityTransport]
+    ) async throws -> RecipePreviewResult {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func finish(with result: RecipePreviewResult) {
+        continuation?.resume(returning: result)
+        continuation = nil
+    }
+}
+
 final class MemoryCredentialStore: CredentialStore {
     var data: Data?
 

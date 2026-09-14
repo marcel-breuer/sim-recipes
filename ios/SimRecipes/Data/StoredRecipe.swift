@@ -19,6 +19,8 @@ final class StoredRecipe {
     var imagesData: Data = Data()
     var syncStateRawValue: String
     var lastSyncedAt: Date?
+    var lastSyncError: String?
+    var conflictRecipeData: Data?
 
     init(
         recipe: RecipeTransport,
@@ -42,6 +44,8 @@ final class StoredRecipe {
         self.imagesData = try encoder.encode(recipe.images)
         self.syncStateRawValue = syncState.rawValue
         self.lastSyncedAt = syncedAt
+        self.lastSyncError = nil
+        self.conflictRecipeData = nil
     }
 
     var syncState: RecipeSyncState {

@@ -128,6 +128,29 @@ struct RecipeEditorView: View {
                 }
             }
 
+            Section("Visual preview") {
+                if let imageData = viewModel.draft.images.first?.data,
+                   !viewModel.capabilities.isEmpty {
+                    RecipePreviewView(
+                        imageData: imageData,
+                        settings: viewModel.draft.settings,
+                        capabilities: viewModel.capabilities
+                    )
+                } else if viewModel.draft.images.isEmpty {
+                    Label(
+                        "Select an example image below to preview this local draft.",
+                        systemImage: "photo.on.rectangle"
+                    )
+                    .foregroundStyle(.secondary)
+                } else {
+                    Label(
+                        "Preview controls are loading for the selected camera.",
+                        systemImage: "camera.aperture"
+                    )
+                    .foregroundStyle(.secondary)
+                }
+            }
+
             Section("Example images") {
                 if viewModel.draft.totalImageCount > 0 {
                     ScrollView(.horizontal) {
