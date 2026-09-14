@@ -101,7 +101,11 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func transfer(for recipe: RecipeTransport) -> some View {
-        CameraTransferView(recipe: recipe, cameraService: cameraService)
+        CameraTransferView(
+            recipe: recipe,
+            cameraService: cameraService,
+            capabilityService: CameraCapabilityService(apiClient: apiClient)
+        )
     }
 
     @ViewBuilder

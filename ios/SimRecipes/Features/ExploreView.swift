@@ -123,7 +123,11 @@ struct ExploreView: View {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
             let moderationService = ModerationService(apiClient: authenticatedClient)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                capabilityService: CameraCapabilityService(apiClient: apiClient)
+            ) {
                 try await repository.copy(id: recipe.id)
             } viewAction: {
                 try await repository.recordView(id: recipe.id)
@@ -140,9 +144,14 @@ struct ExploreView: View {
             }
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe), viewAction: {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                capabilityService: CameraCapabilityService(apiClient: apiClient),
+                viewAction: {
                 try await repository.recordView(id: recipe.id)
-            })
+                }
+            )
         }
     }
 

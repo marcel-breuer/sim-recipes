@@ -326,6 +326,112 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertFalse(camera.isX20Candidate)
     }
 
+    func testCameraCompatibilityPreflightAcceptsSupportedRecipeValues() {
+        let camera = SupportedCameraTransport(
+            id: "fujifilm-x-s20",
+            manufacturer: "Fujifilm",
+            name: "Fujifilm X-S20",
+            slug: "x-s20",
+            capabilities: [
+                CameraCapabilityTransport(
+                    id: "film",
+                    key: "film_simulation",
+                    displayName: "Film Simulation",
+                    valueType: "enum",
+                    allowedValues: .array([.string("Classic Chrome")]),
+                    minimum: nil,
+                    maximum: nil,
+                    step: nil
+                ),
+                CameraCapabilityTransport(
+                    id: "iso",
+                    key: "iso",
+                    displayName: "ISO",
+                    valueType: "integer",
+                    allowedValues: nil,
+                    minimum: 64,
+                    maximum: 51200,
+                    step: 1
+                )
+            ]
+        )
+        let recipe = RecipeTransport(
+            id: "compatible",
+            name: "Compatible",
+            description: nil,
+            styleRecommendation: nil,
+            cameraModelID: camera.id,
+            lens: nil,
+            categories: [],
+            tags: [],
+            isPublished: false,
+            provenance: nil,
+            updatedAt: Date(),
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome"),
+                RecipeSettingTransport(key: "iso", value: .number(400))
+            ]
+        )
+
+        let result = CameraCompatibilityEvaluator.evaluate(recipe: recipe, camera: camera)
+
+        XCTAssertTrue(result.isTransferSafe)
+        XCTAssertTrue(result.issues.isEmpty)
+    }
+
+    func testCameraCompatibilityPreflightExplainsUnsupportedAndOutOfRangeValues() {
+        let camera = SupportedCameraTransport(
+            id: "fujifilm-x-s20",
+            manufacturer: "Fujifilm",
+            name: "Fujifilm X-S20",
+            slug: "x-s20",
+            capabilities: [
+                CameraCapabilityTransport(
+                    id: "film",
+                    key: "film_simulation",
+                    displayName: "Film Simulation",
+                    valueType: "enum",
+                    allowedValues: .array([.string("Classic Chrome")]),
+                    minimum: nil,
+                    maximum: nil,
+                    step: nil
+                ),
+                CameraCapabilityTransport(
+                    id: "iso",
+                    key: "iso",
+                    displayName: "ISO",
+                    valueType: "integer",
+                    allowedValues: nil,
+                    minimum: 64,
+                    maximum: 51200,
+                    step: 1
+                )
+            ]
+        )
+        let recipe = RecipeTransport(
+            id: "incompatible",
+            name: "Incompatible",
+            description: nil,
+            styleRecommendation: nil,
+            cameraModelID: camera.id,
+            lens: nil,
+            categories: [],
+            tags: [],
+            isPublished: false,
+            provenance: nil,
+            updatedAt: Date(),
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: "Velvia"),
+                RecipeSettingTransport(key: "iso", value: .number(64000))
+            ]
+        )
+
+        let result = CameraCompatibilityEvaluator.evaluate(recipe: recipe, camera: camera)
+
+        XCTAssertFalse(result.isTransferSafe)
+        XCTAssertEqual(result.issues.map(\.kind), [.unsupportedValue, .outOfRange])
+    }
+
     func testCameraSessionStateIdentifiesConnectionLifecycle() {
         XCTAssertEqual(CameraSessionState.disconnected, .disconnected)
         XCTAssertEqual(
