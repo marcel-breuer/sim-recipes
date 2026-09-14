@@ -43,6 +43,9 @@ class RecipeResource extends JsonResource
             'author' => $user instanceof User ? [
                 'id' => $user->getKey(),
                 'name' => $user->getAttribute('name'),
+                'username' => $user->relationLoaded('profile')
+                    ? $user->getRelation('profile')?->getAttribute('username')
+                    : null,
             ] : null,
             'provenance' => $provenance !== null ? [
                 'source_recipe_id' => $provenance->getAttribute('source_recipe_id'),

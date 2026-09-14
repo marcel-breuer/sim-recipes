@@ -262,6 +262,24 @@ struct RecipeTransport: Codable, Equatable, Identifiable, Sendable {
 struct RecipeAuthorTransport: Codable, Equatable, Sendable {
     let id: String
     let name: String
+    let username: String?
+
+    init(id: String, name: String, username: String? = nil) {
+        self.id = id
+        self.name = name
+        self.username = username
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, username
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        username = try container.decodeIfPresent(String.self, forKey: .username)
+    }
 }
 
 struct RecipeProvenanceTransport: Codable, Equatable, Sendable {
@@ -302,7 +320,31 @@ enum RecipeSyncState: String, Codable, Sendable {
     case localOnly
     case synced
     case pendingUpload
+    case retrying
+    case failed
     case conflict
+
+    var title: String {
+        switch self {
+        case .localOnly: "Local only"
+        case .synced: "Synced"
+        case .pendingUpload: "Pending upload"
+        case .retrying: "Retrying"
+        case .failed: "Sync failed"
+        case .conflict: "Needs review"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .localOnly: "iphone"
+        case .synced: "checkmark.icloud"
+        case .pendingUpload: "arrow.up.circle"
+        case .retrying: "arrow.clockwise.icloud"
+        case .failed: "exclamationmark.icloud"
+        case .conflict: "exclamationmark.triangle"
+        }
+    }
 }
 
 struct RecipeSettingTransport: Codable, Equatable, Sendable {

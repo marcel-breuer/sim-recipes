@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import XCTest
 @testable import SimRecipes
 
@@ -7,6 +8,15 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(OnboardingInterest.allCases.count, 5)
         XCTAssertTrue(OnboardingInterest.allCases.contains(.street))
         XCTAssertTrue(OnboardingInterest.allCases.contains(.everyday))
+    }
+
+    func testAPIContractUsesVersionedCorePaths() {
+        XCTAssertEqual(APIContract.version, "v1")
+        XCTAssertEqual(APIContract.health, "health")
+        XCTAssertEqual(APIContract.authApple, "auth/apple")
+        XCTAssertEqual(APIContract.cameras, "cameras")
+        XCTAssertEqual(APIContract.categories, "categories")
+        XCTAssertEqual(APIContract.recipes, "recipes")
     }
 
     func testRootTabsExposeCoreProductSections() {
@@ -153,6 +163,65 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testRecipePreviewEngineAppliesSupportedSettingsAndReportsUnsupportedSettings() async throws {
+        let supported = CameraCapabilityTransport(
+            id: "film-simulation",
+            key: "film_simulation",
+            displayName: "Film Simulation",
+            valueType: "enum",
+            allowedValues: .array([.string("Classic Chrome")]),
+            minimum: nil,
+            maximum: nil,
+            step: nil
+        )
+        let result = try await RecipePreviewEngine().render(
+            imageData: makePreviewImageData(),
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: .string("Classic Chrome")),
+                RecipeSettingTransport(key: "future_setting", value: .number(1))
+            ],
+            capabilities: [supported]
+        )
+
+        XCTAssertFalse(result.imageData.isEmpty)
+        XCTAssertEqual(result.simulatedSettingKeys, ["film_simulation"])
+        XCTAssertEqual(result.unsupportedSettingKeys, ["future_setting"])
+    }
+
+    @MainActor
+    func testRecipePreviewViewModelReportsLoadingAndLoadedStates() async {
+        let renderer = BlockingPreviewRenderer()
+        let viewModel = RecipePreviewViewModel(renderer: renderer)
+        let result = RecipePreviewResult(
+            imageData: Data([1, 2, 3]),
+            simulatedSettingKeys: ["film_simulation"],
+            unsupportedSettingKeys: []
+        )
+
+        let loadTask = Task {
+            await viewModel.load(imageData: Data([1]), settings: [], capabilities: [])
+        }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        XCTAssertEqual(viewModel.state, .loading)
+
+        await renderer.finish(with: result)
+        await loadTask.value
+
+        XCTAssertEqual(viewModel.state, .loaded(result))
+    }
+
+    @MainActor
+    func testRecipePreviewViewModelReportsRenderingErrors() async {
+        let viewModel = RecipePreviewViewModel()
+
+        await viewModel.load(imageData: Data(), settings: [], capabilities: [])
+
+        XCTAssertEqual(
+            viewModel.state,
+            .failed(RecipePreviewError.invalidImage.localizedDescription)
+        )
+    }
+
     func testMultipartBuilderIncludesJSONFieldsAndImageParts() throws {
         var builder = MultipartFormDataBuilder(boundary: "test-boundary")
         builder.append(name: "name", value: "Soft Chrome")
@@ -207,6 +276,54 @@ final class SimRecipesTests: XCTestCase {
         )
 
         XCTAssertEqual(try JSONDecoder().decode(ProfileTransport.self, from: JSONEncoder().encode(profile)), profile)
+    }
+
+    @MainActor
+    func testLocalCollectionStorePersistsOfflineMembershipAndSyncState() throws {
+        let suiteName = "SimRecipesCollectionsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = LocalCollectionStore(defaults: defaults)
+        let recipe = CollectionRecipeTransport(id: "recipe-1", name: "Soft Chrome")
+        let collection = RecipeCollectionTransport(
+            id: "collection-1",
+            name: "Street set",
+            isPublic: false,
+            sortOrder: 0,
+            recipes: [recipe],
+            syncState: .pendingMembership
+        )
+
+        try store.save([collection])
+
+        XCTAssertEqual(try store.collections(), [collection])
+        XCTAssertEqual(try store.collections().first?.syncState, .pendingMembership)
+        XCTAssertEqual(try store.collections().first?.recipes.first?.id, "recipe-1")
+    }
+
+    func testProfileTransportDecodesCommunityCountsAndCollections() throws {
+        let data = #"""
+        {
+            "id": "profile-1",
+            "username": "creator",
+            "display_name": "Creator",
+            "published_recipes": [],
+            "collections": [
+                {"id": "collection-1", "name": "Street set", "is_public": true, "sort_order": 0, "recipes": []}
+            ],
+            "followers_count": 4,
+            "following_count": 2,
+            "is_following": true
+        }
+        """#.data(using: .utf8)!
+
+        let profile = try JSONDecoder().decode(ProfileTransport.self, from: data)
+
+        XCTAssertEqual(profile.collections.first?.name, "Street set")
+        XCTAssertEqual(profile.followersCount, 4)
+        XCTAssertEqual(profile.followingCount, 2)
+        XCTAssertTrue(profile.isFollowing)
     }
 
     func testAPIErrorPayloadPreservesValidationMessages() throws {
@@ -293,6 +410,22 @@ final class SimRecipesTests: XCTestCase {
     }
 
     @MainActor
+    func testLocalStoreOffersExplicitServerConflictResolution() throws {
+        let localRecipe = makeRecipe(id: "resolution", name: "Keep local", isPublished: false)
+        let serverRecipe = makeRecipe(id: "resolution", name: "Keep server", isPublished: false)
+        let localStore = try LocalRecipeStore(inMemory: true)
+
+        try localStore.saveLocally(localRecipe)
+        XCTAssertEqual(try localStore.mergeRemote(serverRecipe), .conflict)
+        XCTAssertEqual(try localStore.conflictServerRecipe(for: localRecipe.id)?.name, "Keep server")
+
+        try localStore.resolveConflict(id: localRecipe.id, resolution: .keepServer)
+
+        XCTAssertEqual(try localStore.recipe(id: localRecipe.id)?.name, "Keep server")
+        XCTAssertEqual(try localStore.syncState(for: localRecipe.id), .synced)
+    }
+
+    @MainActor
     func testRepositorySynchronizesPaginatedRecipes() async throws {
         let firstRecipe = makeRecipe(id: "page-1")
         let secondRecipe = makeRecipe(id: "page-2")
@@ -347,6 +480,13 @@ final class SimRecipesTests: XCTestCase {
             updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
             settings: [RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome")]
         )
+    }
+
+    private func makePreviewImageData() -> Data {
+        UIGraphicsImageRenderer(size: CGSize(width: 16, height: 16)).jpegData(withCompressionQuality: 0.9) { rendererContext in
+            UIColor.systemBlue.setFill()
+            rendererContext.fill(CGRect(x: 0, y: 0, width: 16, height: 16))
+        }
     }
 
     func testOnlyUSBPTPCameraWithX20ModelNameIsCandidate() {

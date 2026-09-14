@@ -62,6 +62,24 @@ struct LibraryView: View {
                                     Label("Share public link", systemImage: "link")
                                 }
                             }
+                            let state = syncState(for: recipe)
+                            if state == .failed {
+                                Button {
+                                    Task { await retry(recipe) }
+                                } label: {
+                                    Label("Retry sync", systemImage: "arrow.clockwise")
+                                }
+                            }
+                            if state == .conflict {
+                                Button("Keep local draft") {
+                                    resolve(recipe, as: .keepLocal)
+                                }
+                                if (try? localStore.conflictServerRecipe(for: recipe.id)) != nil {
+                                    Button("Keep server version") {
+                                        resolve(recipe, as: .keepServer)
+                            }
+                                }
+                            }
                             NavigationLink {
                                 transfer(for: recipe)
                             } label: {
@@ -118,7 +136,7 @@ struct LibraryView: View {
                     message = error.localizedDescription
                 }
             }
-            .alert("Recipe portability", isPresented: Binding(
+            .alert("Library", isPresented: Binding(
                 get: { message != nil },
                 set: { if !$0 { message = nil } }
             )) {
@@ -167,6 +185,10 @@ struct LibraryView: View {
             Text(recipe.isPublished ? "Published" : "Private draft")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            let state = syncState(for: recipe)
+            Label(state.title, systemImage: state.systemImage)
+                .font(.caption2)
+                .foregroundStyle(state == .failed || state == .conflict ? .orange : .secondary)
         }
     }
 
@@ -176,7 +198,14 @@ struct LibraryView: View {
 
         let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
         let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
-        _ = try? await repository.refreshRecipes()
+        do {
+            _ = try await repository.refreshRecipes()
+        } catch {
+            for recipe in recipes {
+                try? localStore.markSyncState(.failed, for: recipe.id, error: error.localizedDescription)
+            }
+            message = "Sync failed. Retry individual recipes from their context menu."
+        }
         reloadRecipes()
     }
 
@@ -199,6 +228,34 @@ struct LibraryView: View {
             try localStore.saveLocally(draft.transport())
             reloadRecipes()
             message = "The recipe was imported as a local draft."
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    private func syncState(for recipe: RecipeTransport) -> RecipeSyncState {
+        (try? localStore.syncState(for: recipe.id)) ?? .synced
+    }
+
+    private func retry(_ recipe: RecipeTransport) async {
+        guard let session = authService.session else { return }
+        let repository = RecipeRepository(
+            apiClient: BearerAPIClient(apiClient: apiClient, accessToken: session.token),
+            localStore: localStore
+        )
+        do {
+            _ = try await repository.retryRecipe(id: recipe.id)
+            reloadRecipes()
+        } catch {
+            message = "Retry failed: \(error.localizedDescription)"
+            reloadRecipes()
+        }
+    }
+
+    private func resolve(_ recipe: RecipeTransport, as resolution: RecipeConflictResolution) {
+        do {
+            try localStore.resolveConflict(id: recipe.id, resolution: resolution)
+            reloadRecipes()
         } catch {
             message = error.localizedDescription
         }

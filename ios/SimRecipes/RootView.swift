@@ -59,6 +59,7 @@ struct RootView: View {
         TabView(selection: $selectedTab) {
             ExploreView(
                 authService: authService,
+                profileService: profileService,
                 apiClient: apiClient,
                 localStore: localStore,
                 cameraService: cameraService,

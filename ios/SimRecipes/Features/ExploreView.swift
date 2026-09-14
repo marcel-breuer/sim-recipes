@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExploreView: View {
     @ObservedObject private var authService: AuthService
+    @ObservedObject private var profileService: ProfileService
     private let apiClient: any APIClient
     private let localStore: LocalRecipeStore
     private let cameraService: any CameraService
@@ -12,12 +13,14 @@ struct ExploreView: View {
 
     init(
         authService: AuthService,
+        profileService: ProfileService,
         apiClient: any APIClient,
         localStore: LocalRecipeStore,
         cameraService: any CameraService,
         deepLinkRecipeID: String? = nil
     ) {
         _authService = ObservedObject(wrappedValue: authService)
+        _profileService = ObservedObject(wrappedValue: profileService)
         self.apiClient = apiClient
         self.localStore = localStore
         self.cameraService = cameraService
@@ -90,6 +93,7 @@ struct ExploreView: View {
             }
             .task {
                 await viewModel.loadInitial()
+                try? await profileService.loadCollections()
             }
             .task(id: deepLinkRecipeID) {
                 guard let deepLinkRecipeID else { return }
@@ -137,7 +141,23 @@ struct ExploreView: View {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
             let moderationService = ModerationService(apiClient: authenticatedClient)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                collections: profileService.collections,
+                addToCollectionAction: { collectionID in
+                    let recipeSummary = CollectionRecipeTransport(
+                        id: recipe.id,
+                        name: recipe.name,
+                        description: recipe.description,
+                        cameraModel: recipe.cameraModelName.map {
+                            CameraModelTransport(id: recipe.cameraModelID, name: $0, slug: recipe.cameraModelID)
+                        },
+                        publishedAt: recipe.publishedAt
+                    )
+                    try await profileService.addRecipe(recipeSummary, to: collectionID)
+                }
+            ) {
                 try await repository.copy(id: recipe.id)
             } viewAction: {
                 try await repository.recordView(id: recipe.id)
@@ -145,6 +165,22 @@ struct ExploreView: View {
                 try await repository.like(id: recipe.id)
             } unlikeAction: {
                 try await repository.unlike(id: recipe.id)
+            } followAction: {
+                guard let username = recipe.author?.username else {
+                    throw APIClientError.invalidResponse
+                }
+                return try await authenticatedClient.send(
+                    APIRequest(method: .post, path: "profiles/\(username)/follow"),
+                    responseType: APIResponse<FollowResponse>.self
+                ).data
+            } unfollowAction: {
+                guard let username = recipe.author?.username else {
+                    throw APIClientError.invalidResponse
+                }
+                return try await authenticatedClient.send(
+                    APIRequest(method: .delete, path: "profiles/\(username)/follow"),
+                    responseType: APIResponse<FollowResponse>.self
+                ).data
             } reportAction: {
                 try await moderationService.reportRecipe(id: recipe.id)
             } blockAction: {
@@ -264,8 +300,12 @@ private struct ExploreFilterView: View {
 }
 
 #Preview {
+    let authService = AuthService(
+        apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)
+    )
     ExploreView(
-        authService: AuthService(apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!)),
+        authService: authService,
+        profileService: ProfileService(authService: authService),
         apiClient: URLSessionAPIClient(baseURL: URL(string: "https://api.example.test/api/v1")!),
         localStore: try! LocalRecipeStore(inMemory: true),
         cameraService: ImageCaptureCameraService()

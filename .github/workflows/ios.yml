@@ -2,9 +2,14 @@ name: iOS quality
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,6 +18,7 @@ jobs:
   ios:
     name: iOS build and tests
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -63,7 +69,7 @@ jobs:
         with:
           path: |
             ios/.build
-            ~/Library/Developer/Xcode/DerivedData
+            ~/Library/Developer/Xcode/DerivedData/SourcePackages
           key: ${{ runner.os }}-xcode-${{ hashFiles('ios/**/Package.resolved', 'ios/**/*.xcodeproj/project.pbxproj', 'ios/**/*.xcworkspace/contents.xcworkspacedata') }}
           restore-keys: |
             ${{ runner.os }}-xcode-
@@ -103,7 +109,7 @@ jobs:
           )
 
           if [[ "${{ steps.project.outputs.project_type }}" == "workspace" ]]; then
-            xcodebuild -workspace "${{ steps.project.outputs.project_path }}" "${common_args[@]}" build test
+            xcodebuild -workspace "${{ steps.project.outputs.project_path }}" "${common_args[@]}" test
           else
-            xcodebuild -project "${{ steps.project.outputs.project_path }}" "${common_args[@]}" build test
+            xcodebuild -project "${{ steps.project.outputs.project_path }}" "${common_args[@]}" test
           fi

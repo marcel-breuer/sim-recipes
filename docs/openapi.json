@@ -1,0 +1,160 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SimRecipes API",
+    "version": "v1",
+    "description": "The versioned public application contract for SimRecipes."
+  },
+  "servers": [
+    { "url": "/api/v1" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": { "$ref": "#/components/responses/HealthResponse" }
+        }
+      }
+    },
+    "/auth/apple": {
+      "post": {
+        "operationId": "signInWithApple",
+        "requestBody": { "$ref": "#/components/requestBodies/AppleLogin" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AuthSessionResponse" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/cameras": {
+      "get": {
+        "operationId": "listCameras",
+        "responses": {
+          "200": { "$ref": "#/components/responses/CameraCollection" }
+        }
+      }
+    },
+    "/cameras/{camera}": {
+      "get": {
+        "operationId": "getCamera",
+        "parameters": [{ "$ref": "#/components/parameters/Camera" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/CameraResponse" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/cameras/{camera}/capabilities": {
+      "get": {
+        "operationId": "listCameraCapabilities",
+        "parameters": [{ "$ref": "#/components/parameters/Camera" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/CameraCapabilityCollection" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "operationId": "listCategories",
+        "responses": {
+          "200": { "$ref": "#/components/responses/CategoryCollection" }
+        }
+      }
+    },
+    "/recipes": {
+      "get": {
+        "operationId": "listRecipes",
+        "parameters": [
+          { "$ref": "#/components/parameters/Feed" },
+          { "$ref": "#/components/parameters/Search" },
+          { "$ref": "#/components/parameters/PerPage" },
+          { "$ref": "#/components/parameters/Page" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/RecipePage" }
+        }
+      },
+      "post": {
+        "operationId": "createRecipe",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "$ref": "#/components/responses/RecipeResponse" },
+          "401": { "$ref": "#/components/responses/Unauthenticated" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/recipes/{recipe}": {
+      "get": {
+        "operationId": "getRecipe",
+        "parameters": [{ "$ref": "#/components/parameters/Recipe" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/RecipeResponse" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/recipes/{recipe}/view": {
+      "post": {
+        "operationId": "recordRecipeView",
+        "parameters": [{ "$ref": "#/components/parameters/Recipe" }],
+        "responses": {
+          "204": { "description": "The view was recorded or deduplicated." },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "parameters": {
+      "Camera": { "name": "camera", "in": "path", "required": true, "schema": { "type": "string" } },
+      "Recipe": { "name": "recipe", "in": "path", "required": true, "schema": { "type": "string" } },
+      "Feed": { "name": "feed", "in": "query", "schema": { "type": "string", "enum": ["popular", "newest"] } },
+      "Search": { "name": "search", "in": "query", "schema": { "type": "string" } },
+      "PerPage": { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
+      "Page": { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } }
+    },
+    "requestBodies": {
+      "AppleLogin": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["identity_token"],
+              "properties": { "identity_token": { "type": "string" }, "authorization_code": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "HealthResponse": { "description": "API health", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthEnvelope" } } } },
+      "AuthSessionResponse": { "description": "Authenticated session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
+      "CameraCollection": { "description": "Camera models", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
+      "CameraResponse": { "description": "Camera model", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
+      "CameraCapabilityCollection": { "description": "Camera capabilities", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
+      "CategoryCollection": { "description": "Recipe categories", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
+      "RecipeResponse": { "description": "Recipe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
+      "RecipePage": { "description": "Paginated recipes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PageEnvelope" } } } },
+      "Unauthenticated": { "description": "Authentication is required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } },
+      "ValidationError": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } },
+      "NotFound": { "description": "Resource not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } }
+    },
+    "schemas": {
+      "DataEnvelope": { "type": "object", "required": ["data"], "properties": { "data": {} } },
+      "DataArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array" } } },
+      "HealthEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Health" } } },
+      "Health": { "type": "object", "required": ["service", "status", "version"], "properties": { "service": { "type": "string" }, "status": { "type": "string" }, "version": { "type": "string" } } },
+      "PageEnvelope": { "type": "object", "required": ["data", "links", "meta"], "properties": { "data": { "type": "array" }, "links": { "type": "object" }, "meta": { "$ref": "#/components/schemas/PageMeta" } } },
+      "PageMeta": { "type": "object", "required": ["current_page", "last_page", "per_page", "total"], "properties": { "current_page": { "type": "integer" }, "last_page": { "type": "integer" }, "per_page": { "type": "integer" }, "total": { "type": "integer" } } },
+      "ErrorEnvelope": { "type": "object", "required": ["error"], "properties": { "error": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "details": { "type": "object" } } } } }
+    }
+  }
+}
