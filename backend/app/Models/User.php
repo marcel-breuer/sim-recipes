@@ -79,6 +79,16 @@ class User extends Authenticatable
         return $this->hasMany(UserFollow::class, 'follower_id');
     }
 
+    public function recipeCollections(): HasMany
+    {
+        return $this->hasMany(RecipeCollection::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function publicRecipeCollections(): HasMany
+    {
+        return $this->recipeCollections()->where('is_public', true);
+    }
+
     public function blocksCreated(): HasMany
     {
         return $this->hasMany(UserBlock::class, 'blocker_id');

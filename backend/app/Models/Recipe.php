@@ -97,6 +97,12 @@ class Recipe extends Model
         return $this->hasMany(RecipeComment::class);
     }
 
+    public function recipeCollections(): BelongsToMany
+    {
+        return $this->belongsToMany(RecipeCollection::class, 'recipe_collection_recipe')
+            ->withPivot('sort_order');
+    }
+
     public function provenance(): HasOne
     {
         return $this->hasOne(RecipeProvenance::class, 'copied_recipe_id');

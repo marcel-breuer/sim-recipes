@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ModerationReportController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReadinessController;
+use App\Http\Controllers\Api\V1\RecipeCollectionController;
 use App\Http\Controllers\Api\V1\RecipeCommentController;
 use App\Http\Controllers\Api\V1\RecipeController;
 use App\Http\Controllers\Api\V1\RecipeCopyController;
@@ -68,6 +69,20 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.recipes.publish');
         Route::post('/recipes/{recipe}/copy', [RecipeCopyController::class, 'store'])
             ->name('api.v1.recipes.copy');
+        Route::get('/collections', [RecipeCollectionController::class, 'index'])
+            ->name('api.v1.collections.index');
+        Route::post('/collections', [RecipeCollectionController::class, 'store'])
+            ->name('api.v1.collections.store');
+        Route::patch('/collections/reorder', [RecipeCollectionController::class, 'reorder'])
+            ->name('api.v1.collections.reorder');
+        Route::patch('/collections/{collection}', [RecipeCollectionController::class, 'update'])
+            ->name('api.v1.collections.update');
+        Route::delete('/collections/{collection}', [RecipeCollectionController::class, 'destroy'])
+            ->name('api.v1.collections.destroy');
+        Route::put('/collections/{collection}/recipes/{recipe}', [RecipeCollectionController::class, 'addRecipe'])
+            ->name('api.v1.collections.recipes.add');
+        Route::delete('/collections/{collection}/recipes/{recipe}', [RecipeCollectionController::class, 'removeRecipe'])
+            ->name('api.v1.collections.recipes.remove');
         Route::post('/recipes/{recipe}/like', [RecipeEngagementController::class, 'like'])
             ->name('api.v1.recipes.like');
         Route::delete('/recipes/{recipe}/like', [RecipeEngagementController::class, 'unlike'])

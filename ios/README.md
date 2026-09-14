@@ -28,6 +28,8 @@ metadata so the personal library remains useful offline. The recipe editor now l
 camera capabilities and predefined categories from the API, renders supported
 settings dynamically, uploads photo-library images as multipart form data, and
 stores drafts locally for offline recovery. Published recipes are presented as
-immutable and cannot be edited in the editor.
+immutable and cannot be edited in the editor. Personal collections are cached
+locally, can be reordered and edited from Profile, and retain pending recipe
+membership changes for synchronization when connectivity returns.
 
 Do not place credentials or signing material in this directory.

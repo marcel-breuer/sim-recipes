@@ -92,6 +92,14 @@ Authenticated users can follow and unfollow a public profile with `POST` and
 following counts and the authenticated viewer's `is_following` state. Following
 is unavailable when either user has blocked the other.
 
+Authenticated users manage their personal collections with `GET` and `POST
+/collections`, `PATCH`/`DELETE /collections/{collection}`, and
+`PATCH /collections/reorder`. Recipe membership is idempotently added or
+removed with `PUT`/`DELETE /collections/{collection}/recipes/{recipe}`. Only
+the owning user can read or mutate personal collections. Public profile
+responses expose only collections marked public and filter their members to
+published, visible recipes, so private drafts never cross the profile boundary.
+
 The default popularity strategy scores likes × 3, downloads × 5, and views ×
 1. It is bound behind a replaceable `PopularityRanking` service so the formula
 can change without a database migration.
