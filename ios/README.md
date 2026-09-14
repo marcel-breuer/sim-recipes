@@ -18,6 +18,10 @@ the camera-selected custom slot. It does not write camera settings or change
 the selected slot. The write path requires explicit slot confirmation, a
 supported property set, validated raw PTP payloads, per-property read-back,
 and rollback on failure; it never writes the slot selector automatically.
+The recipe editor shows an on-device approximate visual preview for selected
+example images. It applies only settings advertised by the selected camera's
+capability model and provides an accessible before/after comparison; it does
+not claim to reproduce Fujifilm color science exactly.
 Recipe images are downloaded through the authenticated API client into the
 durable `ImageCache`; SwiftData stores their local file URLs with recipe
 metadata so the personal library remains useful offline. The recipe editor now loads

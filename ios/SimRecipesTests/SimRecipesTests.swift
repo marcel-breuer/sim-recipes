@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import XCTest
 @testable import SimRecipes
 
@@ -97,6 +98,65 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(
             recipe.settings[1].value,
             .object(["roughness": .string("WEAK"), "size": .string("SMALL")])
+        )
+    }
+
+    func testRecipePreviewEngineAppliesSupportedSettingsAndReportsUnsupportedSettings() async throws {
+        let supported = CameraCapabilityTransport(
+            id: "film-simulation",
+            key: "film_simulation",
+            displayName: "Film Simulation",
+            valueType: "enum",
+            allowedValues: .array([.string("Classic Chrome")]),
+            minimum: nil,
+            maximum: nil,
+            step: nil
+        )
+        let result = try await RecipePreviewEngine().render(
+            imageData: makePreviewImageData(),
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: .string("Classic Chrome")),
+                RecipeSettingTransport(key: "future_setting", value: .number(1))
+            ],
+            capabilities: [supported]
+        )
+
+        XCTAssertFalse(result.imageData.isEmpty)
+        XCTAssertEqual(result.simulatedSettingKeys, ["film_simulation"])
+        XCTAssertEqual(result.unsupportedSettingKeys, ["future_setting"])
+    }
+
+    @MainActor
+    func testRecipePreviewViewModelReportsLoadingAndLoadedStates() async {
+        let renderer = BlockingPreviewRenderer()
+        let viewModel = RecipePreviewViewModel(renderer: renderer)
+        let result = RecipePreviewResult(
+            imageData: Data([1, 2, 3]),
+            simulatedSettingKeys: ["film_simulation"],
+            unsupportedSettingKeys: []
+        )
+
+        let loadTask = Task {
+            await viewModel.load(imageData: Data([1]), settings: [], capabilities: [])
+        }
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        XCTAssertEqual(viewModel.state, .loading)
+
+        await renderer.finish(with: result)
+        await loadTask.value
+
+        XCTAssertEqual(viewModel.state, .loaded(result))
+    }
+
+    @MainActor
+    func testRecipePreviewViewModelReportsRenderingErrors() async {
+        let viewModel = RecipePreviewViewModel()
+
+        await viewModel.load(imageData: Data(), settings: [], capabilities: [])
+
+        XCTAssertEqual(
+            viewModel.state,
+            .failed(RecipePreviewError.invalidImage.localizedDescription)
         )
     }
 
@@ -294,6 +354,13 @@ final class SimRecipesTests: XCTestCase {
             updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
             settings: [RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome")]
         )
+    }
+
+    private func makePreviewImageData() -> Data {
+        UIGraphicsImageRenderer(size: CGSize(width: 16, height: 16)).jpegData(withCompressionQuality: 0.9) { rendererContext in
+            UIColor.systemBlue.setFill()
+            rendererContext.fill(CGRect(x: 0, y: 0, width: 16, height: 16))
+        }
     }
 
     func testOnlyUSBPTPCameraWithX20ModelNameIsCandidate() {
