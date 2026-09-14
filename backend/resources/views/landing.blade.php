@@ -74,7 +74,10 @@
             <div class="phone-screen">
                 <div class="phone-topline"><span>9:41</span><span>▴ ◼︎ ▰</span></div>
                 <div class="phone-nav"><span>‹</span><span>Recipe</span><span>•••</span></div>
-                <div class="recipe-photo"><span>PORTRAIT / GOLDEN HOUR</span></div>
+                <div class="recipe-photo">
+                    <img src="/images/example-street.jpg" alt="A quiet stone street at blue hour with warm window light">
+                    <span>STREET / BLUE HOUR</span>
+                </div>
                 <div class="recipe-title"><span>Soft Negative</span><small>by simrecipes community</small></div>
                 <div class="recipe-settings">
                     <div><small>FILM SIMULATION</small><strong>Nostalgic Neg.</strong></div>
@@ -122,6 +125,17 @@
         <p class="eyebrow">Your next favourite look</p>
         <h2>See differently.<br><em>Save intentionally.</em></h2>
         <a class="button button-light" href="#top">Back to the beginning <span aria-hidden="true">↑</span></a>
+    </section>
+
+    <section class="photo-credit section-wrap" aria-labelledby="photo-credit-title">
+        <div>
+            <p class="eyebrow">Example photograph</p>
+            <h2 id="photo-credit-title">A look before the settings.</h2>
+        </div>
+        <figure>
+            <img src="/images/example-street.jpg" alt="A quiet stone street at blue hour with warm window light">
+            <figcaption>Original SimRecipes artwork · suitable for project use and modification</figcaption>
+        </figure>
     </section>
 </main>
 
