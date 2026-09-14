@@ -2,9 +2,18 @@ name: Backend quality
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    paths:
+      - 'backend/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpstan.neon*'
+      - 'phpunit.xml*'
+      - '.github/workflows/backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -13,6 +22,7 @@ jobs:
   backend:
     name: Laravel checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:17-alpine
