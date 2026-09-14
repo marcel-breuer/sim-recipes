@@ -3,6 +3,7 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: RecipeTransport
     var transferService: (any CameraService)?
+    var similarRecipesRepository: RecipeRepository?
     var copyAction: (() async throws -> RecipeTransport)?
     var viewAction: (() async throws -> RecipeEngagementTransport)?
     var likeAction: (() async throws -> RecipeEngagementTransport)?
@@ -19,6 +20,7 @@ struct RecipeDetailView: View {
     init(
         recipe: RecipeTransport,
         transferService: (any CameraService)? = nil,
+        similarRecipesRepository: RecipeRepository? = nil,
         copyAction: (() async throws -> RecipeTransport)? = nil,
         viewAction: (() async throws -> RecipeEngagementTransport)? = nil,
         likeAction: (() async throws -> RecipeEngagementTransport)? = nil,
@@ -28,6 +30,7 @@ struct RecipeDetailView: View {
     ) {
         self.recipe = recipe
         self.transferService = transferService
+        self.similarRecipesRepository = similarRecipesRepository
         self.copyAction = copyAction
         self.viewAction = viewAction
         self.likeAction = likeAction
@@ -122,6 +125,13 @@ struct RecipeDetailView: View {
                             LabeledContent(setting.key, value: setting.value.displayValue)
                         }
                     }
+                }
+
+                if let similarRecipesRepository {
+                    SimilarRecipesView(
+                        recipeID: recipe.id,
+                        repository: similarRecipesRepository
+                    )
                 }
             }
             .padding()

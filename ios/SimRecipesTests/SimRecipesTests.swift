@@ -70,6 +70,31 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
     }
 
+    func testSavedFilterStorePreservesNamedFilterOrder() {
+        let suiteName = "SimRecipesTests.saved-filters-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = SavedFilterStore(defaults: defaults)
+        let filters = [
+            SavedRecipeFilter(
+                id: UUID(),
+                name: "Muted street",
+                filter: CommunityRecipeFilter(
+                    search: "street",
+                    cameraModelID: "camera-1",
+                    filmSimulation: "Classic Chrome",
+                    categorySlugs: ["street"],
+                    tags: ["muted"]
+                )
+            )
+        ]
+
+        store.save(filters)
+
+        XCTAssertEqual(store.load(), filters)
+    }
+
     func testRecipeTransportDecodesAPIResourceShapeAndStructuredSettings() throws {
         let data = #"""
         {
@@ -203,6 +228,21 @@ final class SimRecipesTests: XCTestCase {
 
         XCTAssertEqual(result, recipe)
         XCTAssertTrue(apiClient.requests.isEmpty)
+    }
+
+    @MainActor
+    func testRepositoryRequestsSimilarRecipesFromVersionedEndpoint() async throws {
+        let similar = makeRecipe(id: "similar")
+        let apiClient = StubAPIClient(responses: [APIResponse(data: [similar])])
+        let repository = RecipeRepository(
+            apiClient: apiClient,
+            localStore: try LocalRecipeStore(inMemory: true)
+        )
+
+        let result = try await repository.similarRecipes(id: "source")
+
+        XCTAssertEqual(result, [similar])
+        XCTAssertEqual(apiClient.requests, ["recipes/source/similar"])
     }
 
     @MainActor

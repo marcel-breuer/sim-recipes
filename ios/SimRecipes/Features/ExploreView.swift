@@ -123,7 +123,11 @@ struct ExploreView: View {
             let authenticatedClient = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
             let repository = RecipeRepository(apiClient: authenticatedClient, localStore: localStore)
             let moderationService = ModerationService(apiClient: authenticatedClient)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe)) {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                similarRecipesRepository: repository
+            ) {
                 try await repository.copy(id: recipe.id)
             } viewAction: {
                 try await repository.recordView(id: recipe.id)
@@ -140,9 +144,14 @@ struct ExploreView: View {
             }
         } else {
             let repository = RecipeRepository(apiClient: apiClient, localStore: localStore)
-            RecipeDetailView(recipe: recipe, transferService: transferService(for: recipe), viewAction: {
+            RecipeDetailView(
+                recipe: recipe,
+                transferService: transferService(for: recipe),
+                similarRecipesRepository: repository,
+                viewAction: {
                 try await repository.recordView(id: recipe.id)
-            })
+                }
+            )
         }
     }
 
@@ -194,10 +203,51 @@ private struct RecipeCard: View {
 private struct ExploreFilterView: View {
     @ObservedObject var viewModel: ExploreViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var newPresetName = ""
+    @State private var renamePresetID: UUID?
+    @State private var renamePresetName = ""
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Saved presets") {
+                    if viewModel.savedFilters.isEmpty {
+                        Text("Save a filter combination to reuse it later.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(viewModel.savedFilters) { preset in
+                            Button {
+                                Task {
+                                    await viewModel.applySavedFilter(preset)
+                                    dismiss()
+                                }
+                            } label: {
+                                Label(preset.name, systemImage: "line.3.horizontal.decrease.circle")
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button("Rename") {
+                                    renamePresetID = preset.id
+                                    renamePresetName = preset.name
+                                }
+                                .tint(.blue)
+                                Button("Delete", role: .destructive) {
+                                    viewModel.deleteSavedFilter(id: preset.id)
+                                }
+                            }
+                        }
+                        .onMove(perform: viewModel.moveSavedFilters)
+                    }
+
+                    HStack {
+                        TextField("Preset name", text: $newPresetName)
+                        Button("Save") {
+                            viewModel.saveCurrentFilter(named: newPresetName)
+                            newPresetName = ""
+                        }
+                        .disabled(newPresetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+
                 Section("Camera") {
                     Picker("Camera model", selection: $viewModel.selectedCameraID) {
                         Text("Any camera").tag(nil as String?)
@@ -233,6 +283,9 @@ private struct ExploreFilterView: View {
             }
             .navigationTitle("Filters")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    EditButton()
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
@@ -244,6 +297,19 @@ private struct ExploreFilterView: View {
                         }
                     }
                 }
+            }
+            .alert("Rename preset", isPresented: Binding(
+                get: { renamePresetID != nil },
+                set: { if !$0 { renamePresetID = nil } }
+            )) {
+                TextField("Preset name", text: $renamePresetName)
+                Button("Rename") {
+                    if let renamePresetID {
+                        viewModel.renameSavedFilter(id: renamePresetID, to: renamePresetName)
+                    }
+                    renamePresetID = nil
+                }
+                Button("Cancel", role: .cancel) { renamePresetID = nil }
             }
         }
     }

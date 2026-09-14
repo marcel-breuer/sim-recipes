@@ -62,6 +62,68 @@ class RecipeController extends Controller
         ));
     }
 
+    public function similar(Recipe $recipe): AnonymousResourceCollection
+    {
+        abort_unless($this->canView($recipe), 404);
+
+        $recipe->loadMissing(['categories', 'tags', 'settings']);
+        $categoryIDs = $recipe->categories->modelKeys();
+        $tagIDs = $recipe->tags->modelKeys();
+        $settingValues = $recipe->settings
+            ->mapWithKeys(fn (RecipeSetting $setting): array => [
+                $setting->getAttribute('setting_key') => json_encode($setting->getAttribute('value'), JSON_THROW_ON_ERROR),
+            ]);
+
+        $query = Recipe::query()
+            ->where('id', '!=', $recipe->getKey())
+            ->where('camera_model_id', $recipe->getAttribute('camera_model_id'))
+            ->where('status', Recipe::STATUS_PUBLISHED)
+            ->where('is_hidden', false)
+            ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('is_suspended', false))
+            ->with([
+                'cameraModel',
+                'user',
+                'categories',
+                'tags',
+                'settings',
+                'images',
+                'provenance',
+            ]);
+
+        if (request()->user() !== null) {
+            $query->whereDoesntHave('user.blocksReceived', fn (Builder $blockQuery) => $blockQuery
+                ->where('blocker_id', request()->user()->getKey()));
+        }
+
+        $ranked = $query->get()
+            ->map(function (Recipe $candidate) use ($categoryIDs, $tagIDs, $settingValues): array {
+                $categoryScore = count(array_intersect($categoryIDs, $candidate->categories->modelKeys())) * 3;
+                $tagScore = count(array_intersect($tagIDs, $candidate->tags->modelKeys())) * 2;
+                $candidateSettings = $candidate->settings->mapWithKeys(fn (RecipeSetting $setting): array => [
+                    $setting->getAttribute('setting_key') => json_encode($setting->getAttribute('value'), JSON_THROW_ON_ERROR),
+                ]);
+                $settingScore = $settingValues->keys()
+                    ->intersect($candidateSettings->keys())
+                    ->filter(fn (string $key): bool => $settingValues->get($key) === $candidateSettings->get($key))
+                    ->count();
+
+                return ['recipe' => $candidate, 'score' => $categoryScore + $tagScore + $settingScore];
+            })
+            ->sort(function (array $left, array $right): int {
+                $scoreComparison = $right['score'] <=> $left['score'];
+                if ($scoreComparison !== 0) {
+                    return $scoreComparison;
+                }
+
+                return strcmp((string) $left['recipe']->getKey(), (string) $right['recipe']->getKey());
+            })
+            ->take(6)
+            ->pluck('recipe')
+            ->values();
+
+        return RecipeResource::collection($ranked);
+    }
+
     public function show(Recipe $recipe): RecipeResource
     {
         abort_unless($this->canView($recipe), 404);

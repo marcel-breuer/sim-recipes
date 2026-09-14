@@ -16,10 +16,16 @@ enum RecipeFeed: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-struct CommunityRecipeFilter: Equatable, Sendable {
+struct CommunityRecipeFilter: Codable, Equatable, Sendable {
     var search = ""
     var cameraModelID: String?
     var filmSimulation: String?
     var categorySlugs: [String] = []
     var tags: [String] = []
+}
+
+struct SavedRecipeFilter: Codable, Equatable, Identifiable, Sendable {
+    let id: UUID
+    var name: String
+    var filter: CommunityRecipeFilter
 }

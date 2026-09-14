@@ -38,6 +38,8 @@
 		A00000000000000000000029 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000033 /* ImageCache.swift */; };
 		A00000000000000000000030 /* CameraTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000034 /* CameraTransferView.swift */; };
 		A00000000000000000000031 /* ModerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000035 /* ModerationService.swift */; };
+		A00000000000000000000032 /* SavedFilterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000036 /* SavedFilterStore.swift */; };
+		A00000000000000000000033 /* SimilarRecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000037 /* SimilarRecipesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +88,8 @@
 		B00000000000000000000033 /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		B00000000000000000000034 /* CameraTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CameraTransferView.swift; sourceTree = "<group>"; };
 		B00000000000000000000035 /* ModerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationService.swift; sourceTree = "<group>"; };
+		B00000000000000000000036 /* SavedFilterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFilterStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000037 /* SimilarRecipesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SimilarRecipesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +138,7 @@
 				B00000000000000000000031 /* ExploreViewModel.swift */,
 				B00000000000000000000032 /* RecipeDetailView.swift */,
 				B00000000000000000000034 /* CameraTransferView.swift */,
+				B00000000000000000000037 /* SimilarRecipesView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -172,6 +177,7 @@
 				B00000000000000000000030 /* CommunityFeedModels.swift */,
 				B00000000000000000000033 /* ImageCache.swift */,
 				B00000000000000000000035 /* ModerationService.swift */,
+				B00000000000000000000036 /* SavedFilterStore.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -329,6 +335,8 @@
 				A00000000000000000000029 /* ImageCache.swift in Sources */,
 				A00000000000000000000030 /* CameraTransferView.swift in Sources */,
 				A00000000000000000000031 /* ModerationService.swift in Sources */,
+				A00000000000000000000032 /* SavedFilterStore.swift in Sources */,
+				A00000000000000000000033 /* SimilarRecipesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

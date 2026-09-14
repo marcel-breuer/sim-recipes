@@ -129,6 +129,14 @@ final class RecipeRepository {
         )
     }
 
+    func similarRecipes(id: String) async throws -> [RecipeTransport] {
+        let response = try await apiClient.send(
+            APIRequest(method: .get, path: "recipes/\(id)/similar"),
+            responseType: APIResponse<[RecipeTransport]>.self
+        )
+        return response.data
+    }
+
     func recipe(id: String) async throws -> RecipeTransport {
         if let cachedRecipe = try localStore.recipe(id: id) {
             return cachedRecipe

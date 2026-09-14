@@ -42,6 +42,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.recipes.comments.index');
     Route::post('/recipes/{recipe}/view', [RecipeEngagementController::class, 'view'])
         ->name('api.v1.recipes.view');
+    Route::get('/recipes/{recipe}/similar', [RecipeController::class, 'similar'])
+        ->name('api.v1.recipes.similar');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])
         ->name('api.v1.recipes.show');
     Route::get('/recipe-images/{recipeImage}', [RecipeImageController::class, 'show'])
