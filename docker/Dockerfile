@@ -1,6 +1,6 @@
 # Server Side Up provides the hardened PHP-FPM + NGINX runtime, Composer,
 # PHP CLI, health checks, and Laravel container automations.
-FROM serversideup/php:8.4-fpm-nginx
+FROM serversideup/php:8.5-fpm-nginx
 
 USER root
 
