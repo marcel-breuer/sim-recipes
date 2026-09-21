@@ -65,7 +65,7 @@ jobs:
 
       - name: Cache Swift package and derived data
         if: steps.project.outputs.present == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ios/.build
