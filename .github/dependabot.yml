@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: monthly
       time: "00:00"
       timezone: Europe/Berlin
     assignees:
@@ -12,7 +12,7 @@ updates:
   - package-ecosystem: docker
     directory: /docker
     schedule:
-      interval: daily
+      interval: monthly
       time: "00:00"
       timezone: Europe/Berlin
     assignees:
@@ -21,7 +21,7 @@ updates:
   - package-ecosystem: composer
     directory: /backend
     schedule:
-      interval: daily
+      interval: monthly
       time: "00:00"
       timezone: Europe/Berlin
     assignees:
@@ -30,7 +30,7 @@ updates:
   - package-ecosystem: npm
     directory: /backend
     schedule:
-      interval: daily
+      interval: monthly
       time: "00:00"
       timezone: Europe/Berlin
     assignees:
