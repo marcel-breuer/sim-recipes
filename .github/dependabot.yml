@@ -1,37 +1,77 @@
 version: 2
+
+multi-ecosystem-groups:
+  all-dependencies:
+    schedule:
+      interval: monthly
+      time: "00:00"
+      timezone: Europe/Berlin
+    assignees:
+      - marcel-breuer
+
 updates:
-  - package-ecosystem: github-actions
+  - package-ecosystem: "github-actions"
     directory: /
-    schedule:
-      interval: monthly
-      time: "00:00"
-      timezone: Europe/Berlin
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
     assignees:
       - marcel-breuer
-
-  - package-ecosystem: docker
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "docker"
     directory: /docker
-    schedule:
-      interval: monthly
-      time: "00:00"
-      timezone: Europe/Berlin
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
     assignees:
       - marcel-breuer
-
-  - package-ecosystem: composer
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "docker-compose"
+    directory: /docker
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
+    assignees:
+      - marcel-breuer
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "composer"
     directory: /backend
-    schedule:
-      interval: monthly
-      time: "00:00"
-      timezone: Europe/Berlin
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
     assignees:
       - marcel-breuer
-
-  - package-ecosystem: npm
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
     directory: /backend
-    schedule:
-      interval: monthly
-      time: "00:00"
-      timezone: Europe/Berlin
+    patterns:
+      - "*"
+    multi-ecosystem-group: all-dependencies
+    open-pull-requests-limit: 1
     assignees:
       - marcel-breuer
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
