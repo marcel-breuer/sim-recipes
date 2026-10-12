@@ -14,6 +14,14 @@ struct RecipePreviewResult: Equatable, Sendable {
     let imageData: Data
     let simulatedSettingKeys: [String]
     let unsupportedSettingKeys: [String]
+    let notSimulatedSettingKeys: [String] = []
+}
+
+struct RecipePreviewApplication {
+    let image: CIImage
+    let simulatedSettingKeys: [String]
+    let unsupportedSettingKeys: [String]
+    let notSimulatedSettingKeys: [String]
 }
 
 enum RecipePreviewError: LocalizedError, Equatable {
@@ -50,30 +58,45 @@ struct RecipePreviewEngine: RecipePreviewRendering {
             throw RecipePreviewError.invalidImage
         }
 
-        let supportedKeys = Set(capabilities.map(\.key))
-        let supportedSettings = settings.filter { supportedKeys.contains($0.key) }
-        let unsupportedSettingKeys = settings
-            .filter { !supportedKeys.contains($0.key) }
-            .map(\.key)
-        var outputImage = inputImage
-        var simulatedSettingKeys: [String] = []
+        let application = apply(settings: settings, capabilities: capabilities, to: inputImage)
 
-        for setting in supportedSettings {
-            if let transformed = apply(setting: setting, to: outputImage) {
-                simulatedSettingKeys.append(setting.key)
-                outputImage = transformed
-            }
-        }
-
-        guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent),
+        guard let cgImage = context.createCGImage(application.image, from: application.image.extent),
               let renderedData = UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.9) else {
             throw RecipePreviewError.unableToRender
         }
 
         return RecipePreviewResult(
             imageData: renderedData,
+            simulatedSettingKeys: application.simulatedSettingKeys,
+            unsupportedSettingKeys: application.unsupportedSettingKeys,
+            notSimulatedSettingKeys: application.notSimulatedSettingKeys
+        )
+    }
+
+    func apply(
+        settings: [RecipeSettingTransport],
+        capabilities: [CameraCapabilityTransport],
+        to inputImage: CIImage
+    ) -> RecipePreviewApplication {
+        let supportedKeys = Set(capabilities.map(\.key))
+        let supportedSettings = settings.filter { supportedKeys.contains($0.key) }
+        let unsupportedSettingKeys = settings.filter { !supportedKeys.contains($0.key) }.map(\.key)
+        var notSimulatedSettingKeys: [String] = []
+        var outputImage = inputImage
+        var simulatedSettingKeys: [String] = []
+        for setting in supportedSettings {
+            if let transformed = apply(setting: setting, to: outputImage) {
+                simulatedSettingKeys.append(setting.key)
+                outputImage = transformed
+            } else {
+                notSimulatedSettingKeys.append(setting.key)
+            }
+        }
+        return RecipePreviewApplication(
+            image: outputImage,
             simulatedSettingKeys: simulatedSettingKeys,
-            unsupportedSettingKeys: unsupportedSettingKeys
+            unsupportedSettingKeys: unsupportedSettingKeys,
+            notSimulatedSettingKeys: notSimulatedSettingKeys
         )
     }
 
@@ -297,6 +320,11 @@ struct RecipePreviewView: View {
 
         if !result.unsupportedSettingKeys.isEmpty {
             Text("Not simulated because the camera does not support: \(result.unsupportedSettingKeys.joined(separator: ", ")).")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        if !result.notSimulatedSettingKeys.isEmpty {
+            Text("The preview does not approximate: \(result.notSimulatedSettingKeys.joined(separator: ", ")).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
