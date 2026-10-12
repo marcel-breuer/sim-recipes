@@ -46,6 +46,7 @@
 		A00000000000000000000041 /* RecipeCommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000041 /* RecipeCommentsView.swift */; };
 		A00000000000000000000042 /* SavedFilterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000042 /* SavedFilterStore.swift */; };
 		A00000000000000000000043 /* SimilarRecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000043 /* SimilarRecipesView.swift */; };
+		A00000000000000000000044 /* RecipeShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000044 /* RecipeShareCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +103,7 @@
 		B00000000000000000000041 /* RecipeCommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeCommentsView.swift; sourceTree = "<group>"; };
 		B00000000000000000000042 /* SavedFilterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFilterStore.swift; sourceTree = "<group>"; };
 		B00000000000000000000043 /* SimilarRecipesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SimilarRecipesView.swift; sourceTree = "<group>"; };
+		B00000000000000000000044 /* RecipeShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeShareCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -154,6 +156,7 @@
 				B00000000000000000000039 /* RecipePreview.swift */,
 				B00000000000000000000041 /* RecipeCommentsView.swift */,
 				B00000000000000000000043 /* SimilarRecipesView.swift */,
+				B00000000000000000000044 /* RecipeShareCard.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -361,6 +364,7 @@
 				A00000000000000000000041 /* RecipeCommentsView.swift in Sources */,
 				A00000000000000000000042 /* SavedFilterStore.swift in Sources */,
 				A00000000000000000000043 /* SimilarRecipesView.swift in Sources */,
+				A00000000000000000000044 /* RecipeShareCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
