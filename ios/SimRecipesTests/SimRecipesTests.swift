@@ -979,4 +979,131 @@ final class SimRecipesTests: XCTestCase {
             )
         )
     }
+
+    func testRecipeScanParserMapsLocalizedAndVariantLabelsToCameraCapabilities() {
+        let capabilities = scanTestCapabilities()
+        let fields = RecipeScanParser.parse([
+            RecipeScanOCRLine(text: "Film Simulation: Classic Chrome", confidence: 0.98),
+            RecipeScanOCRLine(text: "Körnungseffekt: Weak", confidence: 0.91),
+            RecipeScanOCRLine(text: "Lichter: −1", confidence: 0.88)
+        ], capabilities: capabilities)
+
+        XCTAssertEqual(fields.map(\.capabilityKey), ["film_simulation", "grain_effect", "highlight_tone"])
+        XCTAssertEqual(fields[0].settingValue, .string("Classic Chrome"))
+        XCTAssertEqual(fields[1].settingValue, .string("Weak"))
+        XCTAssertEqual(fields[2].settingValue, .number(-1))
+        XCTAssertTrue(fields.allSatisfy(\.isSelected))
+        XCTAssertEqual(fields.first?.sourceText, "Film Simulation: Classic Chrome")
+    }
+
+    func testRecipeScanParserUsesStableDecimalParsingAcrossLocales() {
+        let capability = CameraCapabilityTransport(
+            id: "compensation", key: "exposure_compensation", displayName: "Exposure Compensation",
+            valueType: "decimal", allowedValues: nil, minimum: -2, maximum: 2, step: 0.1
+        )
+
+        let field = RecipeScanParser.resolve(
+            label: "Belichtungskorrektur", rawValue: "−1,5 EV", confidence: 0.95,
+            capabilities: [capability]
+        )
+
+        XCTAssertEqual(field.capabilityKey, "exposure_compensation")
+        XCTAssertEqual(field.settingValue, .number(-1.5))
+        XCTAssertEqual(field.status, .ready)
+    }
+
+    func testRecipeScanParserFlagsUnknownUnsupportedAndDuplicateOCRFields() {
+        let capabilities = scanTestCapabilities()
+        let fields = RecipeScanParser.parse([
+            RecipeScanOCRLine(text: "Film Simulation: Velvia", confidence: 0.96),
+            RecipeScanOCRLine(text: "Mystery Setting: Auto", confidence: 0.93),
+            RecipeScanOCRLine(text: "Lichter: -1", confidence: 0.96),
+            RecipeScanOCRLine(text: "Highlight Tone: +2", confidence: 0.96)
+        ], capabilities: capabilities)
+
+        XCTAssertEqual(fields[0].status, .unsupportedValue)
+        XCTAssertNil(fields[0].settingValue)
+        XCTAssertEqual(fields[1].status, .unknownLabel)
+        XCTAssertEqual(fields[2].status, .duplicate)
+        XCTAssertEqual(fields[3].status, .duplicate)
+        XCTAssertTrue(fields.allSatisfy { !$0.isSelected })
+    }
+
+    func testRecipeScanParserFlagsLowConfidenceForExplicitReview() {
+        let field = RecipeScanParser.resolve(
+            label: "Grain", rawValue: "Weak", confidence: 0.4,
+            capabilities: scanTestCapabilities()
+        )
+
+        XCTAssertEqual(field.status, .lowConfidence)
+        XCTAssertFalse(field.isSelected)
+        XCTAssertEqual(field.settingValue, .string("Weak"))
+    }
+
+    func testRecipeScanParserFlagsAmbiguousCapabilityLabelsWithoutGuessing() {
+        let capabilities = [
+            CameraCapabilityTransport(
+                id: "chrome", key: "color_chrome_effect", displayName: "Color Chrome Effect",
+                valueType: "enum", allowedValues: .array([.string("Off"), .string("Strong")]),
+                minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "chrome-blue", key: "color_chrome_fx_blue", displayName: "Color Chrome Effect",
+                valueType: "enum", allowedValues: .array([.string("Off"), .string("Strong")]),
+                minimum: nil, maximum: nil, step: nil
+            )
+        ]
+
+        let field = RecipeScanParser.resolve(label: "Color Chrome Effect", rawValue: "Strong", capabilities: capabilities)
+
+        XCTAssertEqual(field.status, .ambiguous)
+        XCTAssertNil(field.settingValue)
+        XCTAssertFalse(field.isSelected)
+    }
+
+    func testRecipeScanParserBuildsObjectCapabilitiesOnlyWhenEveryAxisIsExplicit() {
+        let grain = CameraCapabilityTransport(
+            id: "grain", key: "grain_effect", displayName: "Grain Effect", valueType: "object",
+            allowedValues: .object([
+                "roughness": .array([.string("OFF"), .string("WEAK"), .string("STRONG")]),
+                "size": .array([.string("SMALL"), .string("LARGE")])
+            ]), minimum: nil, maximum: nil, step: nil
+        )
+        let shift = CameraCapabilityTransport(
+            id: "shift", key: "white_balance_shift", displayName: "White Balance Shift", valueType: "object",
+            allowedValues: .object(["axes": .array([.string("warm_cool"), .string("green_magenta")])]),
+            minimum: -9, maximum: 9, step: 1
+        )
+
+        let grainField = RecipeScanParser.resolve(
+            label: "Grain", rawValue: "Weak Small", capabilities: [grain]
+        )
+        let shiftField = RecipeScanParser.resolve(
+            label: "WB Shift", rawValue: "warm_cool: +2, green_magenta: -4", capabilities: [shift]
+        )
+        let incompleteShift = RecipeScanParser.resolve(
+            label: "WB Shift", rawValue: "warm_cool: +2", capabilities: [shift]
+        )
+
+        XCTAssertEqual(grainField.settingValue, .object(["roughness": .string("WEAK"), "size": .string("SMALL")]))
+        XCTAssertEqual(shiftField.settingValue, .object(["warm_cool": .number(2), "green_magenta": .number(-4)]))
+        XCTAssertEqual(incompleteShift.status, .unsupportedValue)
+    }
+
+    private func scanTestCapabilities() -> [CameraCapabilityTransport] {
+        [
+            CameraCapabilityTransport(
+                id: "film", key: "film_simulation", displayName: "Film Simulation", valueType: "enum",
+                allowedValues: .array([.string("Classic Chrome"), .string("Provia")]), minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "grain", key: "grain_effect", displayName: "Grain Effect", valueType: "enum",
+                allowedValues: .array([.string("Off"), .string("Weak"), .string("Strong")]), minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "highlight", key: "highlight_tone", displayName: "Highlight Tone", valueType: "integer",
+                allowedValues: nil, minimum: -4, maximum: 4, step: 1
+            )
+        ]
+    }
 }

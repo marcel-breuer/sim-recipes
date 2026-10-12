@@ -6,6 +6,7 @@ struct RecipeEditorView: View {
     @StateObject private var viewModel: RecipeEditorViewModel
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showPublishConfirmation = false
+    @State private var showRecipeScanner = false
 
     init(viewModel: RecipeEditorViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -25,8 +26,30 @@ struct RecipeEditorView: View {
         }
         .navigationTitle(viewModel.draft.id == nil ? "New Recipe" : "Edit Recipe")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if viewModel.canEdit {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showRecipeScanner = true
+                    } label: {
+                        Label("Scan recipe", systemImage: "text.viewfinder")
+                    }
+                    .disabled(viewModel.isLoading)
+                }
+            }
+        }
         .task {
             await viewModel.load()
+        }
+        .sheet(isPresented: $showRecipeScanner) {
+            RecipePhotoScanView(
+                initialCameraID: viewModel.draft.cameraModelID,
+                loadCameras: { try await viewModel.scanAvailableCameras() },
+                loadCapabilities: { cameraID in try await viewModel.scanCapabilities(for: cameraID) },
+                onApply: { cameraID, settings in
+                    await viewModel.applyScannedSettings(settings, cameraID: cameraID)
+                }
+            )
         }
         .alert("Recipe Editor", isPresented: errorIsPresented) {
             Button("OK", role: .cancel) {}

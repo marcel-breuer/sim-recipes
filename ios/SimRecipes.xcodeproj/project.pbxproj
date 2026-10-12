@@ -47,6 +47,8 @@
 		A00000000000000000000042 /* SavedFilterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000042 /* SavedFilterStore.swift */; };
 		A00000000000000000000043 /* SimilarRecipesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000043 /* SimilarRecipesView.swift */; };
 		A00000000000000000000044 /* RecipeShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000044 /* RecipeShareCard.swift */; };
+		A00000000000000000000045 /* RecipePhotoScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000045 /* RecipePhotoScanner.swift */; };
+		A00000000000000000000046 /* RecipePhotoScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000046 /* RecipePhotoScanView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +106,8 @@
 		B00000000000000000000042 /* SavedFilterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFilterStore.swift; sourceTree = "<group>"; };
 		B00000000000000000000043 /* SimilarRecipesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/SimilarRecipesView.swift; sourceTree = "<group>"; };
 		B00000000000000000000044 /* RecipeShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipeShareCard.swift; sourceTree = "<group>"; };
+		B00000000000000000000045 /* RecipePhotoScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipePhotoScanner.swift; sourceTree = "<group>"; };
+		B00000000000000000000046 /* RecipePhotoScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipePhotoScanView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +161,7 @@
 				B00000000000000000000041 /* RecipeCommentsView.swift */,
 				B00000000000000000000043 /* SimilarRecipesView.swift */,
 				B00000000000000000000044 /* RecipeShareCard.swift */,
+				B00000000000000000000046 /* RecipePhotoScanView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -199,6 +204,7 @@
 				B00000000000000000000038 /* RecipePortability.swift */,
 				B00000000000000000000040 /* RecipeCommentsService.swift */,
 				B00000000000000000000042 /* SavedFilterStore.swift */,
+				B00000000000000000000045 /* RecipePhotoScanner.swift */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -365,6 +371,8 @@
 				A00000000000000000000042 /* SavedFilterStore.swift in Sources */,
 				A00000000000000000000043 /* SimilarRecipesView.swift in Sources */,
 				A00000000000000000000044 /* RecipeShareCard.swift in Sources */,
+				A00000000000000000000045 /* RecipePhotoScanner.swift in Sources */,
+				A00000000000000000000046 /* RecipePhotoScanView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

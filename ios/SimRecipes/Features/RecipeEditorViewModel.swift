@@ -25,6 +25,7 @@ final class RecipeEditorViewModel: ObservableObject {
     private let draftStore: RecipeDraftStore
     private var activeUploadTask: Task<Void, Never>?
     private var lastUploadAction: UploadAction?
+    private var programmaticCameraChangeID: String?
 
     private enum UploadAction: Equatable {
         case save
@@ -69,12 +70,48 @@ final class RecipeEditorViewModel: ObservableObject {
     }
 
     func cameraDidChange() async {
+        if programmaticCameraChangeID == draft.cameraModelID {
+            programmaticCameraChangeID = nil
+            return
+        }
         do {
             draft.settings = []
             try await loadCapabilities()
             fillMissingSettings()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    func scanAvailableCameras() async throws -> [SupportedCameraTransport] {
+        try await capabilityService.supportedCameras()
+    }
+
+    func scanCapabilities(for cameraID: String) async throws -> [CameraCapabilityTransport] {
+        try await capabilityService.capabilities(for: cameraID)
+    }
+
+    func applyScannedSettings(_ settings: [RecipeSettingTransport], cameraID: String) async {
+        guard cameras.contains(where: { $0.id == cameraID }) else {
+            errorMessage = "Choose a supported camera before applying scanned settings."
+            return
+        }
+        if draft.cameraModelID != cameraID {
+            do {
+                let newCapabilities = try await capabilityService.capabilities(for: cameraID)
+                programmaticCameraChangeID = cameraID
+                draft.cameraModelID = cameraID
+                draft.settings = []
+                capabilities = newCapabilities
+                fillMissingSettings()
+            } catch {
+                programmaticCameraChangeID = nil
+                errorMessage = error.localizedDescription
+                return
+            }
+        }
+        for setting in settings where capabilities.contains(where: { $0.key == setting.key }) {
+            setSetting(setting.value, for: setting.key)
         }
     }
 
