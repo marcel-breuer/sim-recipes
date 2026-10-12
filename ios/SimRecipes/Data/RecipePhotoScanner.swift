@@ -99,7 +99,7 @@ enum RecipeScanParser {
 
         let duplicateKeys = Dictionary(grouping: fields.indices.compactMap { index in
             fields[index].capabilityKey.map { ($0, index) }
-        }, by: \.0).filter { $0.value.count > 1 }
+        }, by: { $0.0 }).filter { $0.value.count > 1 }
         for (_, entries) in duplicateKeys {
             for (_, index) in entries {
                 fields[index].status = .duplicate

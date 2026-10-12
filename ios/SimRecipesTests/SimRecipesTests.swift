@@ -988,7 +988,7 @@ final class SimRecipesTests: XCTestCase {
             RecipeScanOCRLine(text: "Lichter: −1", confidence: 0.88)
         ], capabilities: capabilities)
 
-        XCTAssertEqual(fields.map(\.capabilityKey), ["film_simulation", "grain_effect", "highlight_tone"])
+        XCTAssertEqual(fields.compactMap(\.capabilityKey), ["film_simulation", "grain_effect", "highlight_tone"])
         XCTAssertEqual(fields[0].settingValue, .string("Classic Chrome"))
         XCTAssertEqual(fields[1].settingValue, .string("Weak"))
         XCTAssertEqual(fields[2].settingValue, .number(-1))
