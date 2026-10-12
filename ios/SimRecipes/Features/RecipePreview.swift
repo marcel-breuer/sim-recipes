@@ -14,7 +14,7 @@ struct RecipePreviewResult: Equatable, Sendable {
     let imageData: Data
     let simulatedSettingKeys: [String]
     let unsupportedSettingKeys: [String]
-    let notSimulatedSettingKeys: [String] = []
+    let notSimulatedSettingKeys: [String]
 }
 
 struct RecipePreviewApplication {

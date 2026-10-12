@@ -205,7 +205,7 @@ struct PhotoDarkroomRenderer: Sendable {
                       kCGImageSourceCreateThumbnailFromImageAlways: true,
                       kCGImageSourceCreateThumbnailWithTransform: true,
                       kCGImageSourceThumbnailMaxPixelSize: Int(maximumDimension)
-                  ]) else {
+                  ] as CFDictionary) else {
                 throw PhotoDarkroomError.missingSource
             }
             let input = CIImage(cgImage: thumbnail)
@@ -244,7 +244,7 @@ struct PhotoDarkroomRenderer: Sendable {
                         kCGImageSourceCreateThumbnailFromImageAlways: true,
                         kCGImageSourceCreateThumbnailWithTransform: true,
                         kCGImageSourceThumbnailMaxPixelSize: self.maximumExportDimension
-                      ]) else {
+                      ] as CFDictionary) else {
                     throw PhotoDarkroomError.missingSource
                 }
                 let input = CIImage(cgImage: inputImage)
