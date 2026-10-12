@@ -72,6 +72,7 @@ struct RootView: View {
 
             LibraryView(
                 authService: authService,
+                profileService: profileService,
                 apiClient: apiClient,
                 localStore: localStore,
                 cameraService: cameraService

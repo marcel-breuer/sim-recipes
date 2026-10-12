@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @ObservedObject var authService: AuthService
+    @ObservedObject var profileService: ProfileService
     let apiClient: any APIClient
     let localStore: LocalRecipeStore
     let cameraService: any CameraService
@@ -14,6 +15,7 @@ struct LibraryView: View {
     @State private var message: String?
     @State private var shareCardRecipe: RecipeTransport?
     @State private var showingDarkroom = false
+    @State private var showingCameraKit = false
 
     private var filteredRecipes: [RecipeTransport] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -111,6 +113,16 @@ struct LibraryView: View {
                     RecipeShareCardEditorView(recipe: recipe)
                 }
             }
+            .sheet(isPresented: $showingCameraKit) {
+                NavigationStack {
+                    CameraKitCollectionPickerView(
+                        collections: profileService.collections,
+                        localStore: localStore,
+                        cameraService: cameraService,
+                        capabilityService: CameraCapabilityService(apiClient: apiClient)
+                    )
+                }
+            }
             .fullScreenCover(isPresented: $showingDarkroom) {
                 PhotoDarkroomView(
                     recipes: recipes,
@@ -125,6 +137,14 @@ struct LibraryView: View {
                         Label("JPEG Darkroom", systemImage: "slider.horizontal.3")
                     }
                     if authService.session != nil {
+                        Button {
+                            Task {
+                                try? await profileService.loadCollections()
+                                showingCameraKit = true
+                            }
+                        } label: {
+                            Label("Install camera kit", systemImage: "square.stack.3d.up")
+                        }
                         Button {
                             showingImporter = true
                         } label: {

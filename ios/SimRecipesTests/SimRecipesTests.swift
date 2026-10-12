@@ -48,6 +48,29 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertTrue(OnboardingInterest.allCases.contains(.everyday))
     }
 
+    func testCameraKitMappingRejectsTwoRecipesAssignedToTheSameSlot() {
+        XCTAssertTrue(CameraKitMappingValidator.hasUniqueSlots(["recipe-1": .c1, "recipe-2": .c2]))
+        XCTAssertFalse(CameraKitMappingValidator.hasUniqueSlots(["recipe-1": .c1, "recipe-2": .c1]))
+    }
+
+    func testCameraCapabilitiesCanBeReadFromLocalCache() throws {
+        let suiteName = "CameraCapabilityLocalStoreTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = CameraCapabilityLocalStore(defaults: defaults)
+        let camera = SupportedCameraTransport(
+            id: "camera-1",
+            manufacturer: "Fujifilm",
+            name: "X-S20",
+            slug: "fujifilm-x-s20",
+            capabilities: []
+        )
+
+        try store.save([camera])
+
+        XCTAssertEqual(try store.cameras(), [camera])
+    }
+
     func testAPIContractUsesVersionedCorePaths() {
         XCTAssertEqual(APIContract.version, "v1")
         XCTAssertEqual(APIContract.health, "health")
