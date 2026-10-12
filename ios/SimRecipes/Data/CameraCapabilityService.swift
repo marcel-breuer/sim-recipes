@@ -27,17 +27,26 @@ struct SupportedCameraTransport: Codable, Equatable, Identifiable, Sendable {
 
 struct CameraCapabilityService {
     private let apiClient: any APIClient
+    private let localStore: CameraCapabilityLocalStore
 
-    init(apiClient: any APIClient) {
+    init(apiClient: any APIClient, localStore: CameraCapabilityLocalStore = CameraCapabilityLocalStore()) {
         self.apiClient = apiClient
+        self.localStore = localStore
     }
 
     func supportedCameras() async throws -> [SupportedCameraTransport] {
-        let response = try await apiClient.send(
-            APIRequest(method: .get, path: "cameras"),
-            responseType: APIResponse<[SupportedCameraTransport]>.self
-        )
-        return response.data
+        do {
+            let response = try await apiClient.send(
+                APIRequest(method: .get, path: "cameras"),
+                responseType: APIResponse<[SupportedCameraTransport]>.self
+            )
+            try? localStore.save(response.data)
+            return response.data
+        } catch {
+            let cached = try localStore.cameras()
+            guard !cached.isEmpty else { throw error }
+            return cached
+        }
     }
 
     func capabilities(for cameraID: String) async throws -> [CameraCapabilityTransport] {
@@ -54,5 +63,23 @@ struct CameraCapabilityService {
             responseType: APIResponse<[CategoryTransport]>.self
         )
         return response.data
+    }
+}
+
+final class CameraCapabilityLocalStore {
+    private let defaults: UserDefaults
+    private let key = "simrecipes.camera.capabilities"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func cameras() throws -> [SupportedCameraTransport] {
+        guard let data = defaults.data(forKey: key) else { return [] }
+        return try JSONDecoder().decode([SupportedCameraTransport].self, from: data)
+    }
+
+    func save(_ cameras: [SupportedCameraTransport]) throws {
+        defaults.set(try JSONEncoder().encode(cameras), forKey: key)
     }
 }

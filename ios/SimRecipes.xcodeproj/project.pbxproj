@@ -51,6 +51,7 @@
 		A00000000000000000000046 /* RecipePhotoScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000046 /* RecipePhotoScanView.swift */; };
 		A00000000000000000000047 /* PhotoDarkroom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000047 /* PhotoDarkroom.swift */; };
 		A00000000000000000000048 /* PhotoDarkroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000048 /* PhotoDarkroomView.swift */; };
+		A00000000000000000000049 /* CameraKitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000049 /* CameraKitView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +113,7 @@
 		B00000000000000000000046 /* RecipePhotoScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/RecipePhotoScanView.swift; sourceTree = "<group>"; };
 		B00000000000000000000047 /* PhotoDarkroom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDarkroom.swift; sourceTree = "<group>"; };
 		B00000000000000000000048 /* PhotoDarkroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PhotoDarkroomView.swift; sourceTree = "<group>"; };
+		B00000000000000000000049 /* CameraKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CameraKitView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,6 +169,7 @@
 				B00000000000000000000044 /* RecipeShareCard.swift */,
 				B00000000000000000000046 /* RecipePhotoScanView.swift */,
 				B00000000000000000000048 /* PhotoDarkroomView.swift */,
+				B00000000000000000000049 /* CameraKitView.swift */,
 				B00000000000000000000006 /* Info.plist */,
 			);
 			path = SimRecipes;
@@ -381,6 +384,7 @@
 				A00000000000000000000046 /* RecipePhotoScanView.swift in Sources */,
 				A00000000000000000000047 /* PhotoDarkroom.swift in Sources */,
 				A00000000000000000000048 /* PhotoDarkroomView.swift in Sources */,
+				A00000000000000000000049 /* CameraKitView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
