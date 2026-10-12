@@ -214,6 +214,97 @@ final class SimRecipesTests: XCTestCase {
         )
     }
 
+    func testRecipeCardContentIncludesAccurateSettingsAndPublicLink() {
+        var recipe = makeRecipe(id: "card-public")
+        recipe = RecipeTransport(
+            id: recipe.id,
+            name: "A long recipe name for a quiet evening",
+            description: recipe.description,
+            styleRecommendation: recipe.styleRecommendation,
+            cameraModelID: recipe.cameraModelID,
+            cameraModelName: "Fujifilm X-S20",
+            lens: recipe.lens,
+            categories: recipe.categories,
+            tags: recipe.tags,
+            isPublished: true,
+            provenance: recipe.provenance,
+            updatedAt: recipe.updatedAt,
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome"),
+                RecipeSettingTransport(key: "highlight_tone", value: -2),
+                RecipeSettingTransport(key: "grain_effect", value: .object([
+                    "roughness": .string("WEAK"), "size": .string("SMALL")
+                ]))
+            ]
+        )
+
+        let content = RecipeShareCardContent.make(from: recipe)
+
+        XCTAssertEqual(content.name, "A long recipe name for a quiet evening")
+        XCTAssertEqual(content.cameraName, "Fujifilm X-S20")
+        XCTAssertEqual(content.filmSimulation, "Classic Chrome")
+        XCTAssertEqual(content.publicURL?.absoluteString, "https://simrecipes.marcel-breuer.dev/recipes/card-public")
+        XCTAssertEqual(content.settings.map(\.name), ["Film simulation", "Highlights", "Grain"])
+        XCTAssertEqual(content.settings[1].value, "-2")
+        XCTAssertEqual(content.settings[2].value, "Roughness: WEAK, Size: SMALL")
+    }
+
+    func testPrivateRecipeCardContainsNoPublicOrImageURL() {
+        var recipe = makeRecipe(id: "card-private", isPublished: false)
+        recipe = RecipeTransport(
+            id: recipe.id,
+            name: recipe.name,
+            description: recipe.description,
+            styleRecommendation: recipe.styleRecommendation,
+            cameraModelID: recipe.cameraModelID,
+            lens: recipe.lens,
+            categories: recipe.categories,
+            tags: recipe.tags,
+            isPublished: false,
+            provenance: recipe.provenance,
+            updatedAt: recipe.updatedAt,
+            settings: recipe.settings,
+            images: [RecipeImageTransport(
+                id: "private-image",
+                url: URL(string: "https://private.example.test/recipes/private-image?signature=secret"),
+                derivativeURLs: [:],
+                processingStatus: "ready"
+            )]
+        )
+
+        let content = RecipeShareCardContent.make(from: recipe)
+
+        XCTAssertNil(content.publicURL)
+        XCTAssertFalse(content.settings.contains { $0.value.contains("private.example.test") })
+    }
+
+    @MainActor
+    func testRecipeCardRendererCreatesPNGAndReportsMissingPhoto() throws {
+        let content = RecipeShareCardContent.make(from: makeRecipe(id: "card-render"))
+        XCTAssertThrowsError(try RecipeShareCardRenderer.renderPNG(
+            content: content,
+            photo: nil,
+            layout: .darkroom,
+            crop: .center,
+            detail: .summary
+        )) { error in
+            XCTAssertEqual(error as? RecipeCardError, .missingPhoto)
+        }
+
+        let photo = try XCTUnwrap(UIImage(data: makePreviewImageData()))
+        let png = try RecipeShareCardRenderer.renderPNG(
+            content: content,
+            photo: photo,
+            layout: .editorial,
+            crop: .top,
+            detail: .allSettings
+        )
+
+        XCTAssertTrue(png.starts(with: [137, 80, 78, 71, 13, 10, 26, 10]))
+        XCTAssertEqual(RecipeShareCardRenderer.filename(for: "Café / Night"), "cafe-night.png")
+        XCTAssertEqual(RecipeShareCardRenderer.filename(for: "///"), "film-recipe.png")
+    }
+
     func testRecipeTransportDecodesAPIResourceShapeAndStructuredSettings() throws {
         let data = #"""
         {

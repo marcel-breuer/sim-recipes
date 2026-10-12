@@ -30,6 +30,7 @@ struct RecipeDetailView: View {
     @State private var isSubmittingSafetyAction = false
     @State private var isCreatorBlocked = false
     @State private var showingCreatorBlockConfirmation = false
+    @State private var showingRecipeCard = false
 
     init(
         recipe: RecipeTransport,
@@ -262,6 +263,14 @@ struct RecipeDetailView: View {
                     .accessibilityLabel("Share public recipe link")
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingRecipeCard = true
+                } label: {
+                    Label("Create recipe card", systemImage: "rectangle.portrait.on.rectangle.portrait")
+                }
+                .accessibilityLabel("Create shareable recipe card")
+            }
             if let addToCollectionAction, !collections.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -321,6 +330,11 @@ struct RecipeDetailView: View {
                     .disabled(isSubmittingSafetyAction)
                     .accessibilityLabel("Safety options")
                 }
+            }
+        }
+        .sheet(isPresented: $showingRecipeCard) {
+            NavigationStack {
+                RecipeShareCardEditorView(recipe: recipe)
             }
         }
         .task {

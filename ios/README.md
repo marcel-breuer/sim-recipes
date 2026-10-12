@@ -32,4 +32,12 @@ immutable and cannot be edited in the editor. Personal collections are cached
 locally, can be reordered and edited from Profile, and retain pending recipe
 membership changes for synchronization when connectivity returns.
 
+Recipe detail and the personal library can create an offline PNG share card
+from a recipe photo or a photo-library selection. Cards support dark/editorial
+layouts, crop focus, and summary/all-settings variants. Public cards include the
+stable public recipe link; private cards omit recipe and image URLs. A card is a
+visual snapshot for sharing, distinct from the versioned `.simrecipe` file used
+for recipe import/export and the public deep link used to open the canonical
+recipe.
+
 Do not place credentials or signing material in this directory.

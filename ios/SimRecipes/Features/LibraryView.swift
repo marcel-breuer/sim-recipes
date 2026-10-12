@@ -12,6 +12,7 @@ struct LibraryView: View {
     @State private var showingExporter = false
     @State private var exportFilename = "recipe.simrecipe"
     @State private var message: String?
+    @State private var shareCardRecipe: RecipeTransport?
 
     private var filteredRecipes: [RecipeTransport] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -57,6 +58,11 @@ struct LibraryView: View {
                             } label: {
                                 Label("Export recipe", systemImage: "square.and.arrow.up")
                             }
+                            Button {
+                                shareCardRecipe = recipe
+                            } label: {
+                                Label("Create recipe card", systemImage: "rectangle.portrait.on.rectangle.portrait")
+                            }
                             if let shareURL = RecipeShareLink.url(for: recipe) {
                                 ShareLink(item: shareURL) {
                                     Label("Share public link", systemImage: "link")
@@ -99,6 +105,11 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .searchable(text: $searchText, prompt: "Search your library")
+            .sheet(item: $shareCardRecipe) { recipe in
+                NavigationStack {
+                    RecipeShareCardEditorView(recipe: recipe)
+                }
+            }
             .toolbar {
                 if authService.session != nil {
                     ToolbarItem(placement: .topBarLeading) {
