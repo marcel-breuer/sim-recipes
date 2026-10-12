@@ -40,4 +40,13 @@ visual snapshot for sharing, distinct from the versioned `.simrecipe` file used
 for recipe import/export and the public deep link used to open the canonical
 recipe.
 
+The recipe editor can scan a saved or newly captured recipe photo into a
+private, editable draft using on-device Vision text recognition. The source
+image is held only for extraction and is not attached or uploaded. Recognized
+settings show their source text and confidence, are matched against the selected
+camera's capability list, and require review before applying. Unknown,
+unsupported, low-confidence, and duplicate fields are flagged instead of
+guessed. Scanning never saves, publishes, or transfers a recipe; verify the
+draft against the source before continuing.
+
 Do not place credentials or signing material in this directory.
