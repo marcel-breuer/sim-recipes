@@ -231,7 +231,7 @@ final class SimRecipesTests: XCTestCase {
             updatedAt: recipe.updatedAt,
             settings: [
                 RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome"),
-                RecipeSettingTransport(key: "highlight_tone", value: -2),
+                RecipeSettingTransport(key: "highlight_tone", value: .number(-2)),
                 RecipeSettingTransport(key: "grain_effect", value: .object([
                     "roughness": .string("WEAK"), "size": .string("SMALL")
                 ]))
