@@ -259,11 +259,7 @@ enum RecipeScanParser {
             .replacingOccurrences(of: "stops", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: ",", with: ".")
             .replacingOccurrences(of: " ", with: "")
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.isLenient = false
-        return formatter.number(from: cleaned)?.doubleValue
+        return Double(cleaned)
     }
 
     private static func normalize(_ text: String) -> String {
