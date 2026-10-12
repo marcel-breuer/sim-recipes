@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import UIKit
 import XCTest
 @testable import SimRecipes
@@ -360,6 +361,24 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(result.unsupportedSettingKeys, ["future_setting"])
     }
 
+    func testRecipePreviewEngineDistinguishesUnsimulatedApproximationFromCameraSupport() async throws {
+        let shift = CameraCapabilityTransport(
+            id: "shift", key: "white_balance_shift", displayName: "White Balance Shift", valueType: "object",
+            allowedValues: .object(["axes": .array([.string("warm_cool"), .string("green_magenta")])]),
+            minimum: -9, maximum: 9, step: 1
+        )
+        let result = try await RecipePreviewEngine().render(
+            imageData: makePreviewImageData(),
+            settings: [RecipeSettingTransport(key: "white_balance_shift", value: .object([
+                "warm_cool": .number(2), "green_magenta": .number(-4)
+            ]))],
+            capabilities: [shift]
+        )
+
+        XCTAssertEqual(result.unsupportedSettingKeys, [])
+        XCTAssertEqual(result.notSimulatedSettingKeys, ["white_balance_shift"])
+    }
+
     @MainActor
     func testRecipePreviewViewModelReportsLoadingAndLoadedStates() async {
         let renderer = BlockingPreviewRenderer()
@@ -367,7 +386,8 @@ final class SimRecipesTests: XCTestCase {
         let result = RecipePreviewResult(
             imageData: Data([1, 2, 3]),
             simulatedSettingKeys: ["film_simulation"],
-            unsupportedSettingKeys: []
+            unsupportedSettingKeys: [],
+            notSimulatedSettingKeys: []
         )
 
         let loadTask = Task {
@@ -1088,6 +1108,99 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(grainField.settingValue, .object(["roughness": .string("WEAK"), "size": .string("SMALL")]))
         XCTAssertEqual(shiftField.settingValue, .object(["warm_cool": .number(2), "green_magenta": .number(-4)]))
         XCTAssertEqual(incompleteShift.status, .unsupportedValue)
+    }
+
+    func testPhotoDarkroomEditParametersRestoreFromLocalProjectStore() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SimRecipesDarkroom-\(UUID().uuidString)", isDirectory: true)
+        let store = PhotoDarkroomStore(directoryURL: directory)
+        let source = try makeDarkroomJPEG(includeGPS: false)
+
+        let imported = try await store.importJPEG(source, filename: "street.jpg")
+        var edited = imported.project
+        edited.edits.exposure = 1.2
+        edited.edits.cropScale = 1.4
+        edited.edits.straightenDegrees = -2
+        try await store.update(edited)
+
+        let restored = try await store.load()
+        XCTAssertEqual(restored.first?.edits.exposure, 1.2)
+        XCTAssertEqual(restored.first?.edits.cropScale, 1.4)
+        XCTAssertEqual(restored.first?.edits.straightenDegrees, -2)
+    }
+
+    func testPhotoDarkroomBatchSyncCopiesOnlySelectedAdjustmentGroups() {
+        let source = PhotoDarkroomEdits(
+            recipeID: "recipe-1", recipeName: "Classic Chrome", exposure: 1,
+            contrast: 0.2, saturation: -0.1, cropScale: 1.8, straightenDegrees: 3,
+            frame: .white
+        )
+        let target = PhotoDarkroomEdits(recipeID: "recipe-2", recipeName: "Portra", exposure: -1, cropScale: 1.2)
+
+        let synced = PhotoDarkroomBatchSync.apply(source: source, to: target, selection: [.lightAndColor])
+
+        XCTAssertEqual(synced.recipeID, "recipe-2")
+        XCTAssertEqual(synced.exposure, 1)
+        XCTAssertEqual(synced.cropScale, 1.2)
+        XCTAssertEqual(synced.frame, .white)
+    }
+
+    func testPhotoDarkroomExportsCopyWithExplicitGPSMetadataChoiceAndPreservesSource() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SimRecipesDarkroomExport-\(UUID().uuidString)", isDirectory: true)
+        let store = PhotoDarkroomStore(directoryURL: directory)
+        let original = try makeDarkroomJPEG(includeGPS: true)
+        let imported = try await store.importJPEG(original, filename: "location.jpg")
+        let sourceURL = await store.sourceURL(for: imported.project)
+        let edits = PhotoDarkroomEdits(exposure: 0.5, cropScale: 1.1, frame: .black)
+        let renderer = PhotoDarkroomRenderer()
+
+        let privateExport = try await renderer.export(sourceURL: sourceURL, edits: edits, preservingMetadata: false)
+        let privateSource = try XCTUnwrap(CGImageSourceCreateWithURL(privateExport as CFURL, nil))
+        let privateProperties = CGImageSourceCopyPropertiesAtIndex(privateSource, 0, nil) as? [CFString: Any]
+        XCTAssertNil(privateProperties?[kCGImagePropertyGPSDictionary])
+
+        let metadataExport = try await renderer.export(sourceURL: sourceURL, edits: edits, preservingMetadata: true)
+        let metadataSource = try XCTUnwrap(CGImageSourceCreateWithURL(metadataExport as CFURL, nil))
+        let metadataProperties = CGImageSourceCopyPropertiesAtIndex(metadataSource, 0, nil) as? [CFString: Any]
+        XCTAssertNotNil(metadataProperties?[kCGImagePropertyGPSDictionary])
+        XCTAssertEqual(try Data(contentsOf: sourceURL), original)
+        XCTAssertNotEqual(privateExport, sourceURL)
+    }
+
+    func testPhotoDarkroomImportSkipsDuplicateJPEGs() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SimRecipesDarkroomDuplicates-\(UUID().uuidString)", isDirectory: true)
+        let store = PhotoDarkroomStore(directoryURL: directory)
+        let image = try makeDarkroomJPEG(includeGPS: false)
+
+        let first = try await store.importJPEG(image, filename: "first.jpg")
+        let duplicate = try await store.importJPEG(image, filename: "second.jpg")
+
+        XCTAssertFalse(first.wasDuplicate)
+        XCTAssertTrue(duplicate.wasDuplicate)
+        XCTAssertEqual(first.project.id, duplicate.project.id)
+    }
+
+    private func makeDarkroomJPEG(includeGPS: Bool) throws -> Data {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 180, height: 120)).image { context in
+            UIColor.systemOrange.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 180, height: 120))
+        }
+        let data = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "public.jpeg" as CFString, 1, nil))
+        var properties: [CFString: Any] = [:]
+        if includeGPS {
+            properties[kCGImagePropertyGPSDictionary] = [
+                kCGImagePropertyGPSLatitude: 37.33,
+                kCGImagePropertyGPSLatitudeRef: "N",
+                kCGImagePropertyGPSLongitude: 122.03,
+                kCGImagePropertyGPSLongitudeRef: "W"
+            ] as [CFString: Any]
+        }
+        CGImageDestinationAddImage(destination, try XCTUnwrap(image.cgImage), properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return data as Data
     }
 
     private func scanTestCapabilities() -> [CameraCapabilityTransport] {

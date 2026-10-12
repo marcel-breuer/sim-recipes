@@ -49,4 +49,11 @@ unsupported, low-confidence, and duplicate fields are flagged instead of
 guessed. Scanning never saves, publishes, or transfers a recipe; verify the
 draft against the source before continuing.
 
+The JPEG darkroom opens photo-library or local JPEG files for on-device
+non-destructive edits. Projects retain the original in the app's private local
+support directory and persist reversible recipe, light/color, crop, straighten,
+and frame parameters. Selected adjustment groups can be synchronized across a
+batch. Export creates a separate JPEG; source metadata and GPS are removed by
+default, with an explicit option to preserve them in the exported copy.
+
 Do not place credentials or signing material in this directory.

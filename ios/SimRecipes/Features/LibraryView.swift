@@ -13,6 +13,7 @@ struct LibraryView: View {
     @State private var exportFilename = "recipe.simrecipe"
     @State private var message: String?
     @State private var shareCardRecipe: RecipeTransport?
+    @State private var showingDarkroom = false
 
     private var filteredRecipes: [RecipeTransport] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -110,15 +111,28 @@ struct LibraryView: View {
                     RecipeShareCardEditorView(recipe: recipe)
                 }
             }
+            .fullScreenCover(isPresented: $showingDarkroom) {
+                PhotoDarkroomView(
+                    recipes: recipes,
+                    loadCapabilities: { cameraID in try await darkroomCapabilities(for: cameraID) }
+                )
+            }
             .toolbar {
-                if authService.session != nil {
-                    ToolbarItem(placement: .topBarLeading) {
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button {
+                        showingDarkroom = true
+                    } label: {
+                        Label("JPEG Darkroom", systemImage: "slider.horizontal.3")
+                    }
+                    if authService.session != nil {
                         Button {
                             showingImporter = true
                         } label: {
                             Label("Import recipe", systemImage: "square.and.arrow.down")
                         }
                     }
+                }
+                if authService.session != nil {
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink {
                             editor(for: nil)
@@ -181,6 +195,16 @@ struct LibraryView: View {
             cameraService: cameraService,
             capabilityService: CameraCapabilityService(apiClient: apiClient)
         )
+    }
+
+    private func darkroomCapabilities(for cameraID: String) async throws -> [CameraCapabilityTransport] {
+        let client: any APIClient
+        if let session = authService.session {
+            client = BearerAPIClient(apiClient: apiClient, accessToken: session.token)
+        } else {
+            client = apiClient
+        }
+        return try await CameraCapabilityService(apiClient: client).capabilities(for: cameraID)
     }
 
     @ViewBuilder
