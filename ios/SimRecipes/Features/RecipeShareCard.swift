@@ -221,8 +221,7 @@ private struct RecipeShareCardCanvas: View {
         LazyVGrid(
             columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)],
             alignment: .leading,
-            horizontalSpacing: 10,
-            verticalSpacing: 5
+            spacing: 5
         ) {
             ForEach(Array(content.settings.enumerated()), id: \.offset) { _, setting in
                 settingRow(setting, fontSize: 8.5)
