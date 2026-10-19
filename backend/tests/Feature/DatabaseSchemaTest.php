@@ -18,6 +18,7 @@ use App\Models\User;
 use Database\Seeders\CameraCapabilitySeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -64,6 +65,21 @@ class DatabaseSchemaTest extends TestCase
             ['monochromatic_color', 'smooth_skin_effect'],
             $camera->unsupported_recipe_settings,
         );
+    }
+
+    public function test_public_popularity_feed_has_a_partial_expression_index(): void
+    {
+        $index = DB::selectOne(
+            'select indexdef from pg_indexes where schemaname = current_schema() and indexname = ?',
+            ['recipes_public_popularity_feed_idx'],
+        );
+
+        $this->assertNotNull($index);
+        $this->assertStringContainsString('likes_count', $index->indexdef);
+        $this->assertStringContainsString('downloads_count', $index->indexdef);
+        $this->assertStringContainsString('views_count', $index->indexdef);
+        $this->assertStringContainsString('WHERE', $index->indexdef);
+        $this->assertStringContainsString('is_hidden', $index->indexdef);
     }
 
     public function test_x_s20_capability_seeder_is_idempotent(): void

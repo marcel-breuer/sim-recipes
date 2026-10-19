@@ -21,6 +21,9 @@ port.
 The API container runs Laravel migrations through Server Side Up's autorun
 configuration before it becomes healthy. The queue and scheduler wait for that
 healthy API container and use the same application image.
+The image creates `storage/app` with the application user's ownership before
+Compose mounts the persistent `storage_data` volume. The Docker smoke check
+verifies that the runtime user can write to this mount.
 
 Seed the X-S20 camera catalog explicitly on a new database:
 
