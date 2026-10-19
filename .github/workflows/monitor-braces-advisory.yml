@@ -1,0 +1,60 @@
+name: Monitor braces security advisory
+
+on:
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check-advisory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the GitHub Advisory Database
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ghsaId = 'GHSA-vfj7-8cjw-p6xm';
+            const issueNumber = 141;
+            const marker = `<!-- ${ghsaId}-patched-release -->`;
+            const { data: advisory } = await github.request('GET /advisories/{ghsa_id}', {
+              ghsa_id: ghsaId,
+            });
+            const patchedVersions = advisory.vulnerabilities
+              .filter((vulnerability) =>
+                vulnerability.package?.ecosystem === 'npm' &&
+                vulnerability.package?.name === 'braces'
+              )
+              .map((vulnerability) => {
+                const patchedVersion = vulnerability.first_patched_version;
+                return typeof patchedVersion === 'string'
+                  ? patchedVersion
+                  : patchedVersion?.identifier;
+              })
+              .filter(Boolean);
+
+            if (patchedVersions.length === 0) {
+              core.info(`${ghsaId} still has no patched braces version.`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+            });
+
+            if (comments.some((comment) => comment.body?.includes(marker))) {
+              core.info('A patched-release notification is already recorded on issue #141.');
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: `${marker}\nThe GitHub Advisory Database now lists a patched `braces` release: ${patchedVersions.join(', ')}. Please update the dependency lockfile and reassess this advisory.`,
+            });

@@ -51,19 +51,20 @@ class GenerateRecipeImageDerivatives implements ShouldQueue
             $width = $original->width();
             $height = $original->height();
             $derivativePaths = [];
+            $derivativeDefinitions = array_filter(
+                config('recipes.images.derivatives', []),
+                static fn (mixed $maxWidth, mixed $name): bool => is_string($name) && is_int($maxWidth),
+                ARRAY_FILTER_USE_BOTH,
+            );
+            uasort($derivativeDefinitions, static fn (int $left, int $right): int => $right <=> $left);
 
-            foreach (config('recipes.images.derivatives', []) as $name => $maxWidth) {
-                if (! is_string($name) || ! is_int($maxWidth)) {
-                    continue;
-                }
-
-                $derivative = $manager->decode($contents)->orient();
-                if ($derivative->width() > $maxWidth) {
-                    $derivative->scale($maxWidth);
+            foreach ($derivativeDefinitions as $name => $maxWidth) {
+                if ($original->width() > $maxWidth) {
+                    $original->scale($maxWidth);
                 }
 
                 $derivativePath = 'recipes/'.$imageRecord->getAttribute('recipe_id').'/derivatives/'.$imageRecord->getKey().'/'.$name.'.webp';
-                $disk->put($derivativePath, $derivative->encode(new WebpEncoder(82, true))->toString());
+                $disk->put($derivativePath, $original->encode(new WebpEncoder(82, true))->toString());
                 $derivativePaths[$name] = $derivativePath;
             }
 

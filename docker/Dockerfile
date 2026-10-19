@@ -23,7 +23,7 @@ RUN composer dump-autoload \
     --classmap-authoritative \
     --no-dev \
     --no-scripts \
-    && mkdir -p storage/framework/cache/data storage/framework/sessions \
+    && mkdir -p storage/app storage/framework/cache/data storage/framework/sessions \
         storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
