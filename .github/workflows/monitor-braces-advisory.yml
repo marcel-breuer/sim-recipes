@@ -56,5 +56,5 @@ jobs:
               owner,
               repo,
               issue_number: issueNumber,
-              body: `${marker}\nThe GitHub Advisory Database now lists a patched `braces` release: ${patchedVersions.join(', ')}. Please update the dependency lockfile and reassess this advisory.`,
+              body: `${marker}\nThe GitHub Advisory Database now lists a patched \`braces\` release: ${patchedVersions.join(', ')}. Please update the dependency lockfile and reassess this advisory.`,
             });
