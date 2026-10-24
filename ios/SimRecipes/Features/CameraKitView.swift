@@ -23,6 +23,10 @@ enum CameraKitMappingValidator {
     static func hasUniqueSlots(_ assignments: [String: CameraSlot]) -> Bool {
         Set(assignments.values).count == assignments.count
     }
+
+    static func selectableSlots(from availableSlots: Set<CameraSlot>) -> [CameraSlot] {
+        CameraSlot.allCases.filter(availableSlots.contains)
+    }
 }
 
 @MainActor
@@ -34,6 +38,7 @@ final class CameraKitViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var notice: String?
     @Published private(set) var hasStopped = false
+    @Published private(set) var availableSlots: Set<CameraSlot> = []
     @Published private(set) var unverifiedSlotContents: Set<CameraSlot> = []
 
     let collectionName: String
@@ -64,6 +69,7 @@ final class CameraKitViewModel: ObservableObject {
         })
         return next.slot != nil && next.preflight?.isTransferSafe == true
             && CameraKitMappingValidator.hasUniqueSlots(assignments)
+            && next.slot.map(availableSlots.contains) == true
     }
 
     var hasDuplicateSlots: Bool {
@@ -103,6 +109,7 @@ final class CameraKitViewModel: ObservableObject {
     func assign(_ slot: CameraSlot?, to recipeID: String) {
         guard let index = items.firstIndex(where: { $0.id == recipeID }),
               items[index].result == .waiting else { return }
+        guard slot == nil || slot.map(availableSlots.contains) == true else { return }
         items[index].slot = slot
     }
 
@@ -130,8 +137,9 @@ final class CameraKitViewModel: ObservableObject {
         try await cameraService.openSession(for: camera.id)
         activeCameraID = camera.id
         connectedCameraName = camera.name
-        let slots = try await cameraService.availableSlots()
-        unverifiedSlotContents = Set(slots)
+        let slots = Set(try await cameraService.availableSlots())
+        availableSlots = slots
+        unverifiedSlotContents = slots
         notice = "Slot contents are not verified. Confirm each overwrite and select the mapped C-slot on the camera before continuing."
     }
 
@@ -299,12 +307,16 @@ struct CameraKitInstallView: View {
                                 set: { model.assign($0, to: item.id) }
                             )) {
                                 Text("Choose…").tag(CameraSlot?.none)
-                                ForEach(CameraSlot.allCases, id: \.rawValue) { slot in
+                                ForEach(CameraKitMappingValidator.selectableSlots(from: model.availableSlots), id: \.rawValue) { slot in
                                     Text("C\(slot.rawValue)").tag(CameraSlot?.some(slot))
                                 }
                             }
                             .labelsHidden()
-                            .disabled(item.result != .waiting)
+                            .disabled(item.result != .waiting || model.availableSlots.isEmpty)
+                        }
+                        if model.availableSlots.isEmpty {
+                            Label("Connect the camera to load its available slots.", systemImage: "cable.connector")
+                                .font(.caption).foregroundStyle(.secondary)
                         }
                         if let preflight = item.preflight, !preflight.isTransferSafe {
                             ForEach(preflight.issues) { issue in

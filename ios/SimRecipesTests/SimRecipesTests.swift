@@ -53,6 +53,14 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertFalse(CameraKitMappingValidator.hasUniqueSlots(["recipe-1": .c1, "recipe-2": .c1]))
     }
 
+    func testCameraKitOnlyOffersSlotsReportedByConnectedCamera() {
+        XCTAssertEqual(
+            CameraKitMappingValidator.selectableSlots(from: [.c2, .c4]),
+            [.c2, .c4]
+        )
+        XCTAssertTrue(CameraKitMappingValidator.selectableSlots(from: []).isEmpty)
+    }
+
     func testCameraCapabilitiesCanBeReadFromLocalCache() throws {
         let suiteName = "CameraCapabilityLocalStoreTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
