@@ -10,6 +10,9 @@ final class ImageCaptureCameraService: NSObject, CameraService {
 
     private(set) var discoveredCameras: [CameraDescriptor] = []
     private(set) var sessionState: CameraSessionState = .disconnected
+    let recipeWriteAvailability = CameraRecipeWriteAvailability.blocked(
+        reason: "Recipe writes are disabled until X-S20 firmware, slot behavior, setting encodings, backup, and read-back recovery are verified on real hardware."
+    )
 
     init(browser: ICDeviceBrowser = ICDeviceBrowser()) {
         self.browser = browser
@@ -146,6 +149,10 @@ final class ImageCaptureCameraService: NSObject, CameraService {
         supportedPropertyCodes: Set<UInt16>,
         confirmation: CameraSlotOverwriteConfirmation
     ) async throws -> CameraSlotSnapshot {
+        guard recipeWriteAvailability == .enabled else {
+            throw CameraServiceError.recipeTransferEncodingUnavailable
+        }
+
         if let validationError = CameraSlotWriteValidator.validationError(
             slot: slot,
             properties: properties,

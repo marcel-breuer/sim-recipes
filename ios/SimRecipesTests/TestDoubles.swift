@@ -74,6 +74,7 @@ final class MemoryCredentialStore: CredentialStore {
 final class StubCameraService: CameraService {
     var discoveredCameras: [CameraDescriptor]
     var sessionState: CameraSessionState = .disconnected
+    var recipeWriteAvailability: CameraRecipeWriteAvailability = .enabled
     var slots: [CameraSlot] = CameraSlot.allCases
     var currentSnapshot = CameraSlotSnapshot(slot: .c1, properties: [:])
     var transferError: Error?
