@@ -22,6 +22,10 @@ class CameraCapability extends Model
         'step',
         'transport_identifier',
         'custom_slot_metadata',
+        'evidence_level',
+        'evidence_source',
+        'verified_firmware',
+        'verified_at',
     ];
 
     protected function casts(): array
@@ -32,6 +36,7 @@ class CameraCapability extends Model
             'minimum' => 'float',
             'maximum' => 'float',
             'step' => 'float',
+            'verified_at' => 'immutable_datetime',
         ];
     }
 

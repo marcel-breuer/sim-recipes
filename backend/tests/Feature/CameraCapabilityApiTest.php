@@ -25,6 +25,8 @@ class CameraCapabilityApiTest extends TestCase
             ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.slug', 'fujifilm-x-s20')
             ->assertJsonCount(15, 'data.0.capabilities')
+            ->assertJsonPath('data.0.capabilities.0.evidence.level', 'catalog_only')
+            ->assertJsonPath('data.0.capabilities.0.evidence.source', null)
             ->assertJsonPath('data.1.slug', 'fujifilm-x-t5')
             ->assertJsonPath('data.1.unsupported_recipe_settings.0', 'monochromatic_color')
             ->assertJsonFragment([

@@ -57,7 +57,7 @@ struct CameraCompatibilityView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(camera.name)
                                 .font(.headline)
-                            Text("\(camera.capabilities.count) supported settings")
+                            Text("\(camera.capabilities.count) capability records")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -81,12 +81,12 @@ private struct CameraCapabilityDetailView: View {
     var body: some View {
         List {
             Section {
-                Text("Only settings listed here can be safely checked before a transfer. The app will never claim a successful camera write without verified adapter evidence.")
+                Text("This catalogue checks recipe values against recorded capabilities. It does not prove USB transfer support. The app will never claim a successful camera write without verified adapter evidence.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Supported settings") {
+            Section("Capability catalogue") {
                 ForEach(camera.capabilities) { capability in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(capability.displayName)
@@ -96,6 +96,27 @@ private struct CameraCapabilityDetailView: View {
                             .foregroundStyle(.secondary)
                         Text(summary(for: capability))
                             .font(.subheadline)
+                        Label(
+                            capability.evidence?.evidenceLevel.title ?? CameraCompatibilityEvidenceLevel.unknown.title,
+                            systemImage: evidenceSymbol(for: capability.evidence?.evidenceLevel ?? .unknown)
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        if let source = capability.evidence?.source, !source.isEmpty {
+                            Text("Evidence source: \(source)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let firmware = capability.evidence?.firmware {
+                            Text("Verified firmware: \(firmware)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let verifiedAt = capability.evidence?.verifiedAt {
+                            Text("Verified at: \(verifiedAt)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(.vertical, 3)
                 }
@@ -118,5 +139,14 @@ private struct CameraCapabilityDetailView: View {
             values.append(allowedValues.compactMap(\.stringValue).joined(separator: ", "))
         }
         return values.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private func evidenceSymbol(for level: CameraCompatibilityEvidenceLevel) -> String {
+        switch level {
+        case .unknown: "questionmark.circle"
+        case .catalogOnly: "list.bullet.rectangle"
+        case .manufacturerDocumented: "doc.text.magnifyingglass"
+        case .cameraVerified: "checkmark.seal"
+        }
     }
 }

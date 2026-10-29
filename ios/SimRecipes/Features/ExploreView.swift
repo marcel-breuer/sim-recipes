@@ -336,6 +336,17 @@ private struct ExploreFilterView: View {
                         get: { viewModel.selectedFilmSimulation ?? "" },
                         set: { viewModel.selectedFilmSimulation = $0.isEmpty ? nil : $0 }
                     ))
+                    Picker("Compatibility evidence", selection: $viewModel.selectedCompatibilityEvidence) {
+                        ForEach(CompatibilityEvidenceFilter.allCases) { evidence in
+                            Text(evidence.title).tag(evidence)
+                        }
+                    }
+                    .disabled(viewModel.selectedCameraID == nil)
+                    if viewModel.selectedCameraID == nil {
+                        Text("Select a camera to filter by compatibility evidence.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Categories") {

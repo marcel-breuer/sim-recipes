@@ -1,5 +1,43 @@
 import Foundation
 
+enum CameraCompatibilityEvidenceLevel: String, Equatable, Sendable {
+    case unknown
+    case catalogOnly = "catalog_only"
+    case manufacturerDocumented = "manufacturer_documented"
+    case cameraVerified = "camera_verified"
+
+    var confidence: Int {
+        switch self {
+        case .unknown: 0
+        case .catalogOnly: 1
+        case .manufacturerDocumented: 2
+        case .cameraVerified: 3
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .unknown: "Unknown"
+        case .catalogOnly: "Capability catalogue"
+        case .manufacturerDocumented: "Manufacturer documented"
+        case .cameraVerified: "Camera verified"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .unknown:
+            "Compatibility evidence is missing for one or more settings."
+        case .catalogOnly:
+            "Values match the stored capability catalogue; camera behavior has not been verified."
+        case .manufacturerDocumented:
+            "Manufacturer documentation supports these settings; transfer behavior has not been verified."
+        case .cameraVerified:
+            "These settings were checked on camera hardware and firmware recorded in the evidence."
+        }
+    }
+}
+
 struct CameraCompatibilityIssue: Equatable, Identifiable, Sendable {
     enum Kind: String, Sendable {
         case missingCapability
@@ -18,10 +56,47 @@ struct CameraCompatibilityIssue: Equatable, Identifiable, Sendable {
     }
 }
 
+struct CameraCompatibilitySettingEvidence: Equatable, Identifiable, Sendable {
+    enum Status: Equatable, Sendable {
+        case unknown
+        case catalogueMatch
+        case unsupported
+    }
+
+    let settingKey: String
+    let displayName: String
+    let status: Status
+    let evidenceLevel: CameraCompatibilityEvidenceLevel
+    let source: String?
+    let firmware: String?
+    let issues: [CameraCompatibilityIssue]
+
+    var id: String { settingKey }
+
+    var statusTitle: String {
+        switch status {
+        case .unknown: "Unknown compatibility"
+        case .catalogueMatch: "Matches capability catalogue"
+        case .unsupported: "Unsupported recipe value"
+        }
+    }
+
+    var statusSymbol: String {
+        switch status {
+        case .unknown: "questionmark.circle"
+        case .catalogueMatch: "checkmark.circle"
+        case .unsupported: "xmark.circle"
+        }
+    }
+}
+
 struct CameraPreflightResult: Equatable, Sendable {
     let cameraID: String
     let cameraName: String
     let issues: [CameraCompatibilityIssue]
+    let evidenceLevel: CameraCompatibilityEvidenceLevel
+    let evidenceRecords: [CameraCapabilityEvidenceTransport]
+    let settingEvidence: [CameraCompatibilitySettingEvidence]
 
     var isTransferSafe: Bool {
         issues.isEmpty
@@ -34,23 +109,48 @@ enum CameraCompatibilityEvaluator {
         camera: SupportedCameraTransport
     ) -> CameraPreflightResult {
         let capabilities = Dictionary(uniqueKeysWithValues: camera.capabilities.map { ($0.key, $0) })
-        let issues = recipe.settings.flatMap { setting -> [CameraCompatibilityIssue] in
+        let settingEvidence = recipe.settings.map { setting -> CameraCompatibilitySettingEvidence in
             guard let capability = capabilities[setting.key] else {
-                return [CameraCompatibilityIssue(
+                let issue = CameraCompatibilityIssue(
                     settingKey: setting.key,
                     displayName: setting.key,
                     kind: .missingCapability,
-                    detail: "This camera does not expose this setting."
-                )]
+                    detail: "No capability record exists for this setting, so compatibility is unknown."
+                )
+                return CameraCompatibilitySettingEvidence(
+                    settingKey: setting.key,
+                    displayName: setting.key,
+                    status: .unknown,
+                    evidenceLevel: .unknown,
+                    source: nil,
+                    firmware: nil,
+                    issues: [issue]
+                )
             }
 
-            return validate(setting: setting, capability: capability)
+            let settingIssues = validate(setting: setting, capability: capability)
+            return CameraCompatibilitySettingEvidence(
+                settingKey: setting.key,
+                displayName: capability.displayName,
+                status: settingIssues.isEmpty ? .catalogueMatch : .unsupported,
+                evidenceLevel: capability.evidence?.evidenceLevel ?? .unknown,
+                source: capability.evidence?.source,
+                firmware: capability.evidence?.firmware,
+                issues: settingIssues
+            )
         }
+        let evidenceRecords = settingEvidence.compactMap { setting in
+            capabilities[setting.settingKey]?.evidence
+        }
+        let issues = settingEvidence.flatMap(\.issues)
 
         return CameraPreflightResult(
             cameraID: camera.id,
             cameraName: camera.name,
-            issues: issues
+            issues: issues,
+            evidenceLevel: settingEvidence.map(\.evidenceLevel).min { $0.confidence < $1.confidence } ?? .unknown,
+            evidenceRecords: evidenceRecords,
+            settingEvidence: settingEvidence
         )
     }
 

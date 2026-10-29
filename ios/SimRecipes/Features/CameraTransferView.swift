@@ -306,10 +306,34 @@ struct CameraTransferView: View {
             if let preflight = viewModel.preflight {
                 if preflight.isTransferSafe {
                     Label(
-                        "All recipe settings are supported by \(preflight.cameraName).",
+                        "Recipe values fit the recorded capability data for \(preflight.cameraName).",
                         systemImage: "checkmark.shield.fill"
                     )
                     .foregroundStyle(.green)
+                    Label(
+                        "Evidence: \(preflight.evidenceLevel.title)",
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Text(preflight.evidenceLevel.explanation)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    let evidenceSources = Set(preflight.evidenceRecords.compactMap(\.source)).sorted()
+                    if !evidenceSources.isEmpty {
+                        Text("Sources: \(evidenceSources.joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    let firmwareVersions = Set(preflight.evidenceRecords.compactMap(\.firmware)).sorted()
+                    if !firmwareVersions.isEmpty {
+                        Text("Verified firmware: \(firmwareVersions.joined(separator: ", "))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text("This preflight does not confirm that the camera accepts these values over USB.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
                     Label(
                         "Transfer blocked until incompatible settings are removed.",

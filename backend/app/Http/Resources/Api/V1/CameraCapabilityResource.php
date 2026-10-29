@@ -23,6 +23,12 @@ class CameraCapabilityResource extends JsonResource
             'step' => $this->resource->getAttribute('step'),
             'transport_identifier' => $this->resource->getAttribute('transport_identifier'),
             'custom_slot_metadata' => $this->resource->getAttribute('custom_slot_metadata'),
+            'evidence' => [
+                'level' => $this->resource->getAttribute('evidence_level'),
+                'source' => $this->resource->getAttribute('evidence_source'),
+                'firmware' => $this->resource->getAttribute('verified_firmware'),
+                'verified_at' => $this->resource->getAttribute('verified_at')?->toIso8601String(),
+            ],
         ];
     }
 }
