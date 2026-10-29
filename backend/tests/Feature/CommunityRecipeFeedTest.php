@@ -6,6 +6,7 @@ use App\Models\CameraCapability;
 use App\Models\CameraModel;
 use App\Models\Category;
 use App\Models\Recipe;
+use App\Models\RecipeImage;
 use App\Models\RecipeSetting;
 use App\Models\Tag;
 use App\Models\User;
@@ -145,6 +146,54 @@ class CommunityRecipeFeedTest extends TestCase
             ->assertJsonPath('error.code', 'validation_failed');
     }
 
+    public function test_example_context_filters_match_one_example_image_and_allow_alternatives_within_a_facet(): void
+    {
+        $user = User::factory()->create();
+        $camera = $this->createCamera('x-s20');
+
+        $matching = $this->createPublishedRecipe($user, $camera, 'Muted street', 'A context-matched example.');
+        $this->addExampleContext($matching, [
+            'subjects' => ['street'],
+            'lighting' => ['overcast'],
+            'looks' => ['muted'],
+        ]);
+
+        $contextSplitAcrossImages = $this->createPublishedRecipe($user, $camera, 'Split context', 'Labels belong to separate photos.');
+        $this->addExampleContext($contextSplitAcrossImages, [
+            'subjects' => ['street'],
+            'lighting' => ['golden_hour'],
+            'looks' => ['muted'],
+        ]);
+        $this->addExampleContext($contextSplitAcrossImages, [
+            'subjects' => ['portrait'],
+            'lighting' => ['overcast'],
+            'looks' => ['muted'],
+        ], 1);
+
+        $wrongLook = $this->createPublishedRecipe($user, $camera, 'Warm street', 'A different color character.');
+        $this->addExampleContext($wrongLook, [
+            'subjects' => ['street'],
+            'lighting' => ['overcast'],
+            'looks' => ['warm'],
+        ]);
+
+        $response = $this->getJson('/api/v1/recipes?subjects[]=street&lighting[]=overcast&looks[]=muted')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matching->id)
+            ->assertJsonPath('data.0.images.0.example_context.looks.0', 'muted');
+
+        $this->assertSame([$matching->id], collect($response->json('data'))->pluck('id')->all());
+
+        $alternatives = $this->getJson('/api/v1/recipes?subjects[]=street&subjects[]=portrait')
+            ->assertOk();
+        $this->assertContains($matching->id, collect($alternatives->json('data'))->pluck('id')->all());
+
+        $this->getJson('/api/v1/recipes?looks[]=invented')
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+    }
+
     public function test_similar_recipes_use_deterministic_camera_metadata_and_settings(): void
     {
         $user = User::factory()->create();
@@ -212,6 +261,20 @@ class CommunityRecipeFeedTest extends TestCase
             'description' => $description,
             'status' => Recipe::STATUS_PUBLISHED,
             'published_at' => now(),
+        ]);
+    }
+
+    /** @param array<string, array<int, string>> $context */
+    private function addExampleContext(Recipe $recipe, array $context, int $sortOrder = 0): RecipeImage
+    {
+        return RecipeImage::create([
+            'recipe_id' => $recipe->id,
+            'storage_disk' => 'local',
+            'original_path' => 'examples/'.$recipe->id.'/'.$sortOrder.'.jpg',
+            'original_size_bytes' => 1,
+            'mime_type' => 'image/jpeg',
+            'sort_order' => $sortOrder,
+            'example_context' => $context,
         ]);
     }
 }

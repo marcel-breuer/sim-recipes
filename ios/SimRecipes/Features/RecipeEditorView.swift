@@ -8,6 +8,7 @@ struct RecipeEditorView: View {
     @State private var showPublishConfirmation = false
     @State private var showRecipeScanner = false
     @State private var showCaptureImport = false
+    @State private var contextEditorTarget: ExampleContextEditorTarget?
 
     init(viewModel: RecipeEditorViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -76,6 +77,16 @@ struct RecipeEditorView: View {
                     )
                 }
             )
+        }
+        .sheet(item: $contextEditorTarget) { target in
+            NavigationStack {
+                RecipeExampleContextEditorView(
+                    initialContext: viewModel.draft.images.first(where: { $0.id == target.imageID })?.exampleContext,
+                    onSave: { context in
+                        viewModel.updateExampleContext(context, for: target.imageID)
+                    }
+                )
+            }
         }
         .alert("Recipe Editor", isPresented: errorIsPresented) {
             Button("OK", role: .cancel) {}
@@ -205,23 +216,36 @@ struct RecipeEditorView: View {
                     ScrollView(.horizontal) {
                         HStack(spacing: 12) {
                             ForEach(viewModel.draft.images) { image in
-                                ZStack(alignment: .topTrailing) {
-                                    if let uiImage = UIImage(data: image.data) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 110, height: 110)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                VStack(alignment: .leading, spacing: 6) {
+                                    ZStack(alignment: .topTrailing) {
+                                        if let uiImage = UIImage(data: image.data) {
+                                            Image(uiImage: uiImage)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 110, height: 110)
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        }
+                                        Button {
+                                            viewModel.removePhoto(image)
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .symbolRenderingMode(.palette)
+                                                .foregroundStyle(.white, .black.opacity(0.65))
+                                        }
+                                        .padding(5)
+                                        .buttonStyle(.plain)
                                     }
+
                                     Button {
-                                        viewModel.removePhoto(image)
+                                        contextEditorTarget = ExampleContextEditorTarget(imageID: image.id)
                                     } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .symbolRenderingMode(.palette)
-                                            .foregroundStyle(.white, .black.opacity(0.65))
+                                        Label(
+                                            image.exampleContext?.hasLabels == true ? "Edit context" : "Add context",
+                                            systemImage: "tag"
+                                        )
+                                        .font(.caption)
                                     }
-                                    .padding(5)
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.borderless)
                                 }
                             }
                         }
@@ -254,6 +278,9 @@ struct RecipeEditorView: View {
                 }
 
                 Text("Up to five images. Originals are retained securely when the recipe is uploaded.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Add subject, lighting, and look labels to help others find matching examples. Labels are supplied by you.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -507,5 +534,68 @@ private struct RecipeSettingEditorRow: View {
         }
         values[key] = newValue
         value = .object(values)
+    }
+}
+
+private struct ExampleContextEditorTarget: Identifiable {
+    let imageID: UUID
+
+    var id: UUID { imageID }
+}
+
+private struct RecipeExampleContextEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var context: RecipeExampleContext
+    let onSave: (RecipeExampleContext?) -> Void
+
+    init(initialContext: RecipeExampleContext?, onSave: @escaping (RecipeExampleContext?) -> Void) {
+        _context = State(initialValue: initialContext ?? RecipeExampleContext())
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        Form {
+            contextSection("Subject", options: RecipeExampleContextOptions.subjects, keyPath: \.subjects)
+            contextSection("Lighting", options: RecipeExampleContextOptions.lighting, keyPath: \.lighting)
+            contextSection("Look", options: RecipeExampleContextOptions.looks, keyPath: \.looks)
+
+            Section {
+                Text("These labels are supplied by you. SimRecipes does not infer scene or color character from the photo.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Example context")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    onSave(context.hasLabels ? context : nil)
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    private func contextSection(
+        _ title: String,
+        options: [RecipeContextTag],
+        keyPath: WritableKeyPath<RecipeExampleContext, [String]>
+    ) -> some View {
+        Section(title) {
+            ForEach(options) { option in
+                Toggle(option.title, isOn: Binding(
+                    get: { context[keyPath: keyPath].contains(option.id) },
+                    set: { isSelected in
+                        var values = context[keyPath: keyPath]
+                        if isSelected {
+                            if !values.contains(option.id) { values.append(option.id) }
+                        } else {
+                            values.removeAll { $0 == option.id }
+                        }
+                        context[keyPath: keyPath] = values.sorted()
+                    }
+                ))
+            }
+        }
     }
 }

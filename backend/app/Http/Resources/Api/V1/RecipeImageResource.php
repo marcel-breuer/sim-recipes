@@ -41,6 +41,9 @@ class RecipeImageResource extends JsonResource
             'sort_order' => $this->resource->getAttribute('sort_order'),
             'processing_status' => $this->resource->getAttribute('processing_status'),
             'capture_metadata' => is_array($captureMetadata) ? $captureMetadata : null,
+            'example_context' => is_array($this->resource->getAttribute('example_context'))
+                ? $this->resource->getAttribute('example_context')
+                : null,
         ];
     }
 }

@@ -4,6 +4,7 @@ import Foundation
 final class StubAPIClient: APIClient {
     private var responses: [Any]
     private(set) var requests: [String] = []
+    private(set) var queryItemRequests: [[URLQueryItem]] = []
 
     init(responses: [Any] = []) {
         self.responses = responses
@@ -14,6 +15,7 @@ final class StubAPIClient: APIClient {
         responseType: Response.Type
     ) async throws -> Response {
         requests.append(request.path)
+        queryItemRequests.append(request.queryItems)
         guard !responses.isEmpty else {
             throw APIClientError.invalidResponse
         }

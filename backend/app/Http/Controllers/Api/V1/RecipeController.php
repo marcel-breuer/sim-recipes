@@ -152,7 +152,12 @@ class RecipeController extends Controller
                 'lens' => $data['lens'] ?? null,
             ]);
             $this->syncRelations($recipe, $data, $settings);
-            $imageStorage->store($recipe, $request->file('images', []), $data['capture_metadata'] ?? []);
+            $imageStorage->store(
+                $recipe,
+                $request->file('images', []),
+                $data['capture_metadata'] ?? [],
+                $data['example_context'] ?? [],
+            );
 
             return $recipe;
         });
@@ -190,7 +195,12 @@ class RecipeController extends Controller
             $recipe->fill($attributes);
             $recipe->save();
             $this->syncRelations($recipe, $data, $settings);
-            $imageStorage->store($recipe, $request->file('images', []), $data['capture_metadata'] ?? []);
+            $imageStorage->store(
+                $recipe,
+                $request->file('images', []),
+                $data['capture_metadata'] ?? [],
+                $data['example_context'] ?? [],
+            );
         });
 
         return new RecipeResource($this->recipeQuery()->findOrFail($recipe->getKey()));
@@ -297,6 +307,25 @@ class RecipeController extends Controller
 
         $this->applyRelationFilter($query, 'categories', $filters['categories'] ?? []);
         $this->applyRelationFilter($query, 'tags', $filters['tags'] ?? []);
+
+        $contextFilters = array_filter([
+            'subjects' => $filters['subjects'] ?? [],
+            'lighting' => $filters['lighting'] ?? [],
+            'looks' => $filters['looks'] ?? [],
+        ]);
+        if ($contextFilters !== []) {
+            $query->whereHas('images', function (Builder $imageQuery) use ($contextFilters): void {
+                foreach ($contextFilters as $attribute => $values) {
+                    $imageQuery->where(function (Builder $valueQuery) use ($attribute, $values): void {
+                        $firstValue = array_shift($values);
+                        $valueQuery->whereJsonContains('example_context->'.$attribute, $firstValue);
+                        foreach ($values as $value) {
+                            $valueQuery->orWhereJsonContains('example_context->'.$attribute, $value);
+                        }
+                    });
+                }
+            });
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Jobs\GenerateRecipeImageDerivatives;
 use App\Models\Recipe;
 use App\Models\RecipeImage;
 use App\Models\User;
+use App\Support\RecipeExampleContextOptions;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -17,8 +18,12 @@ class RecipeImageStorage
     /**
      * @param  array<int, UploadedFile>  $images
      */
-    public function store(Recipe $recipe, array $images, array $captureMetadata = []): void
-    {
+    public function store(
+        Recipe $recipe,
+        array $images,
+        array $captureMetadata = [],
+        array $exampleContexts = [],
+    ): void {
         if ($images === []) {
             return;
         }
@@ -83,6 +88,7 @@ class RecipeImageStorage
                     'mime_type' => $image->getMimeType(),
                     'sort_order' => $sortOrder + $index,
                     'capture_metadata' => $this->safeCaptureMetadata($captureMetadata[$index] ?? null),
+                    'example_context' => $this->safeExampleContext($exampleContexts[$index] ?? null),
                 ]);
                 GenerateRecipeImageDerivatives::dispatch($imageRecord->getKey())->afterCommit();
             }
@@ -172,6 +178,7 @@ class RecipeImageStorage
                     'height' => $sourceImage->getAttribute('height'),
                     'sort_order' => $sourceImage->getAttribute('sort_order'),
                     'capture_metadata' => $this->safeCaptureMetadata($sourceImage->getAttribute('capture_metadata')),
+                    'example_context' => $this->safeExampleContext($sourceImage->getAttribute('example_context')),
                     'derivatives' => $derivatives === [] ? null : $derivatives,
                     'processing_status' => $sourceImage->getAttribute('processing_status'),
                 ]);
@@ -236,6 +243,37 @@ class RecipeImageStorage
             'location',
             'location_shared',
         ]));
+    }
+
+    /** @return array<string, array<int, string>>|null */
+    private function safeExampleContext(mixed $context): ?array
+    {
+        if (! is_array($context)) {
+            return null;
+        }
+
+        $options = [
+            'subjects' => RecipeExampleContextOptions::SUBJECTS,
+            'lighting' => RecipeExampleContextOptions::LIGHTING,
+            'looks' => RecipeExampleContextOptions::LOOKS,
+        ];
+        $safe = [];
+        foreach ($options as $attribute => $allowedValues) {
+            $values = $context[$attribute] ?? [];
+            if (! is_array($values)) {
+                continue;
+            }
+
+            $values = array_values(array_unique(array_filter(
+                $values,
+                static fn (mixed $value): bool => is_string($value) && in_array($value, $allowedValues, true),
+            )));
+            if ($values !== []) {
+                $safe[$attribute] = $values;
+            }
+        }
+
+        return $safe === [] ? null : $safe;
     }
 
     private function copyPath(

@@ -168,6 +168,70 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(RecipeTransport.self, from: encoder.encode(recipe)), recipe)
     }
 
+    func testRecipeExampleContextMatchesEverySelectedFacetOnTheSameExample() throws {
+        let filter = RecipeExampleContextFilter(
+            subjects: ["street"],
+            lighting: ["overcast"],
+            looks: ["muted"]
+        )
+        let matching = RecipeExampleContext(
+            subjects: ["street", "portrait"],
+            lighting: ["overcast"],
+            looks: ["muted"]
+        )
+        let differentLighting = RecipeExampleContext(
+            subjects: ["street"],
+            lighting: ["golden_hour"],
+            looks: ["muted"]
+        )
+
+        XCTAssertTrue(filter.matches(matching))
+        XCTAssertFalse(filter.matches(differentLighting))
+        XCTAssertFalse(filter.matches(nil))
+        XCTAssertEqual(try JSONDecoder().decode(
+            RecipeExampleContext.self,
+            from: JSONEncoder().encode(matching)
+        ), matching)
+    }
+
+    func testRecipeImageTransportRemainsDecodableWithoutContextMetadata() throws {
+        let data = Data(#"{"id":"image-1","url":null,"derivative_urls":{},"processing_status":"ready"}"#.utf8)
+
+        let image = try JSONDecoder().decode(RecipeImageTransport.self, from: data)
+
+        XCTAssertNil(image.exampleContext)
+    }
+
+    @MainActor
+    func testCommunityRecipeRequestIncludesStructuredExampleContextFilters() async throws {
+        let response = RecipePageTransport(
+            data: [],
+            meta: RecipePageMetadata(currentPage: 1, lastPage: 1, perPage: 20, total: 0),
+            links: nil
+        )
+        let client = StubAPIClient(responses: [response])
+        let repository = RecipeRepository(apiClient: client, localStore: try LocalRecipeStore(inMemory: true))
+        let filter = CommunityRecipeFilter(
+            cameraModelID: "camera-1",
+            compatibilityEvidence: "camera_verified",
+            exampleContext: RecipeExampleContextFilter(
+                subjects: ["street"],
+                lighting: ["blue_hour"],
+                looks: ["neutral"]
+            )
+        )
+
+        _ = try await repository.communityRecipes(feed: .popular, filter: filter)
+
+        let query = try XCTUnwrap(client.queryItemRequests.first)
+        let values = Dictionary(grouping: query, by: \.name).mapValues { $0.compactMap(\.value) }
+        XCTAssertEqual(values["camera_model_id"], ["camera-1"])
+        XCTAssertEqual(values["compatibility_evidence"], ["camera_verified"])
+        XCTAssertEqual(values["subjects[]"], ["street"])
+        XCTAssertEqual(values["lighting[]"], ["blue_hour"])
+        XCTAssertEqual(values["looks[]"], ["neutral"])
+    }
+
     func testSavedFilterStorePreservesNamedFilterOrder() {
         let suiteName = "SimRecipesTests.saved-filters-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

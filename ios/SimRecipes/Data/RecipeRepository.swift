@@ -140,6 +140,17 @@ final class RecipeRepository {
         queryItems.append(contentsOf: filter.tags.map {
             URLQueryItem(name: "tags[]", value: $0)
         })
+        if let context = filter.exampleContext {
+            queryItems.append(contentsOf: context.subjects.map {
+                URLQueryItem(name: "subjects[]", value: $0)
+            })
+            queryItems.append(contentsOf: context.lighting.map {
+                URLQueryItem(name: "lighting[]", value: $0)
+            })
+            queryItems.append(contentsOf: context.looks.map {
+                URLQueryItem(name: "looks[]", value: $0)
+            })
+        }
 
         return try await apiClient.send(
             APIRequest(method: .get, path: "recipes", queryItems: queryItems),
@@ -263,7 +274,8 @@ final class RecipeRepository {
                     derivativeURLs: image.derivativeURLs,
                     processingStatus: image.processingStatus,
                     localURL: cachedURL,
-                    captureMetadata: image.captureMetadata
+                    captureMetadata: image.captureMetadata,
+                    exampleContext: image.exampleContext
                 )
             } else {
                 do {
@@ -277,7 +289,8 @@ final class RecipeRepository {
                         derivativeURLs: image.derivativeURLs,
                         processingStatus: image.processingStatus,
                         localURL: cachedURL,
-                        captureMetadata: image.captureMetadata
+                        captureMetadata: image.captureMetadata,
+                        exampleContext: image.exampleContext
                     )
                 } catch {
                     // Metadata remains usable when an image is unavailable.
@@ -329,6 +342,7 @@ final class RecipeRepository {
             "value": $0.value
         ] as [String: JSONValue] })
         try form.appendJSON(name: "capture_metadata", value: draft.images.map(\.captureMetadata))
+        try form.appendJSON(name: "example_context", value: draft.images.map(\.exampleContext))
 
         for image in draft.images {
             form.appendFile(

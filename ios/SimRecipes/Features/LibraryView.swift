@@ -16,16 +16,94 @@ struct LibraryView: View {
     @State private var shareCardRecipe: RecipeTransport?
     @State private var showingDarkroom = false
     @State private var showingCameraKit = false
+    @State private var showingLocalFilters = false
+    @State private var selectedLocalCameraID: String?
+    @State private var selectedLocalEvidence: CompatibilityEvidenceFilter = .any
+    @State private var selectedLocalFilmSimulation: String?
+    @State private var selectedLocalCategories: Set<String> = []
+    @State private var localTagFilterText = ""
+    @State private var selectedLocalSubjects: Set<String> = []
+    @State private var selectedLocalLighting: Set<String> = []
+    @State private var selectedLocalLooks: Set<String> = []
 
     private var filteredRecipes: [RecipeTransport] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else { return recipes }
+        let contextFilter = RecipeExampleContextFilter(
+            subjects: selectedLocalSubjects.sorted(),
+            lighting: selectedLocalLighting.sorted(),
+            looks: selectedLocalLooks.sorted()
+        )
+        let selectedTags = localTagFilterText
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
 
         return recipes.filter { recipe in
-            [recipe.name, recipe.description ?? "", recipe.styleRecommendation ?? ""]
+            if let selectedLocalCameraID, recipe.cameraModelID != selectedLocalCameraID { return false }
+            if selectedLocalEvidence != .any,
+               !meetsCompatibilityEvidence(recipe, filter: selectedLocalEvidence) { return false }
+            if let selectedLocalFilmSimulation,
+               !recipe.settings.contains(where: { $0.key == "film_simulation" && $0.value.stringValue == selectedLocalFilmSimulation }) {
+                return false
+            }
+            if !selectedLocalCategories.isEmpty,
+               Set(recipe.categories).isDisjoint(with: selectedLocalCategories) { return false }
+            if !selectedTags.isEmpty,
+               Set(recipe.tags.map { $0.lowercased() }).isDisjoint(with: Set(selectedTags.map { $0.lowercased() })) { return false }
+            if !contextFilter.isEmpty,
+               !recipe.images.contains(where: { contextFilter.matches($0.exampleContext) }) {
+                return false
+            }
+            guard !query.isEmpty else { return true }
+
+            let imageText = recipe.images.flatMap { image in
+                (image.exampleContext?.displayLabels ?? [])
+                    + [image.captureMetadata?.sceneNotes ?? "", image.captureMetadata?.lightingNotes ?? ""]
+            }
+            return ([recipe.name, recipe.description ?? "", recipe.styleRecommendation ?? ""]
                 .plus(recipe.categories)
                 .plus(recipe.tags)
-                .contains { $0.localizedCaseInsensitiveContains(query) }
+                .plus(imageText)
+                .contains { $0.localizedCaseInsensitiveContains(query) })
+        }
+    }
+
+    private var localCameraOptions: [LocalCameraFilterOption] {
+        let cameras = cachedCameras
+        let namesByID = Dictionary(uniqueKeysWithValues: cameras.map { ($0.id, $0.name) })
+        return Set(recipes.map(\.cameraModelID)).sorted().map { id in
+            LocalCameraFilterOption(id: id, name: namesByID[id] ?? id)
+        }
+    }
+
+    private var cachedCameras: [SupportedCameraTransport] {
+        (try? CameraCapabilityLocalStore().cameras()) ?? []
+    }
+
+    private var localFilmSimulationOptions: [String] {
+        Set(recipes.flatMap { recipe in
+            recipe.settings
+                .filter { $0.key == "film_simulation" }
+                .compactMap { $0.value.stringValue }
+        }).sorted()
+    }
+
+    private var localCategoryOptions: [String] {
+        Set(recipes.flatMap(\.categories)).sorted()
+    }
+
+    private func meetsCompatibilityEvidence(
+        _ recipe: RecipeTransport,
+        filter: CompatibilityEvidenceFilter
+    ) -> Bool {
+        guard filter != .any,
+              !recipe.settings.isEmpty,
+              let camera = cachedCameras.first(where: { $0.id == recipe.cameraModelID }) else { return false }
+        let minimumConfidence = filter == .cameraVerified ? 3 : 2
+        return recipe.settings.allSatisfy { setting in
+            guard let capability = camera.capabilities.first(where: { $0.key == setting.key }),
+                  let evidence = capability.evidence else { return false }
+            return evidence.evidenceLevel.confidence >= minimumConfidence
         }
     }
 
@@ -44,7 +122,7 @@ struct LibraryView: View {
                         systemImage: "books.vertical",
                         description: Text(recipes.isEmpty
                             ? "Create a recipe or save one from the community to see it here."
-                            : "Try a different local search.")
+                            : "Try a different search, camera, or example-context filter.")
                     )
                 } else {
                     List(filteredRecipes) { recipe in
@@ -113,6 +191,33 @@ struct LibraryView: View {
                     RecipeShareCardEditorView(recipe: recipe)
                 }
             }
+            .sheet(isPresented: $showingLocalFilters) {
+                LocalRecipeFilterView(
+                    cameras: localCameraOptions,
+                    cameraID: selectedLocalCameraID,
+                    evidence: selectedLocalEvidence,
+                    filmSimulation: selectedLocalFilmSimulation,
+                    filmSimulations: localFilmSimulationOptions,
+                    categories: localCategoryOptions,
+                    selectedCategories: selectedLocalCategories,
+                    tagFilter: localTagFilterText,
+                    context: RecipeExampleContextFilter(
+                        subjects: selectedLocalSubjects.sorted(),
+                        lighting: selectedLocalLighting.sorted(),
+                        looks: selectedLocalLooks.sorted()
+                    ),
+                    onApply: { cameraID, evidence, filmSimulation, categories, tags, context in
+                        selectedLocalCameraID = cameraID
+                        selectedLocalEvidence = evidence
+                        selectedLocalFilmSimulation = filmSimulation
+                        selectedLocalCategories = categories
+                        localTagFilterText = tags
+                        selectedLocalSubjects = Set(context.subjects)
+                        selectedLocalLighting = Set(context.lighting)
+                        selectedLocalLooks = Set(context.looks)
+                    }
+                )
+            }
             .sheet(isPresented: $showingCameraKit) {
                 NavigationStack {
                     CameraKitCollectionPickerView(
@@ -152,8 +257,13 @@ struct LibraryView: View {
                         }
                     }
                 }
-                if authService.session != nil {
-                    ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showingLocalFilters = true
+                    } label: {
+                        Label("Filter saved recipes", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                    if authService.session != nil {
                         NavigationLink {
                             editor(for: nil)
                         } label: {
@@ -328,5 +438,160 @@ struct LibraryView: View {
 private extension Array where Element == String {
     func plus(_ values: [String]) -> [String] {
         self + values
+    }
+}
+
+private struct LocalCameraFilterOption: Identifiable {
+    let id: String
+    let name: String
+}
+
+private struct LocalRecipeFilterView: View {
+    @Environment(\.dismiss) private var dismiss
+    let cameras: [LocalCameraFilterOption]
+    let filmSimulations: [String]
+    let categories: [String]
+    let onApply: (String?, CompatibilityEvidenceFilter, String?, Set<String>, String, RecipeExampleContextFilter) -> Void
+    @State private var cameraID: String?
+    @State private var evidence: CompatibilityEvidenceFilter
+    @State private var filmSimulation: String?
+    @State private var selectedCategories: Set<String>
+    @State private var tagFilter: String
+    @State private var subjects: Set<String>
+    @State private var lighting: Set<String>
+    @State private var looks: Set<String>
+
+    init(
+        cameras: [LocalCameraFilterOption],
+        cameraID: String?,
+        evidence: CompatibilityEvidenceFilter,
+        filmSimulation: String?,
+        filmSimulations: [String],
+        categories: [String],
+        selectedCategories: Set<String>,
+        tagFilter: String,
+        context: RecipeExampleContextFilter,
+        onApply: @escaping (String?, CompatibilityEvidenceFilter, String?, Set<String>, String, RecipeExampleContextFilter) -> Void
+    ) {
+        self.cameras = cameras
+        self.filmSimulations = filmSimulations
+        self.categories = categories
+        self.onApply = onApply
+        _cameraID = State(initialValue: cameraID)
+        _evidence = State(initialValue: evidence)
+        _filmSimulation = State(initialValue: filmSimulation)
+        _selectedCategories = State(initialValue: selectedCategories)
+        _tagFilter = State(initialValue: tagFilter)
+        _subjects = State(initialValue: Set(context.subjects))
+        _lighting = State(initialValue: Set(context.lighting))
+        _looks = State(initialValue: Set(context.looks))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Saved recipes") {
+                    Picker("Camera model", selection: $cameraID) {
+                        Text("Any camera").tag(nil as String?)
+                        ForEach(cameras) { camera in
+                            Text(camera.name).tag(Optional(camera.id))
+                        }
+                    }
+                    Picker("Compatibility evidence", selection: $evidence) {
+                        ForEach(CompatibilityEvidenceFilter.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .disabled(cameraID == nil)
+                    if evidence != .any, cameraID != nil {
+                        Text("Evidence filtering uses camera capability data cached on this iPhone.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Picker("Film simulation", selection: $filmSimulation) {
+                        Text("Any simulation").tag(nil as String?)
+                        ForEach(filmSimulations, id: \.self) { value in
+                            Text(value).tag(Optional(value))
+                        }
+                    }
+                    TextField("Tags (comma-separated)", text: $tagFilter)
+                        .textInputAutocapitalization(.never)
+                }
+                Section("Categories") {
+                    ForEach(categories, id: \.self) { category in
+                        Toggle(category, isOn: Binding(
+                            get: { selectedCategories.contains(category) },
+                            set: { isSelected in
+                                if isSelected {
+                                    selectedCategories.insert(category)
+                                } else {
+                                    selectedCategories.remove(category)
+                                }
+                            }
+                        ))
+                    }
+                }
+                Section("Example context") {
+                    contextOptions("Subject", options: RecipeExampleContextOptions.subjects, selected: $subjects)
+                    contextOptions("Lighting", options: RecipeExampleContextOptions.lighting, selected: $lighting)
+                    contextOptions("Look", options: RecipeExampleContextOptions.looks, selected: $looks)
+                    Text("Filters use labels saved with recipe examples and work without a network connection.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Saved recipe filters")
+            .onChange(of: cameraID) {
+                if cameraID == nil { evidence = .any }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Reset") {
+                        cameraID = nil
+                        evidence = .any
+                        filmSimulation = nil
+                        selectedCategories = []
+                        tagFilter = ""
+                        subjects = []
+                        lighting = []
+                        looks = []
+                    }
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Apply") {
+                        onApply(cameraID, evidence, filmSimulation, selectedCategories, tagFilter, RecipeExampleContextFilter(
+                            subjects: subjects.sorted(),
+                            lighting: lighting.sorted(),
+                            looks: looks.sorted()
+                        ))
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func contextOptions(
+        _ title: String,
+        options: [RecipeContextTag],
+        selected: Binding<Set<String>>
+    ) -> some View {
+        DisclosureGroup(title) {
+            ForEach(options) { option in
+                Toggle(option.title, isOn: Binding(
+                    get: { selected.wrappedValue.contains(option.id) },
+                    set: { isSelected in
+                        if isSelected {
+                            selected.wrappedValue.insert(option.id)
+                        } else {
+                            selected.wrappedValue.remove(option.id)
+                        }
+                    }
+                ))
+            }
+        }
     }
 }

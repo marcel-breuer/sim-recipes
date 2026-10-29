@@ -159,6 +159,13 @@ final class RecipeEditorViewModel: ObservableObject {
         draft.images.removeAll { $0.id == image.id }
     }
 
+    func updateExampleContext(_ context: RecipeExampleContext?, for imageID: UUID) {
+        var images = draft.images
+        guard let index = images.firstIndex(where: { $0.id == imageID }) else { return }
+        images[index].exampleContext = context?.hasLabels == true ? context : nil
+        draft.images = images
+    }
+
     func setSetting(_ value: JSONValue, for key: String) {
         if let index = draft.settings.firstIndex(where: { $0.key == key }) {
             draft.settings[index] = RecipeSettingTransport(key: key, value: value)
