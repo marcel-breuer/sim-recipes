@@ -1136,6 +1136,7 @@ final class SimRecipesTests: XCTestCase {
         )
         let service = StubCameraService(discoveredCameras: [camera])
         service.recipeWriteAvailability = .blocked(reason: "Hardware validation is incomplete.")
+        service.currentSnapshot = CameraSlotSnapshot(slot: .c2, properties: [:])
         let viewModel = CameraTransferViewModel(recipe: makeRecipe(id: "blocked-transfer"), cameraService: service)
 
         await viewModel.start()
