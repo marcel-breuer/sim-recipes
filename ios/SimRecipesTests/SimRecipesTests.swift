@@ -1118,6 +1118,91 @@ final class SimRecipesTests: XCTestCase {
         XCTAssertEqual(fields.first?.sourceText, "Film Simulation: Classic Chrome")
     }
 
+    func testCaptureMetadataParserReadsExifAndOnlySelectsSupportedFujifilmValues() {
+        let capabilities = [
+            CameraCapabilityTransport(
+                id: "film", key: "film_simulation", displayName: "Film Simulation", valueType: "enum",
+                allowedValues: .array([.string("Classic Chrome"), .string("PROVIA/STANDARD")]), minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "dynamic-range", key: "dynamic_range", displayName: "Dynamic Range", valueType: "enum",
+                allowedValues: .array([.string("DR100"), .string("DR200")]), minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "chrome", key: "color_chrome_effect", displayName: "Color Chrome Effect", valueType: "enum",
+                allowedValues: .array([.string("OFF"), .string("WEAK"), .string("STRONG")]), minimum: nil, maximum: nil, step: nil
+            ),
+            CameraCapabilityTransport(
+                id: "highlight", key: "highlight_tone", displayName: "Highlight Tone", valueType: "integer",
+                allowedValues: nil, minimum: -4, maximum: 4, step: 1
+            )
+        ]
+        let properties: [CFString: Any] = [
+            kCGImagePropertyTIFFDictionary: ["Make": "FUJIFILM", "Model": "X-S20"],
+            kCGImagePropertyExifDictionary: [
+                "LensModel": "XF 35mm F1.4 R",
+                "ISOSpeedRatings": [400],
+                "ExposureTime": 0.01,
+                "FNumber": 2.8,
+                "FocalLength": 35.0
+            ],
+            kCGImagePropertyMakerFujiDictionary: [
+                "FilmMode": 0x0600,
+                "DynamicRangeSetting": 0x0200,
+                "ColorChromeEffect": 32,
+                "HighlightTone": -16
+            ],
+            kCGImagePropertyGPSDictionary: [
+                "Latitude": 37.33,
+                "LatitudeRef": "N",
+                "Longitude": 122.03,
+                "LongitudeRef": "W"
+            ]
+        ]
+
+        let result = RecipeCaptureMetadataParser.parse(properties: properties, capabilities: capabilities)
+
+        XCTAssertTrue(result.isFujifilmJPEG)
+        XCTAssertEqual(result.metadata.source, "fujifilm_jpeg")
+        XCTAssertEqual(result.metadata.cameraModel, "X-S20")
+        XCTAssertEqual(result.metadata.lensModel, "XF 35mm F1.4 R")
+        XCTAssertEqual(result.metadata.exposure?.iso, 400)
+        XCTAssertEqual(result.metadata.location, RecipeCaptureLocation(latitude: 37.33, longitude: -122.03))
+        XCTAssertEqual(Set(result.metadata.settings.map(\.settingKey)), Set(["film_simulation", "color_chrome_effect", "highlight_tone"]))
+        XCTAssertEqual(result.metadata.settings.first?.value, .string("Classic Chrome"))
+        XCTAssertEqual(result.metadata.settings.first(where: { $0.settingKey == "color_chrome_effect" })?.value, .string("WEAK"))
+        XCTAssertEqual(result.metadata.settings.first(where: { $0.settingKey == "highlight_tone" })?.value, .number(1))
+        XCTAssertEqual(result.fields.first(where: { $0.capabilityKey == "dynamic_range" })?.status, .unsupportedValue)
+        XCTAssertFalse(result.fields.first(where: { $0.capabilityKey == "dynamic_range" })?.isSelected ?? true)
+    }
+
+    func testCaptureMetadataImagePreparationKeepsMetadataSeparateAndStripsGpsFromJpeg() throws {
+        let metadata = RecipeCaptureMetadata(
+            cameraMake: "FUJIFILM",
+            cameraModel: "X-S20",
+            location: RecipeCaptureLocation(latitude: 37.33, longitude: -122.03)
+        )
+        let prepared = try RecipeImagePreparer.prepare(
+            makeDarkroomJPEG(includeGPS: true),
+            filename: "capture.jpg",
+            captureMetadata: metadata
+        )
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(prepared.data as CFData, nil))
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+
+        XCTAssertEqual(prepared.captureMetadata, metadata)
+        XCTAssertNil(properties?[kCGImagePropertyGPSDictionary])
+    }
+
+    func testOldRecipeDraftImageWithoutCaptureMetadataStillDecodes() throws {
+        let data = Data(#"{"id":"11111111-1111-4111-8111-111111111111","filename":"old.jpg","mimeType":"image/jpeg","data":"AQID"}"#.utf8)
+
+        let image = try JSONDecoder().decode(RecipeDraftImage.self, from: data)
+
+        XCTAssertEqual(image.data, Data([1, 2, 3]))
+        XCTAssertNil(image.captureMetadata)
+    }
+
     func testRecipeScanParserUsesStableDecimalParsingAcrossLocales() {
         let capability = CameraCapabilityTransport(
             id: "compensation", key: "exposure_compensation", displayName: "Exposure Compensation",

@@ -129,6 +129,14 @@ through `GET /recipes/{recipe}/comments`; hidden, deleted, suspended-user, and
 blocked-user comments are omitted. Authors can soft-delete their own comments
 with `DELETE /comments/{comment}`.
 
+Recipe create and update multipart requests may include a JSON-encoded
+`capture_metadata` array aligned by index with the uploaded `images[]` files.
+Each item is either `null` or a validated capture-data object. The API only
+stores allowlisted fields. A location is removed unless `location_shared` is
+explicitly `true`; coordinates are range-validated before storage. Image
+resources return the stored capture metadata, with the same location consent
+check applied when building the response.
+
 Recipe image URLs are API URLs rather than direct storage URLs. The
 image endpoint authorizes access against the owning recipe, serves originals
 or generated `thumbnail`/`detail` variants, and keeps private recipe images

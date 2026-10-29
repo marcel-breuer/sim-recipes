@@ -198,6 +198,42 @@ struct RecipeDetailView: View {
                     }
                 }
 
+                let imagesWithCaptureMetadata = recipe.images.filter { $0.captureMetadata != nil }
+                if !imagesWithCaptureMetadata.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Capture details")
+                            .font(.headline)
+                        ForEach(imagesWithCaptureMetadata) { image in
+                            if let metadata = image.captureMetadata {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    if let camera = metadata.cameraModel {
+                                        LabeledContent("Camera in photo", value: camera)
+                                    }
+                                    if let lens = metadata.lensModel {
+                                        LabeledContent("Lens used", value: lens)
+                                    }
+                                    if let exposure = metadata.exposure, !exposure.summary.isEmpty {
+                                        LabeledContent("Exposure", value: exposure.summary.joined(separator: " · "))
+                                    }
+                                    if let scene = metadata.sceneNotes {
+                                        LabeledContent("Scene", value: scene)
+                                    }
+                                    if let lighting = metadata.lightingNotes {
+                                        LabeledContent("Lighting", value: lighting)
+                                    }
+                                    if metadata.locationShared, let location = metadata.location {
+                                        LabeledContent("Shared location", value: "\(location.latitude), \(location.longitude)")
+                                    }
+                                    ForEach(metadata.settings) { setting in
+                                        LabeledContent(setting.settingKey, value: setting.value.displayValue)
+                                    }
+                                }
+                                .padding(.vertical, 5)
+                            }
+                        }
+                    }
+                }
+
                 if let capabilityService {
                     RecipeCompatibilityEvidenceView(recipe: recipe, service: capabilityService)
                 }

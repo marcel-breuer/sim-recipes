@@ -17,7 +17,7 @@ class RecipeImageStorage
     /**
      * @param  array<int, UploadedFile>  $images
      */
-    public function store(Recipe $recipe, array $images): void
+    public function store(Recipe $recipe, array $images, array $captureMetadata = []): void
     {
         if ($images === []) {
             return;
@@ -82,6 +82,7 @@ class RecipeImageStorage
                     'original_size_bytes' => $sizes[$index],
                     'mime_type' => $image->getMimeType(),
                     'sort_order' => $sortOrder + $index,
+                    'capture_metadata' => $this->safeCaptureMetadata($captureMetadata[$index] ?? null),
                 ]);
                 GenerateRecipeImageDerivatives::dispatch($imageRecord->getKey())->afterCommit();
             }
@@ -170,6 +171,7 @@ class RecipeImageStorage
                     'width' => $sourceImage->getAttribute('width'),
                     'height' => $sourceImage->getAttribute('height'),
                     'sort_order' => $sourceImage->getAttribute('sort_order'),
+                    'capture_metadata' => $this->safeCaptureMetadata($sourceImage->getAttribute('capture_metadata')),
                     'derivatives' => $derivatives === [] ? null : $derivatives,
                     'processing_status' => $sourceImage->getAttribute('processing_status'),
                 ]);
@@ -209,6 +211,31 @@ class RecipeImageStorage
         }
 
         return $size;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function safeCaptureMetadata(mixed $metadata): ?array
+    {
+        if (! is_array($metadata)) {
+            return null;
+        }
+
+        if (($metadata['location_shared'] ?? false) !== true) {
+            unset($metadata['location']);
+        }
+
+        return array_intersect_key($metadata, array_flip([
+            'source',
+            'camera_make',
+            'camera_model',
+            'lens_model',
+            'exposure',
+            'settings',
+            'scene_notes',
+            'lighting_notes',
+            'location',
+            'location_shared',
+        ]));
     }
 
     private function copyPath(

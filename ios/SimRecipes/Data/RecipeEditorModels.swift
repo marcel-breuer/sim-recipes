@@ -22,7 +22,8 @@ enum RecipeImagePreparer {
     static func prepare(
         _ data: Data,
         filename: String,
-        id: UUID = UUID()
+        id: UUID = UUID(),
+        captureMetadata: RecipeCaptureMetadata? = nil
     ) throws -> RecipeDraftImage {
         guard let image = UIImage(data: data) else {
             throw RecipeImagePreparationError.invalidImage
@@ -46,7 +47,8 @@ enum RecipeImagePreparer {
                         id: id,
                         filename: URL(fileURLWithPath: filename).deletingPathExtension().lastPathComponent + ".jpg",
                         mimeType: "image/jpeg",
-                        data: jpegData
+                        data: jpegData,
+                        captureMetadata: captureMetadata
                     )
                 }
             }
@@ -79,12 +81,20 @@ struct RecipeDraftImage: Codable, Equatable, Identifiable, Sendable {
     let filename: String
     let mimeType: String
     let data: Data
+    var captureMetadata: RecipeCaptureMetadata?
 
-    init(id: UUID = UUID(), filename: String, mimeType: String = "image/jpeg", data: Data) {
+    init(
+        id: UUID = UUID(),
+        filename: String,
+        mimeType: String = "image/jpeg",
+        data: Data,
+        captureMetadata: RecipeCaptureMetadata? = nil
+    ) {
         self.id = id
         self.filename = filename
         self.mimeType = mimeType
         self.data = data
+        self.captureMetadata = captureMetadata
     }
 }
 

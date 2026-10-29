@@ -262,7 +262,8 @@ final class RecipeRepository {
                     url: image.url,
                     derivativeURLs: image.derivativeURLs,
                     processingStatus: image.processingStatus,
-                    localURL: cachedURL
+                    localURL: cachedURL,
+                    captureMetadata: image.captureMetadata
                 )
             } else {
                 do {
@@ -275,7 +276,8 @@ final class RecipeRepository {
                         url: image.url,
                         derivativeURLs: image.derivativeURLs,
                         processingStatus: image.processingStatus,
-                        localURL: cachedURL
+                        localURL: cachedURL,
+                        captureMetadata: image.captureMetadata
                     )
                 } catch {
                     // Metadata remains usable when an image is unavailable.
@@ -326,6 +328,7 @@ final class RecipeRepository {
             "setting_key": JSONValue.string($0.key),
             "value": $0.value
         ] as [String: JSONValue] })
+        try form.appendJSON(name: "capture_metadata", value: draft.images.map(\.captureMetadata))
 
         for image in draft.images {
             form.appendFile(

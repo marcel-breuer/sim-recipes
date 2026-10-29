@@ -7,6 +7,7 @@ struct RecipeEditorView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showPublishConfirmation = false
     @State private var showRecipeScanner = false
+    @State private var showCaptureImport = false
 
     init(viewModel: RecipeEditorViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -29,10 +30,19 @@ struct RecipeEditorView: View {
         .toolbar {
             if viewModel.canEdit {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showRecipeScanner = true
+                    Menu {
+                        Button {
+                            showRecipeScanner = true
+                        } label: {
+                            Label("Scan recipe settings", systemImage: "text.viewfinder")
+                        }
+                        Button {
+                            showCaptureImport = true
+                        } label: {
+                            Label("Import Fujifilm capture", systemImage: "camera.macro")
+                        }
                     } label: {
-                        Label("Scan recipe", systemImage: "text.viewfinder")
+                        Label("Import", systemImage: "square.and.arrow.down")
                     }
                     .disabled(viewModel.isLoading)
                 }
@@ -48,6 +58,22 @@ struct RecipeEditorView: View {
                 loadCapabilities: { cameraID in try await viewModel.scanCapabilities(for: cameraID) },
                 onApply: { cameraID, settings in
                     await viewModel.applyScannedSettings(settings, cameraID: cameraID)
+                }
+            )
+        }
+        .sheet(isPresented: $showCaptureImport) {
+            RecipeCaptureImportView(
+                initialCameraID: viewModel.draft.cameraModelID,
+                canAttachImage: viewModel.canAddExampleImage,
+                loadCameras: { try await viewModel.scanAvailableCameras() },
+                loadCapabilities: { cameraID in try await viewModel.scanCapabilities(for: cameraID) },
+                onApply: { cameraID, metadata, settings, attachedImage in
+                    await viewModel.applyCaptureImport(
+                        metadata,
+                        settings: settings,
+                        attachedImage: attachedImage,
+                        cameraID: cameraID
+                    )
                 }
             )
         }
