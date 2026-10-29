@@ -89,6 +89,62 @@ class CommunityRecipeFeedTest extends TestCase
             ->assertJsonPath('data.0.name', 'Muted Street');
     }
 
+    public function test_compatibility_evidence_filter_requires_every_setting_to_meet_the_requested_level(): void
+    {
+        $user = User::factory()->create();
+        $camera = $this->createCamera('x-s20');
+        $verified = CameraCapability::create([
+            'camera_model_id' => $camera->id,
+            'setting_key' => 'film_simulation',
+            'display_name' => 'Film Simulation',
+            'value_type' => 'enum',
+            'allowed_values' => ['Classic Chrome'],
+            'evidence_level' => 'camera_verified',
+            'evidence_source' => 'X-S20 hardware validation record',
+            'verified_firmware' => '1.31',
+            'verified_at' => now(),
+        ]);
+        $catalogOnly = CameraCapability::create([
+            'camera_model_id' => $camera->id,
+            'setting_key' => 'grain_effect',
+            'display_name' => 'Grain Effect',
+            'value_type' => 'enum',
+            'allowed_values' => ['OFF', 'WEAK'],
+            'evidence_level' => 'catalog_only',
+        ]);
+
+        $fullyVerified = $this->createPublishedRecipe($user, $camera, 'Verified recipe', 'Camera checked.');
+        RecipeSetting::create([
+            'recipe_id' => $fullyVerified->id,
+            'camera_capability_id' => $verified->id,
+            'setting_key' => 'film_simulation',
+            'value' => 'Classic Chrome',
+        ]);
+
+        $mixedEvidence = $this->createPublishedRecipe($user, $camera, 'Mixed evidence recipe', 'One setting is catalogue-only.');
+        RecipeSetting::create([
+            'recipe_id' => $mixedEvidence->id,
+            'camera_capability_id' => $verified->id,
+            'setting_key' => 'film_simulation',
+            'value' => 'Classic Chrome',
+        ]);
+        RecipeSetting::create([
+            'recipe_id' => $mixedEvidence->id,
+            'camera_capability_id' => $catalogOnly->id,
+            'setting_key' => 'grain_effect',
+            'value' => 'WEAK',
+        ]);
+
+        $this->getJson('/api/v1/recipes?camera_model_id='.$camera->id.'&compatibility_evidence=camera_verified')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $fullyVerified->id);
+
+        $this->getJson('/api/v1/recipes?compatibility_evidence=camera_verified')
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+    }
+
     public function test_similar_recipes_use_deterministic_camera_metadata_and_settings(): void
     {
         $user = User::factory()->create();

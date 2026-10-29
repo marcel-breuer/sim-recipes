@@ -19,7 +19,8 @@ class IndexRecipeRequest extends FormRequest
         return [
             'feed' => ['sometimes', 'string', 'in:popular,newest'],
             'search' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'camera_model_id' => ['sometimes', 'nullable', 'string', 'exists:camera_models,id'],
+            'compatibility_evidence' => ['sometimes', 'nullable', 'string', 'in:manufacturer_documented,camera_verified'],
+            'camera_model_id' => ['nullable', 'string', 'exists:camera_models,id', 'required_with:compatibility_evidence'],
             'film_simulation' => ['sometimes', 'nullable', 'string', 'max:100'],
             'categories' => ['sometimes', 'array', 'max:20'],
             'categories.*' => ['string', 'max:100'],

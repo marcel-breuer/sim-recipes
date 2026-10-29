@@ -181,6 +181,7 @@ final class SimRecipesTests: XCTestCase {
                 filter: CommunityRecipeFilter(
                     search: "street",
                     cameraModelID: "camera-1",
+                compatibilityEvidence: "camera_verified",
                     filmSimulation: "Classic Chrome",
                     categorySlugs: ["street"],
                     tags: ["muted"]
@@ -812,6 +813,75 @@ final class SimRecipesTests: XCTestCase {
 
         XCTAssertTrue(result.isTransferSafe)
         XCTAssertTrue(result.issues.isEmpty)
+        XCTAssertEqual(result.evidenceLevel, .unknown)
+    }
+
+    func testCameraCompatibilityEvidenceUsesTheLeastVerifiedRecipeSetting() {
+        let camera = SupportedCameraTransport(
+            id: "camera-1",
+            manufacturer: "Fujifilm",
+            name: "X-S20",
+            slug: "x-s20",
+            capabilities: [
+                CameraCapabilityTransport(
+                    id: "film",
+                    key: "film_simulation",
+                    displayName: "Film Simulation",
+                    valueType: "enum",
+                    allowedValues: .array([.string("Classic Chrome")]),
+                    minimum: nil,
+                    maximum: nil,
+                    step: nil,
+                    evidence: CameraCapabilityEvidenceTransport(
+                        level: "camera_verified",
+                        source: "Hardware validation record",
+                        firmware: "1.31",
+                        verifiedAt: "2026-10-29T10:00:00Z"
+                    )
+                ),
+                CameraCapabilityTransport(
+                    id: "grain",
+                    key: "grain_effect",
+                    displayName: "Grain Effect",
+                    valueType: "enum",
+                    allowedValues: .array([.string("WEAK")]),
+                    minimum: nil,
+                    maximum: nil,
+                    step: nil,
+                    evidence: CameraCapabilityEvidenceTransport(
+                        level: "catalog_only",
+                        source: nil,
+                        firmware: nil,
+                        verifiedAt: nil
+                    )
+                )
+            ]
+        )
+        let recipe = makeRecipe(id: "evidence", isPublished: false)
+        let recipeWithSettings = RecipeTransport(
+            id: recipe.id,
+            name: recipe.name,
+            description: recipe.description,
+            styleRecommendation: recipe.styleRecommendation,
+            cameraModelID: camera.id,
+            lens: recipe.lens,
+            categories: recipe.categories,
+            tags: recipe.tags,
+            isPublished: recipe.isPublished,
+            provenance: recipe.provenance,
+            updatedAt: recipe.updatedAt,
+            settings: [
+                RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome"),
+                RecipeSettingTransport(key: "grain_effect", value: "WEAK"),
+                RecipeSettingTransport(key: "clarity", value: .number(0))
+            ]
+        )
+
+        let result = CameraCompatibilityEvaluator.evaluate(recipe: recipeWithSettings, camera: camera)
+
+        XCTAssertEqual(result.evidenceLevel, .catalogOnly)
+        XCTAssertEqual(result.settingEvidence.map(\.status), [.catalogueMatch, .catalogueMatch, .unknown])
+        XCTAssertEqual(result.settingEvidence[2].statusTitle, "Unknown compatibility")
     }
 
     func testCameraCompatibilityPreflightExplainsUnsupportedAndOutOfRangeValues() {

@@ -6,6 +6,7 @@ final class ExploreViewModel: ObservableObject {
     @Published var feed: RecipeFeed = .popular
     @Published var searchText = ""
     @Published var selectedCameraID: String?
+    @Published var selectedCompatibilityEvidence: CompatibilityEvidenceFilter = .any
     @Published var selectedFilmSimulation: String?
     @Published var selectedCategorySlugs: Set<String> = []
     @Published var tagText = ""
@@ -46,6 +47,7 @@ final class ExploreViewModel: ObservableObject {
         return CommunityRecipeFilter(
             search: searchText,
             cameraModelID: selectedCameraID,
+            compatibilityEvidence: selectedCameraID == nil ? nil : selectedCompatibilityEvidence.apiValue,
             filmSimulation: selectedFilmSimulation,
             categorySlugs: selectedCategorySlugs.sorted(),
             tags: tags
@@ -95,6 +97,7 @@ final class ExploreViewModel: ObservableObject {
     func applySavedFilter(_ savedFilter: SavedRecipeFilter) async {
         searchText = savedFilter.filter.search
         selectedCameraID = savedFilter.filter.cameraModelID
+        selectedCompatibilityEvidence = CompatibilityEvidenceFilter(apiValue: savedFilter.filter.compatibilityEvidence)
         selectedFilmSimulation = savedFilter.filter.filmSimulation
         selectedCategorySlugs = Set(savedFilter.filter.categorySlugs)
         tagText = savedFilter.filter.tags.joined(separator: ", ")

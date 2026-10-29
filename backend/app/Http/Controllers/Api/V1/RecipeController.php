@@ -271,6 +271,22 @@ class RecipeController extends Controller
             $query->where('camera_model_id', $filters['camera_model_id']);
         }
 
+        if (filled($filters['compatibility_evidence'] ?? null)) {
+            $acceptedEvidence = $filters['compatibility_evidence'] === 'camera_verified'
+                ? ['camera_verified']
+                : ['manufacturer_documented', 'camera_verified'];
+
+            $query->whereHas('settings');
+            $query->whereDoesntHave('settings', function (Builder $settingQuery) use ($acceptedEvidence): void {
+                $settingQuery->where(function (Builder $unverifiedQuery) use ($acceptedEvidence): void {
+                    $unverifiedQuery
+                        ->whereDoesntHave('cameraCapability')
+                        ->orWhereHas('cameraCapability', fn (Builder $capabilityQuery) => $capabilityQuery
+                            ->whereNotIn('evidence_level', $acceptedEvidence));
+                });
+            });
+        }
+
         if (filled($filters['film_simulation'] ?? null)) {
             $query->whereHas('settings', function (Builder $settingQuery) use ($filters): void {
                 $settingQuery

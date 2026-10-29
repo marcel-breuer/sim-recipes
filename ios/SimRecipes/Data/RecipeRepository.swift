@@ -128,6 +128,9 @@ final class RecipeRepository {
         if let cameraModelID = filter.cameraModelID {
             queryItems.append(URLQueryItem(name: "camera_model_id", value: cameraModelID))
         }
+        if let compatibilityEvidence = filter.compatibilityEvidence {
+            queryItems.append(URLQueryItem(name: "compatibility_evidence", value: compatibilityEvidence))
+        }
         if let filmSimulation = filter.filmSimulation, !filmSimulation.isEmpty {
             queryItems.append(URLQueryItem(name: "film_simulation", value: filmSimulation))
         }

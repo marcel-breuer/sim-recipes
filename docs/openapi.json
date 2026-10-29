@@ -70,6 +70,7 @@
         "parameters": [
           { "$ref": "#/components/parameters/Feed" },
           { "$ref": "#/components/parameters/Search" },
+          { "$ref": "#/components/parameters/CompatibilityEvidence" },
           { "$ref": "#/components/parameters/PerPage" },
           { "$ref": "#/components/parameters/Page" }
         ],
@@ -117,6 +118,7 @@
       "Recipe": { "name": "recipe", "in": "path", "required": true, "schema": { "type": "string" } },
       "Feed": { "name": "feed", "in": "query", "schema": { "type": "string", "enum": ["popular", "newest"] } },
       "Search": { "name": "search", "in": "query", "schema": { "type": "string" } },
+      "CompatibilityEvidence": { "name": "compatibility_evidence", "in": "query", "description": "Minimum evidence for every recipe setting; requires camera_model_id.", "schema": { "type": "string", "enum": ["manufacturer_documented", "camera_verified"] } },
       "PerPage": { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
       "Page": { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } }
     },
@@ -139,7 +141,7 @@
       "AuthSessionResponse": { "description": "Authenticated session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
       "CameraCollection": { "description": "Camera models", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
       "CameraResponse": { "description": "Camera model", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
-      "CameraCapabilityCollection": { "description": "Camera capabilities", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
+      "CameraCapabilityCollection": { "description": "Camera capabilities", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CameraCapabilityArrayEnvelope" } } } },
       "CategoryCollection": { "description": "Recipe categories", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
       "RecipeResponse": { "description": "Recipe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
       "RecipePage": { "description": "Paginated recipes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PageEnvelope" } } } },
@@ -150,6 +152,9 @@
     "schemas": {
       "DataEnvelope": { "type": "object", "required": ["data"], "properties": { "data": {} } },
       "DataArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array" } } },
+      "CameraCapabilityArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/CameraCapability" } } } },
+      "CameraCapability": { "type": "object", "required": ["id", "key", "display_name", "value_type", "evidence"], "properties": { "id": { "type": "string" }, "key": { "type": "string" }, "display_name": { "type": "string" }, "value_type": { "type": "string" }, "allowed_values": {}, "minimum": { "type": ["number", "null"] }, "maximum": { "type": ["number", "null"] }, "step": { "type": ["number", "null"] }, "transport_identifier": { "type": ["string", "null"] }, "custom_slot_metadata": { "type": ["object", "null"] }, "evidence": { "$ref": "#/components/schemas/CameraCapabilityEvidence" } } },
+      "CameraCapabilityEvidence": { "type": "object", "required": ["level", "source", "firmware", "verified_at"], "properties": { "level": { "type": "string", "enum": ["catalog_only", "manufacturer_documented", "camera_verified"] }, "source": { "type": ["string", "null"] }, "firmware": { "type": ["string", "null"] }, "verified_at": { "type": ["string", "null"], "format": "date-time" } } },
       "HealthEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Health" } } },
       "Health": { "type": "object", "required": ["service", "status", "version"], "properties": { "service": { "type": "string" }, "status": { "type": "string" }, "version": { "type": "string" } } },
       "PageEnvelope": { "type": "object", "required": ["data", "links", "meta"], "properties": { "data": { "type": "array" }, "links": { "type": "object" }, "meta": { "$ref": "#/components/schemas/PageMeta" } } },

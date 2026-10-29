@@ -48,6 +48,11 @@ be requested directly with `GET /api/v1/cameras/{camera}/capabilities`.
 Each capability includes its setting key, display label, value type, allowed
 values or ranges, transport identifier, and custom-slot metadata. Camera
 resources also expose `unsupported_recipe_settings` and `transport_metadata`.
+Capabilities include an `evidence` object with a level (`catalog_only`,
+`manufacturer_documented`, or `camera_verified`), an optional source, the
+verified firmware, and verification time. Existing catalogue entries default
+to `catalog_only`; this records capability data, not proof of camera transfer.
+`camera_verified` requires a source, firmware version, and verification time.
 The current seeded models are the X-S20 (`C1`–`C4`) and X-T5 (`C1`–`C7`).
 Clients should render controls from this response rather than hard-coding a
 camera's setting list. Changing a private recipe's camera model revalidates
@@ -67,6 +72,9 @@ query parameters:
 - `feed=popular|newest` (defaults to `popular`);
 - `search` for recipe name, description, recommendation, or tag text;
 - `camera_model_id` and `film_simulation`;
+- `compatibility_evidence=manufacturer_documented|camera_verified`, which
+  requires `camera_model_id` and returns only recipes whose every setting has
+  at least the requested evidence level;
 - repeated `categories[]` and `tags[]` values, matched by ID or slug;
 - `per_page` up to the configured API maximum.
 

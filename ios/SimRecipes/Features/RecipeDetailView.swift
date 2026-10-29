@@ -198,6 +198,10 @@ struct RecipeDetailView: View {
                     }
                 }
 
+                if let capabilityService {
+                    RecipeCompatibilityEvidenceView(recipe: recipe, service: capabilityService)
+                }
+
                 if let similarRecipesRepository {
                     SimilarRecipesView(
                         recipeID: recipe.id,
@@ -432,6 +436,89 @@ struct RecipeDetailView: View {
         await submitSafetyAction(action, success: success)
         if message == success {
             isCreatorBlocked = blocked
+        }
+    }
+}
+
+private struct RecipeCompatibilityEvidenceView: View {
+    let recipe: RecipeTransport
+    let service: CameraCapabilityService
+
+    @State private var result: CameraPreflightResult?
+    @State private var errorMessage: String?
+    @State private var isLoading = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Camera compatibility")
+                .font(.headline)
+
+            if isLoading {
+                ProgressView("Checking capability evidence…")
+            } else if let result {
+                LabeledContent("Camera", value: result.cameraName)
+                LabeledContent("Evidence", value: result.evidenceLevel.title)
+                Text(result.evidenceLevel.explanation)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ForEach(result.settingEvidence) { setting in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label(setting.displayName, systemImage: setting.statusSymbol)
+                            .font(.subheadline)
+                        Text("\(setting.statusTitle) · Evidence: \(setting.evidenceLevel.title)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ForEach(setting.issues) { issue in
+                            Text(issue.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                let sources = Set(result.evidenceRecords.compactMap(\.source)).sorted()
+                if !sources.isEmpty {
+                    Text("Evidence sources: \(sources.joined(separator: ", "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                let firmwareVersions = Set(result.evidenceRecords.compactMap(\.firmware)).sorted()
+                if !firmwareVersions.isEmpty {
+                    Text("Verified firmware: \(firmwareVersions.joined(separator: ", "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(result.issues) { issue in
+                    Label("\(issue.displayName): \(issue.detail)", systemImage: "questionmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Label(
+                    errorMessage ?? "Compatibility evidence is unavailable for this camera.",
+                    systemImage: "questionmark.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .task(id: recipe.cameraModelID) {
+            isLoading = true
+            defer { isLoading = false }
+            do {
+                let cameras = try await service.supportedCameras()
+                guard let camera = cameras.first(where: {
+                    $0.id == recipe.cameraModelID || $0.slug == recipe.cameraModelID
+                }) else {
+                    errorMessage = "No capability data is available for this camera model."
+                    result = nil
+                    return
+                }
+                result = CameraCompatibilityEvaluator.evaluate(recipe: recipe, camera: camera)
+                errorMessage = nil
+            } catch {
+                result = nil
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
