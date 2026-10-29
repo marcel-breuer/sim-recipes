@@ -587,7 +587,7 @@ private struct RecipeCompatibilityEvidenceView: View {
     }
 }
 
-private extension JSONValue {
+extension JSONValue {
     var displayValue: String {
         switch self {
         case let .string(value):
