@@ -115,6 +115,27 @@ final class RecipeEditorViewModel: ObservableObject {
         }
     }
 
+    func applyCaptureImport(
+        _ metadata: RecipeCaptureMetadata,
+        settings: [RecipeSettingTransport],
+        attachedImage: RecipeDraftImage?,
+        cameraID: String
+    ) async {
+        await applyScannedSettings(settings, cameraID: cameraID)
+        if let importedLens = metadata.lensModel, !importedLens.isEmpty {
+            draft.lens = importedLens
+        }
+        if let attachedImage {
+            guard canAddExampleImage else {
+                errorMessage = RecipeDraftValidationError.tooManyImages.localizedDescription
+                return
+            }
+            draft.images.append(attachedImage)
+        }
+    }
+
+    var canAddExampleImage: Bool { draft.totalImageCount < 5 }
+
     func addPhotos(_ images: [Data]) {
         let remaining = max(0, 5 - draft.totalImageCount)
         guard remaining > 0 else {

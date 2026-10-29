@@ -26,6 +26,11 @@ class RecipeImageResource extends JsonResource
             }
         }
 
+        $captureMetadata = $this->resource->getAttribute('capture_metadata');
+        if (is_array($captureMetadata) && ($captureMetadata['location_shared'] ?? false) !== true) {
+            unset($captureMetadata['location']);
+        }
+
         return [
             'id' => $this->resource->getKey(),
             'url' => route('api.v1.recipe-images.show', ['recipeImage' => $imageID]),
@@ -35,6 +40,7 @@ class RecipeImageResource extends JsonResource
             'height' => $this->resource->getAttribute('height'),
             'sort_order' => $this->resource->getAttribute('sort_order'),
             'processing_status' => $this->resource->getAttribute('processing_status'),
+            'capture_metadata' => is_array($captureMetadata) ? $captureMetadata : null,
         ];
     }
 }

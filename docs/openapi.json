@@ -81,6 +81,7 @@
       "post": {
         "operationId": "createRecipe",
         "security": [{ "bearerAuth": [] }],
+        "requestBody": { "$ref": "#/components/requestBodies/CreateRecipe" },
         "responses": {
           "201": { "$ref": "#/components/responses/RecipeResponse" },
           "401": { "$ref": "#/components/responses/Unauthenticated" },
@@ -134,6 +135,14 @@
             }
           }
         }
+      },
+      "CreateRecipe": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": { "$ref": "#/components/schemas/CreateRecipe" }
+          }
+        }
       }
     },
     "responses": {
@@ -155,6 +164,9 @@
       "CameraCapabilityArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/CameraCapability" } } } },
       "CameraCapability": { "type": "object", "required": ["id", "key", "display_name", "value_type", "evidence"], "properties": { "id": { "type": "string" }, "key": { "type": "string" }, "display_name": { "type": "string" }, "value_type": { "type": "string" }, "allowed_values": {}, "minimum": { "type": ["number", "null"] }, "maximum": { "type": ["number", "null"] }, "step": { "type": ["number", "null"] }, "transport_identifier": { "type": ["string", "null"] }, "custom_slot_metadata": { "type": ["object", "null"] }, "evidence": { "$ref": "#/components/schemas/CameraCapabilityEvidence" } } },
       "CameraCapabilityEvidence": { "type": "object", "required": ["level", "source", "firmware", "verified_at"], "properties": { "level": { "type": "string", "enum": ["catalog_only", "manufacturer_documented", "camera_verified"] }, "source": { "type": ["string", "null"] }, "firmware": { "type": ["string", "null"] }, "verified_at": { "type": ["string", "null"], "format": "date-time" } } },
+      "CreateRecipe": { "type": "object", "required": ["name", "camera_model_id"], "properties": { "name": { "type": "string", "maxLength": 120 }, "camera_model_id": { "type": "string" }, "images": { "type": "array", "maxItems": 5, "items": { "type": "string", "format": "binary" } }, "capture_metadata": { "type": "string", "contentMediaType": "application/json", "description": "JSON array aligned by index with images; each item is null or RecipeCaptureMetadata." } } },
+      "RecipeCaptureMetadata": { "type": "object", "required": ["source", "location_shared"], "properties": { "source": { "type": "string", "enum": ["fujifilm_jpeg", "jpeg_exif"] }, "camera_make": { "type": ["string", "null"] }, "camera_model": { "type": ["string", "null"] }, "lens_model": { "type": ["string", "null"] }, "exposure": { "type": ["object", "null"], "properties": { "iso": { "type": ["number", "null"] }, "exposure_time_seconds": { "type": ["number", "null"] }, "f_number": { "type": ["number", "null"] }, "focal_length_mm": { "type": ["number", "null"] }, "exposure_compensation_ev": { "type": ["number", "null"] } } }, "settings": { "type": "array", "items": { "type": "object", "required": ["setting_key", "value", "source", "was_edited"], "properties": { "setting_key": { "type": "string" }, "value": {}, "source": { "type": "string" }, "was_edited": { "type": "boolean" } } } }, "scene_notes": { "type": ["string", "null"], "maxLength": 500 }, "lighting_notes": { "type": ["string", "null"], "maxLength": 500 }, "location": { "type": ["object", "null"], "properties": { "latitude": { "type": "number", "minimum": -90, "maximum": 90 }, "longitude": { "type": "number", "minimum": -180, "maximum": 180 } } }, "location_shared": { "type": "boolean", "default": false } } },
+      "RecipeImage": { "type": "object", "properties": { "id": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "capture_metadata": { "oneOf": [{ "$ref": "#/components/schemas/RecipeCaptureMetadata" }, { "type": "null" }], "description": "Location is included only when location_shared is true." } } },
       "HealthEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Health" } } },
       "Health": { "type": "object", "required": ["service", "status", "version"], "properties": { "service": { "type": "string" }, "status": { "type": "string" }, "version": { "type": "string" } } },
       "PageEnvelope": { "type": "object", "required": ["data", "links", "meta"], "properties": { "data": { "type": "array" }, "links": { "type": "object" }, "meta": { "$ref": "#/components/schemas/PageMeta" } } },

@@ -62,6 +62,93 @@ class RecipeImageStorageTest extends TestCase
             ->assertJsonPath('error.code', 'validation_failed');
     }
 
+    public function test_capture_metadata_is_saved_and_location_requires_explicit_opt_in(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        config(['filesystems.default' => 'local']);
+
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $camera = $this->createCamera();
+        Sanctum::actingAs($owner);
+
+        $metadataWithoutLocationConsent = [
+            'source' => 'fujifilm_jpeg',
+            'camera_make' => 'FUJIFILM',
+            'camera_model' => 'X-S20',
+            'lens_model' => 'XF 35mm F1.4 R',
+            'exposure' => ['iso' => 400, 'exposure_time_seconds' => 0.01, 'f_number' => 2.8],
+            'settings' => [[
+                'setting_key' => 'film_simulation',
+                'value' => 'Classic Chrome',
+                'source' => 'Fujifilm MakerNote.FilmMode',
+                'was_edited' => false,
+            ]],
+            'scene_notes' => 'Street portrait',
+            'lighting_notes' => 'Open shade',
+            'location' => ['latitude' => 37.33, 'longitude' => -122.03],
+            'location_shared' => false,
+        ];
+
+        $privateResponse = $this->post('/api/v1/recipes', [
+            'name' => 'Capture metadata without GPS',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('private-capture.jpg')],
+            'capture_metadata' => [$metadataWithoutLocationConsent],
+        ])->assertOk();
+
+        $privateImageID = $privateResponse->json('data.images.0.id');
+        $privateImage = RecipeImage::query()->findOrFail($privateImageID);
+        $this->assertSame('X-S20', $privateImage->capture_metadata['camera_model']);
+        $this->assertArrayNotHasKey('location', $privateImage->capture_metadata);
+        $privateResponse->assertJsonPath('data.images.0.capture_metadata.scene_notes', 'Street portrait')
+            ->assertJsonMissingPath('data.images.0.capture_metadata.location');
+
+        $emptyMetadataResponse = $this->post('/api/v1/recipes', [
+            'name' => 'Image without capture data',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('plain.jpg')],
+            'capture_metadata' => [null],
+        ])->assertOk();
+        $this->assertNull($emptyMetadataResponse->json('data.images.0.capture_metadata'));
+
+        $metadataWithLocationConsent = [...$metadataWithoutLocationConsent, 'location_shared' => true];
+        $publicResponse = $this->post('/api/v1/recipes', [
+            'name' => 'Capture metadata with GPS consent',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('shared-capture.jpg')],
+            'capture_metadata' => [$metadataWithLocationConsent],
+        ])->assertOk();
+        $publicRecipeID = $publicResponse->json('data.id');
+        $publicImageID = $publicResponse->json('data.images.0.id');
+        $publicResponse->assertJsonPath('data.images.0.capture_metadata.location.latitude', 37.33)
+            ->assertJsonPath('data.images.0.capture_metadata.location_shared', true);
+
+        $this->postJson('/api/v1/recipes/'.$publicRecipeID.'/publish')->assertOk();
+        Sanctum::actingAs($otherUser);
+        $this->get('/api/v1/recipes/'.$publicRecipeID)
+            ->assertOk()
+            ->assertJsonPath('data.images.0.capture_metadata.location.longitude', -122.03);
+
+        $copy = $this->postJson('/api/v1/recipes/'.$publicRecipeID.'/copy')->assertOk();
+        $this->assertSame(
+            'Street portrait',
+            RecipeImage::query()->where('recipe_id', $copy->json('data.id'))->firstOrFail()->capture_metadata['scene_notes'],
+        );
+        $this->assertDatabaseHas('recipe_images', ['id' => $publicImageID]);
+
+        Sanctum::actingAs($owner);
+        $invalidMetadata = [...$metadataWithLocationConsent, 'location' => ['latitude' => 91, 'longitude' => -122.03]];
+        $this->post('/api/v1/recipes', [
+            'name' => 'Invalid GPS metadata',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('invalid-gps.jpg')],
+            'capture_metadata' => [$invalidMetadata],
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+    }
+
     public function test_private_images_are_authorized_and_published_images_are_publicly_readable(): void
     {
         Storage::fake('local');

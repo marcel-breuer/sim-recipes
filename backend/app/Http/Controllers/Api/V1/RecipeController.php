@@ -152,7 +152,7 @@ class RecipeController extends Controller
                 'lens' => $data['lens'] ?? null,
             ]);
             $this->syncRelations($recipe, $data, $settings);
-            $imageStorage->store($recipe, $request->file('images', []));
+            $imageStorage->store($recipe, $request->file('images', []), $data['capture_metadata'] ?? []);
 
             return $recipe;
         });
@@ -190,7 +190,7 @@ class RecipeController extends Controller
             $recipe->fill($attributes);
             $recipe->save();
             $this->syncRelations($recipe, $data, $settings);
-            $imageStorage->store($recipe, $request->file('images', []));
+            $imageStorage->store($recipe, $request->file('images', []), $data['capture_metadata'] ?? []);
         });
 
         return new RecipeResource($this->recipeQuery()->findOrFail($recipe->getKey()));
