@@ -64,6 +64,12 @@ The current `ImageCaptureCameraService` safely supports:
 5. Explicit errors for unsupported devices, malformed responses, and
    transaction mismatches.
 
+The iOS transfer screen keeps recipe writes disabled until the X-S20 firmware,
+slot behavior, setting encodings, backup behavior, and read-back recovery are
+verified on real hardware. Non-selected slot contents are shown as unknown; the
+screen does not imply that an unread slot is empty. A capability preflight is
+not permission to write and does not replace a backup of the target slot.
+
 It does not automatically select C1-C4, write a slot selector, encode recipe
 values, or report a successful recipe transfer. This is intentional until the
 hardware plan below is completed.
@@ -81,6 +87,11 @@ identifiers, and each raw response. Then:
 6. Test one sacrificial slot/property, read it back, and record the result.
 7. Test invalid values, disconnects, partial writes, and rollback.
 8. Restore the original settings and verify restoration on the camera.
+
+If a target slot cannot be backed up or its contents cannot be read, keep the
+write disabled and tell the user what recovery is unavailable. Do not treat the
+camera's whole-settings backup workflow as a slot-level backup unless that
+behavior has been independently observed and verified.
 
 No write should be enabled from a successful PTP response alone. A transfer
 success requires confirmed application of the value and read-back evidence.

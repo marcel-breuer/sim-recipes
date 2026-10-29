@@ -1123,6 +1123,61 @@ final class SimRecipesTests: XCTestCase {
     }
 
     @MainActor
+    func testCameraTransferIsBlockedWhenHardwareEvidenceIsIncomplete() async throws {
+        let camera = CameraDescriptor(
+            id: "camera-1",
+            name: "FUJIFILM X-S20",
+            productKind: "Camera",
+            serialNumber: nil,
+            transportType: "USB",
+            usbVendorID: 1,
+            usbProductID: 2,
+            supportsPTP: true
+        )
+        let service = StubCameraService(discoveredCameras: [camera])
+        service.recipeWriteAvailability = .blocked(reason: "Hardware validation is incomplete.")
+        service.currentSnapshot = CameraSlotSnapshot(slot: .c2, properties: [:])
+        let viewModel = CameraTransferViewModel(recipe: makeRecipe(id: "blocked-transfer"), cameraService: service)
+
+        await viewModel.start()
+        await viewModel.connect(to: camera)
+
+        XCTAssertFalse(viewModel.canTransfer)
+        XCTAssertEqual(viewModel.recipeWriteBlockingReason, "Hardware validation is incomplete.")
+        XCTAssertEqual(viewModel.slots.first(where: { $0.slot == .c1 })?.detail, "Not selected · contents unknown")
+
+        viewModel.requestTransfer()
+        await viewModel.confirmTransfer()
+
+        XCTAssertFalse(viewModel.showingOverwriteConfirmation)
+        XCTAssertNil(service.transferredRecipeID)
+        XCTAssertEqual(viewModel.phase, .ready)
+        XCTAssertNil(viewModel.resultMessage)
+    }
+
+    @MainActor
+    func testImageCaptureAdapterRejectsUnvalidatedRecipeWrites() async {
+        let service = ImageCaptureCameraService()
+
+        do {
+            _ = try await service.writeRecipe(
+                to: .c1,
+                properties: [0xD192: Data([1])],
+                supportedPropertyCodes: [0xD192],
+                confirmation: CameraSlotOverwriteConfirmation(slot: .c1)
+            )
+            XCTFail("An unvalidated camera write must be rejected.")
+        } catch let error as CameraServiceError {
+            XCTAssertEqual(
+                error.localizedDescription,
+                CameraServiceError.recipeTransferEncodingUnavailable.localizedDescription
+            )
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    @MainActor
     func testCameraTransferNeverReportsSuccessWhenAdapterFails() async throws {
         let camera = CameraDescriptor(
             id: "camera-1",

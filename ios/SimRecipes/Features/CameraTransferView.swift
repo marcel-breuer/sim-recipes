@@ -42,7 +42,7 @@ struct CameraSlotStatus: Equatable, Identifiable, Sendable {
         if isCurrent {
             return "Currently selected · contents not read"
         }
-        return "Available on camera"
+        return "Not selected · contents unknown"
     }
 
     init(descriptor: CameraSlotDescriptor) {
@@ -93,7 +93,14 @@ final class CameraTransferViewModel: ObservableObject {
     }
 
     var canTransfer: Bool {
-        phase == .ready && selectedSlot != nil && (capabilityService == nil || preflight?.isTransferSafe == true)
+        phase == .ready
+            && selectedSlot != nil
+            && cameraService.recipeWriteAvailability == .enabled
+            && (capabilityService == nil || preflight?.isTransferSafe == true)
+    }
+
+    var recipeWriteBlockingReason: String? {
+        cameraService.recipeWriteAvailability.blockingReason
     }
 
     func start() async {
@@ -435,6 +442,15 @@ struct CameraTransferView: View {
     @ViewBuilder
     private var actionSection: some View {
         Section {
+            if let blockingReason = viewModel.recipeWriteBlockingReason {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Camera writes unavailable", systemImage: "lock.shield")
+                        .font(.subheadline.weight(.semibold))
+                    Text(blockingReason)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if let resultMessage = viewModel.resultMessage {
                 Label(resultMessage, systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
@@ -452,20 +468,22 @@ struct CameraTransferView: View {
                 }
             }
 
-            Button {
-                viewModel.requestTransfer()
-            } label: {
-                if viewModel.phase == .transferring {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Label("Transfer recipe", systemImage: "arrow.down.to.line.compact")
-                        .frame(maxWidth: .infinity)
+            if viewModel.recipeWriteBlockingReason == nil {
+                Button {
+                    viewModel.requestTransfer()
+                } label: {
+                    if viewModel.phase == .transferring {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Transfer recipe", systemImage: "arrow.down.to.line.compact")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canTransfer || viewModel.phase.isBusy)
+                .accessibilityLabel("Transfer recipe to selected camera slot")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!viewModel.canTransfer || viewModel.phase.isBusy)
-            .accessibilityLabel("Transfer recipe to selected camera slot")
         }
     }
 }

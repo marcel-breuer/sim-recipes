@@ -33,6 +33,16 @@ enum CameraSessionState: Equatable, Sendable {
     case connected(cameraID: String)
 }
 
+enum CameraRecipeWriteAvailability: Equatable, Sendable {
+    case enabled
+    case blocked(reason: String)
+
+    var blockingReason: String? {
+        guard case let .blocked(reason) = self else { return nil }
+        return reason
+    }
+}
+
 enum CameraSlot: UInt8, CaseIterable, Sendable {
     case c1 = 1
     case c2 = 2
@@ -178,6 +188,7 @@ enum CameraServiceError: LocalizedError {
 protocol CameraService: AnyObject {
     var discoveredCameras: [CameraDescriptor] { get }
     var sessionState: CameraSessionState { get }
+    var recipeWriteAvailability: CameraRecipeWriteAvailability { get }
 
     func requestControlAuthorization() async throws
     func startDiscovery()
