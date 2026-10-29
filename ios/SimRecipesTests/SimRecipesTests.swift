@@ -872,16 +872,14 @@ final class SimRecipesTests: XCTestCase {
             updatedAt: recipe.updatedAt,
             settings: [
                 RecipeSettingTransport(key: "film_simulation", value: "Classic Chrome"),
-                RecipeSettingTransport(key: "grain_effect", value: "WEAK"),
-                RecipeSettingTransport(key: "clarity", value: .number(0))
+                RecipeSettingTransport(key: "grain_effect", value: "WEAK")
             ]
         )
 
         let result = CameraCompatibilityEvaluator.evaluate(recipe: recipeWithSettings, camera: camera)
 
         XCTAssertEqual(result.evidenceLevel, .catalogOnly)
-        XCTAssertEqual(result.settingEvidence.map(\.status), [.catalogueMatch, .catalogueMatch, .unknown])
-        XCTAssertEqual(result.settingEvidence[2].statusTitle, "Unknown compatibility")
+        XCTAssertEqual(result.settingEvidence.map(\.status), [.catalogueMatch, .catalogueMatch])
     }
 
     func testCameraCompatibilityPreflightExplainsUnsupportedAndOutOfRangeValues() {
@@ -927,14 +925,17 @@ final class SimRecipesTests: XCTestCase {
             updatedAt: Date(),
             settings: [
                 RecipeSettingTransport(key: "film_simulation", value: "Velvia"),
-                RecipeSettingTransport(key: "iso", value: .number(64000))
+                RecipeSettingTransport(key: "iso", value: .number(64000)),
+                RecipeSettingTransport(key: "clarity", value: .number(0))
             ]
         )
 
         let result = CameraCompatibilityEvaluator.evaluate(recipe: recipe, camera: camera)
 
         XCTAssertFalse(result.isTransferSafe)
-        XCTAssertEqual(result.issues.map(\.kind), [.unsupportedValue, .outOfRange])
+        XCTAssertEqual(result.issues.map(\.kind), [.unsupportedValue, .outOfRange, .missingCapability])
+        XCTAssertEqual(result.evidenceLevel, .unknown)
+        XCTAssertEqual(result.settingEvidence.map(\.status), [.unsupported, .unsupported, .unknown])
     }
 
     func testCameraSessionStateIdentifiesConnectionLifecycle() {
