@@ -350,17 +350,17 @@ enum RecipeCaptureMetadataParser {
         guard let code = integer(rawValue) else { return nil }
 
         switch tag {
-        case "FilmMode": filmModeNames[code]
-        case "ColorChromeEffect", "ColorChromeFXBlue": colorChromeNames[code]
-        case "Sharpness": sharpnessNames[code]
-        case "Saturation": saturationNames[code]
-        case "WhiteBalance": whiteBalanceNames[code]
+        case "FilmMode": return filmModeNames[code]
+        case "ColorChromeEffect", "ColorChromeFXBlue": return colorChromeNames[code]
+        case "Sharpness": return sharpnessNames[code]
+        case "Saturation": return saturationNames[code]
+        case "WhiteBalance": return whiteBalanceNames[code]
         case "DynamicRangeSetting":
-            [0: "AUTO", 0x100: "100%", 0x201: "400%"][code]
+            return [0: "AUTO", 0x100: "100%", 0x201: "400%"][code]
         case "HighlightTone", "ShadowTone":
             guard (-64...64).contains(code), code.isMultiple(of: 16) else { return nil }
             return String(-code / 16)
-        default: nil
+        default: return nil
         }
     }
 

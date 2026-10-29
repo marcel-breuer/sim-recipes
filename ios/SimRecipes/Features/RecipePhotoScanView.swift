@@ -368,7 +368,7 @@ struct RecipeCaptureImportView: View {
                             result.isFujifilmJPEG ? "Fujifilm camera metadata found" : "Fujifilm camera not identified",
                             systemImage: result.isFujifilmJPEG ? "checkmark.seal" : "questionmark.circle"
                         )
-                        .foregroundStyle(result.isFujifilmJPEG ? .primary : .orange)
+                        .foregroundStyle(result.isFujifilmJPEG ? Color.primary : Color.orange)
                         if let model = result.metadata.cameraModel {
                             LabeledContent("Camera in JPEG", value: model)
                         }
@@ -658,7 +658,7 @@ private struct RecipeCaptureSettingReviewRow: View {
                         .font(.subheadline.weight(.semibold))
                     Text(statusTitle)
                         .font(.caption)
-                        .foregroundStyle(field.settingValue == nil ? .orange : .secondary)
+                        .foregroundStyle(field.settingValue == nil ? Color.orange : Color.secondary)
                 }
             }
             .disabled(field.settingValue == nil)
