@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\RecipeExampleContextOptions;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRecipeRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ class StoreRecipeRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['settings', 'categories', 'tags', 'capture_metadata'] as $field) {
+        foreach (['settings', 'categories', 'tags', 'capture_metadata', 'example_context'] as $field) {
             if (is_string($this->input($field))) {
                 $decoded = json_decode($this->input($field), true);
                 if (is_array($decoded)) {
@@ -27,17 +29,19 @@ class StoreRecipeRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->exists('capture_metadata')) {
-                return;
-            }
-
-            $metadata = $this->input('capture_metadata', []);
             $images = $this->file('images', []);
-            if (! is_array($metadata) || count($metadata) !== count($images)) {
-                $validator->errors()->add(
-                    'capture_metadata',
-                    'Capture metadata must contain one aligned item for each uploaded image.',
-                );
+            foreach (['capture_metadata', 'example_context'] as $field) {
+                if (! $this->exists($field)) {
+                    continue;
+                }
+
+                $metadata = $this->input($field, []);
+                if (! is_array($metadata) || count($metadata) !== count($images)) {
+                    $validator->errors()->add(
+                        $field,
+                        ucfirst(str_replace('_', ' ', $field)).' must contain one aligned item for each uploaded image.',
+                    );
+                }
             }
         });
     }
@@ -86,6 +90,14 @@ class StoreRecipeRequest extends FormRequest
             'capture_metadata.*.location.latitude' => ['required_with:capture_metadata.*.location', 'numeric', 'between:-90,90'],
             'capture_metadata.*.location.longitude' => ['required_with:capture_metadata.*.location', 'numeric', 'between:-180,180'],
             'capture_metadata.*.location_shared' => ['required_with:capture_metadata.*', 'boolean'],
+            'example_context' => ['sometimes', 'array', 'max:5'],
+            'example_context.*' => ['nullable', 'array:subjects,lighting,looks'],
+            'example_context.*.subjects' => ['sometimes', 'array', 'max:10'],
+            'example_context.*.subjects.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::SUBJECTS)],
+            'example_context.*.lighting' => ['sometimes', 'array', 'max:10'],
+            'example_context.*.lighting.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::LIGHTING)],
+            'example_context.*.looks' => ['sometimes', 'array', 'max:8'],
+            'example_context.*.looks.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::LOOKS)],
         ];
     }
 }

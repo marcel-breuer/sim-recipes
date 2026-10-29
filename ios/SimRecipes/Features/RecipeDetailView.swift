@@ -234,6 +234,34 @@ struct RecipeDetailView: View {
                     }
                 }
 
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Example context")
+                        .font(.headline)
+                    let labeledExamples = recipe.images.filter { $0.exampleContext?.hasLabels == true }
+                    if labeledExamples.isEmpty {
+                        Text("No example photos have structured context labels yet.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(labeledExamples) { image in
+                            HStack(spacing: 10) {
+                                if let imageURL = image.localURL ?? image.url {
+                                    AsyncImage(url: imageURL) { loadedImage in
+                                        loadedImage.resizable().scaledToFill()
+                                    } placeholder: {
+                                        Rectangle().fill(.quaternary)
+                                    }
+                                    .frame(width: 64, height: 64)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                Text(image.exampleContext?.displayLabels.joined(separator: " · ") ?? "")
+                                    .font(.subheadline)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                }
+
                 if let capabilityService {
                     RecipeCompatibilityEvidenceView(recipe: recipe, service: capabilityService)
                 }

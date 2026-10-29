@@ -21,6 +21,7 @@ class RecipeImage extends Model
         'height',
         'sort_order',
         'capture_metadata',
+        'example_context',
         'derivatives',
         'processing_status',
     ];
@@ -33,6 +34,7 @@ class RecipeImage extends Model
             'height' => 'integer',
             'sort_order' => 'integer',
             'capture_metadata' => 'array',
+            'example_context' => 'array',
             'derivatives' => 'array',
         ];
     }

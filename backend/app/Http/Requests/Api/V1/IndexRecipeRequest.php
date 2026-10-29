@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\RecipeExampleContextOptions;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class IndexRecipeRequest extends FormRequest
 {
@@ -26,6 +28,12 @@ class IndexRecipeRequest extends FormRequest
             'categories.*' => ['string', 'max:100'],
             'tags' => ['sometimes', 'array', 'max:20'],
             'tags.*' => ['string', 'max:100'],
+            'subjects' => ['sometimes', 'array', 'max:10'],
+            'subjects.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::SUBJECTS)],
+            'lighting' => ['sometimes', 'array', 'max:10'],
+            'lighting.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::LIGHTING)],
+            'looks' => ['sometimes', 'array', 'max:8'],
+            'looks.*' => ['string', 'distinct', Rule::in(RecipeExampleContextOptions::LOOKS)],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.config('api.pagination.max_per_page')],
         ];
     }

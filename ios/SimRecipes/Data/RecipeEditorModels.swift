@@ -82,19 +82,22 @@ struct RecipeDraftImage: Codable, Equatable, Identifiable, Sendable {
     let mimeType: String
     let data: Data
     var captureMetadata: RecipeCaptureMetadata?
+    var exampleContext: RecipeExampleContext?
 
     init(
         id: UUID = UUID(),
         filename: String,
         mimeType: String = "image/jpeg",
         data: Data,
-        captureMetadata: RecipeCaptureMetadata? = nil
+        captureMetadata: RecipeCaptureMetadata? = nil,
+        exampleContext: RecipeExampleContext? = nil
     ) {
         self.id = id
         self.filename = filename
         self.mimeType = mimeType
         self.data = data
         self.captureMetadata = captureMetadata
+        self.exampleContext = exampleContext
     }
 }
 

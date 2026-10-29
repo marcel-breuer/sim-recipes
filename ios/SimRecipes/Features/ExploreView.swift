@@ -10,6 +10,8 @@ struct ExploreView: View {
     @StateObject private var viewModel: ExploreViewModel
     @State private var deepLinkedRecipe: RecipeTransport?
     @State private var showingFilters = false
+    @State private var showingComparison = false
+    @State private var comparisonSelection: [RecipeTransport] = []
 
     init(
         authService: AuthService,
@@ -66,7 +68,9 @@ struct ExploreView: View {
                         ContentUnavailableView(
                             "No recipes found",
                             systemImage: "camera.aperture",
-                            description: Text("Try a different search or filter combination.")
+                            description: Text(viewModel.filter.exampleContext?.isEmpty == false
+                                ? "No recipe has an example photo with all selected context labels yet. Try fewer labels or broader filters."
+                                : "Try a different search or filter combination.")
                         )
                     } else {
                         recipeList
@@ -91,6 +95,14 @@ struct ExploreView: View {
                 ExploreFilterView(viewModel: viewModel)
                     .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showingComparison) {
+                NavigationStack {
+                    RecipeComparisonView(
+                        recipes: comparisonSelection,
+                        contextFilter: viewModel.filter.exampleContext ?? RecipeExampleContextFilter()
+                    )
+                }
+            }
             .task {
                 await viewModel.loadInitial()
                 try? await profileService.loadCollections()
@@ -111,10 +123,31 @@ struct ExploreView: View {
     private var recipeList: some View {
         List {
             ForEach(viewModel.recipes) { recipe in
-                NavigationLink {
-                    detail(for: recipe)
-                } label: {
-                    RecipeCard(recipe: recipe)
+                HStack(alignment: .top, spacing: 8) {
+                    NavigationLink {
+                        detail(for: recipe)
+                    } label: {
+                        RecipeCard(
+                            recipe: recipe,
+                            contextFilter: viewModel.filter.exampleContext ?? RecipeExampleContextFilter()
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        toggleComparison(recipe)
+                    } label: {
+                        Image(systemName: comparisonSelection.contains(where: { $0.id == recipe.id })
+                            ? "checkmark.circle.fill"
+                            : "circle")
+                            .font(.title2)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(comparisonSelection.contains(where: { $0.id == recipe.id })
+                        ? "Remove \(recipe.name) from comparison"
+                        : "Add \(recipe.name) to comparison")
+                    .disabled(comparisonSelection.count == 2 && !comparisonSelection.contains(where: { $0.id == recipe.id }))
                 }
                 .task {
                     await viewModel.loadNextPageIfNeeded(after: recipe)
@@ -132,6 +165,33 @@ struct ExploreView: View {
         .listStyle(.plain)
         .refreshable {
             await viewModel.refresh()
+        }
+        .safeAreaInset(edge: .bottom) {
+            if !comparisonSelection.isEmpty {
+                HStack {
+                    Text(comparisonSelection.count == 1
+                        ? "Choose one more recipe to compare"
+                        : "Two recipes selected")
+                        .font(.subheadline)
+                    Spacer()
+                    Button("Compare") {
+                        showingComparison = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(comparisonSelection.count != 2)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(.bar)
+            }
+        }
+    }
+
+    private func toggleComparison(_ recipe: RecipeTransport) {
+        if let index = comparisonSelection.firstIndex(where: { $0.id == recipe.id }) {
+            comparisonSelection.remove(at: index)
+        } else if comparisonSelection.count < 2 {
+            comparisonSelection.append(recipe)
         }
     }
 
@@ -242,6 +302,7 @@ struct ExploreView: View {
 
 private struct RecipeCard: View {
     let recipe: RecipeTransport
+    let contextFilter: RecipeExampleContextFilter
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -271,6 +332,28 @@ private struct RecipeCard: View {
                     .font(.caption)
                     .foregroundStyle(.tint)
                     .lineLimit(1)
+            }
+            if contextFilter.isEmpty {
+                if let exampleContext = recipe.images.first(where: { $0.exampleContext?.hasLabels == true })?.exampleContext {
+                    Text("Example: \(exampleContext.displayLabels.joined(separator: " · "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                } else {
+                    Text("Example context not labeled")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                let hasMatchingExample = recipe.images.contains {
+                    contextFilter.matches($0.exampleContext)
+                }
+                Label(
+                    hasMatchingExample ? "Example photo matches this context" : "No matching example photo",
+                    systemImage: hasMatchingExample ? "checkmark.circle" : "questionmark.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(hasMatchingExample ? Color.accentColor : Color.secondary)
             }
         }
         .padding(.vertical, 8)
@@ -349,6 +432,15 @@ private struct ExploreFilterView: View {
                     }
                 }
 
+                Section("Example context") {
+                    contextOptions("Subject", options: RecipeExampleContextOptions.subjects, selected: $viewModel.selectedSubjects)
+                    contextOptions("Lighting", options: RecipeExampleContextOptions.lighting, selected: $viewModel.selectedLighting)
+                    contextOptions("Look", options: RecipeExampleContextOptions.looks, selected: $viewModel.selectedLooks)
+                    Text("A recipe matches when one example image has the selected labels. Values within each group are alternatives.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Categories") {
                     ForEach(viewModel.categories) { category in
                         Toggle(category.name, isOn: Binding(
@@ -398,6 +490,27 @@ private struct ExploreFilterView: View {
                     renamePresetID = nil
                 }
                 Button("Cancel", role: .cancel) { renamePresetID = nil }
+            }
+        }
+    }
+
+    private func contextOptions(
+        _ title: String,
+        options: [RecipeContextTag],
+        selected: Binding<Set<String>>
+    ) -> some View {
+        DisclosureGroup(title) {
+            ForEach(options) { option in
+                Toggle(option.title, isOn: Binding(
+                    get: { selected.wrappedValue.contains(option.id) },
+                    set: { isSelected in
+                        if isSelected {
+                            selected.wrappedValue.insert(option.id)
+                        } else {
+                            selected.wrappedValue.remove(option.id)
+                        }
+                    }
+                ))
             }
         }
     }

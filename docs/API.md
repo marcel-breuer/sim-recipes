@@ -75,12 +75,29 @@ query parameters:
 - `compatibility_evidence=manufacturer_documented|camera_verified`, which
   requires `camera_model_id` and returns only recipes whose every setting has
   at least the requested evidence level;
+- repeated `subjects[]`, `lighting[]`, and `looks[]` values to find recipes
+  with an example photo labeled for the selected shooting context;
 - repeated `categories[]` and `tags[]` values, matched by ID or slug;
 - `per_page` up to the configured API maximum.
 
 Filters are combined with AND semantics between filter types. Multiple values
-within a category or tag filter match any selected value. Ordering has stable
-ID tie-breakers so adjacent pages remain deterministic during normal browsing.
+within a category, tag, or context facet match any selected value. Context
+facets are combined with AND semantics, and all selected facets must be present
+on the same example photo. Ordering has stable ID tie-breakers so adjacent
+pages remain deterministic during normal browsing.
+
+Recipe image uploads may include an `example_context` JSON array aligned by
+index with `images[]`. Each item is null or an object with `subjects`,
+`lighting`, and `looks` arrays. These labels are supplied by the recipe author;
+the application does not infer scene content or color character from the photo.
+Recognized subject values are `street`, `portrait`, `landscape`, `architecture`,
+`nature`, `wildlife`, `travel`, `automotive`, `night`, `low_light`, `indoor`,
+`food`, `everyday`, `documentary`, and `close_up`. Lighting values are
+`daylight`, `golden_hour`, `blue_hour`, `overcast`, `open_shade`, `backlit`,
+`artificial`, `mixed`, `low_light`, and `studio`. Look values are `warm`,
+`neutral`, `cool`, `monochrome`, `vibrant`, `muted`, `cinematic`, and `vintage`.
+The same labels are returned as `images[].example_context`, copied with a recipe,
+and available to search and filter saved recipes offline.
 
 ## Community engagement
 

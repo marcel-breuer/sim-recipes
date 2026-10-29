@@ -10,6 +10,9 @@ final class ExploreViewModel: ObservableObject {
     @Published var selectedFilmSimulation: String?
     @Published var selectedCategorySlugs: Set<String> = []
     @Published var tagText = ""
+    @Published var selectedSubjects: Set<String> = []
+    @Published var selectedLighting: Set<String> = []
+    @Published var selectedLooks: Set<String> = []
     @Published private(set) var recipes: [RecipeTransport] = []
     @Published private(set) var cameras: [SupportedCameraTransport] = []
     @Published private(set) var categories: [CategoryTransport] = []
@@ -44,13 +47,20 @@ final class ExploreViewModel: ObservableObject {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
+        let context = RecipeExampleContextFilter(
+            subjects: selectedSubjects.sorted(),
+            lighting: selectedLighting.sorted(),
+            looks: selectedLooks.sorted()
+        )
+
         return CommunityRecipeFilter(
             search: searchText,
             cameraModelID: selectedCameraID,
             compatibilityEvidence: selectedCameraID == nil ? nil : selectedCompatibilityEvidence.apiValue,
             filmSimulation: selectedFilmSimulation,
             categorySlugs: selectedCategorySlugs.sorted(),
-            tags: tags
+            tags: tags,
+            exampleContext: context.isEmpty ? nil : context
         )
     }
 
@@ -101,6 +111,9 @@ final class ExploreViewModel: ObservableObject {
         selectedFilmSimulation = savedFilter.filter.filmSimulation
         selectedCategorySlugs = Set(savedFilter.filter.categorySlugs)
         tagText = savedFilter.filter.tags.joined(separator: ", ")
+        selectedSubjects = Set(savedFilter.filter.exampleContext?.subjects ?? [])
+        selectedLighting = Set(savedFilter.filter.exampleContext?.lighting ?? [])
+        selectedLooks = Set(savedFilter.filter.exampleContext?.looks ?? [])
         await refresh()
     }
 

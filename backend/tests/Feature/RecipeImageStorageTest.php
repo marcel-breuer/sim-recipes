@@ -60,6 +60,7 @@ class RecipeImageStorageTest extends TestCase
             'images' => [UploadedFile::fake()->image('over-quota.jpg')],
         ])->assertUnprocessable()
             ->assertJsonPath('error.code', 'validation_failed');
+
     }
 
     public function test_capture_metadata_is_saved_and_location_requires_explicit_opt_in(): void
@@ -90,12 +91,18 @@ class RecipeImageStorageTest extends TestCase
             'location' => ['latitude' => 37.33, 'longitude' => -122.03],
             'location_shared' => false,
         ];
+        $exampleContext = [
+            'subjects' => ['street', 'portrait'],
+            'lighting' => ['open_shade'],
+            'looks' => ['muted', 'neutral'],
+        ];
 
         $privateResponse = $this->post('/api/v1/recipes', [
             'name' => 'Capture metadata without GPS',
             'camera_model_id' => $camera->id,
             'images' => [UploadedFile::fake()->image('private-capture.jpg')],
             'capture_metadata' => [$metadataWithoutLocationConsent],
+            'example_context' => [$exampleContext],
         ])->assertOk();
 
         $privateImageID = $privateResponse->json('data.images.0.id');
@@ -103,7 +110,12 @@ class RecipeImageStorageTest extends TestCase
         $this->assertSame('X-S20', $privateImage->capture_metadata['camera_model']);
         $this->assertArrayNotHasKey('location', $privateImage->capture_metadata);
         $privateResponse->assertJsonPath('data.images.0.capture_metadata.scene_notes', 'Street portrait')
+            ->assertJsonPath('data.images.0.example_context.subjects.0', 'street')
+            ->assertJsonPath('data.images.0.example_context.lighting.0', 'open_shade')
             ->assertJsonMissingPath('data.images.0.capture_metadata.location');
+        $this->assertSame($exampleContext['subjects'], $privateImage->example_context['subjects']);
+        $this->assertSame($exampleContext['lighting'], $privateImage->example_context['lighting']);
+        $this->assertSame($exampleContext['looks'], $privateImage->example_context['looks']);
 
         $emptyMetadataResponse = $this->post('/api/v1/recipes', [
             'name' => 'Image without capture data',
@@ -119,6 +131,7 @@ class RecipeImageStorageTest extends TestCase
             'camera_model_id' => $camera->id,
             'images' => [UploadedFile::fake()->image('shared-capture.jpg')],
             'capture_metadata' => [$metadataWithLocationConsent],
+            'example_context' => [$exampleContext],
         ])->assertOk();
         $publicRecipeID = $publicResponse->json('data.id');
         $publicImageID = $publicResponse->json('data.images.0.id');
@@ -136,6 +149,13 @@ class RecipeImageStorageTest extends TestCase
             'Street portrait',
             RecipeImage::query()->where('recipe_id', $copy->json('data.id'))->firstOrFail()->capture_metadata['scene_notes'],
         );
+        $copiedContext = RecipeImage::query()
+            ->where('recipe_id', $copy->json('data.id'))
+            ->firstOrFail()
+            ->example_context;
+        $this->assertSame($exampleContext['subjects'], $copiedContext['subjects']);
+        $this->assertSame($exampleContext['lighting'], $copiedContext['lighting']);
+        $this->assertSame($exampleContext['looks'], $copiedContext['looks']);
         $this->assertDatabaseHas('recipe_images', ['id' => $publicImageID]);
 
         Sanctum::actingAs($owner);
@@ -147,6 +167,15 @@ class RecipeImageStorageTest extends TestCase
             'capture_metadata' => [$invalidMetadata],
         ])->assertUnprocessable()
             ->assertJsonPath('error.code', 'validation_failed');
+
+        $invalidContextResponse = $this->post('/api/v1/recipes', [
+            'name' => 'Invalid example context',
+            'camera_model_id' => $camera->id,
+            'images' => [UploadedFile::fake()->image('invalid-context.jpg')],
+            'example_context' => [['subjects' => ['unverified_guess']]],
+        ])->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed');
+        $this->assertNotEmpty($invalidContextResponse->json('error.details'));
     }
 
     public function test_private_images_are_authorized_and_published_images_are_publicly_readable(): void
