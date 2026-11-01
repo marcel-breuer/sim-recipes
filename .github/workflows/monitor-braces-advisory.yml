@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check the GitHub Advisory Database
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const ghsaId = 'GHSA-vfj7-8cjw-p6xm';
