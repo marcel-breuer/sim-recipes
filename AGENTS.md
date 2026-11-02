@@ -11,6 +11,14 @@ These rules apply to all contributors and automated coding agents working in thi
 - Do not silently change product behavior defined in `PROJECT_SPEC.md`.
 - If implementation constraints conflict with the specification, document the constraint in the pull request and update the specification only when the product decision is explicit.
 
+## UI work
+
+- Use the repository skill at `.agents/skills/unslop` (`$unslop`) when creating a UI view, redesigning an existing surface, or performing a focused UI review.
+- Before changing a UI, audit the rendered surface and identify concrete issues. If it is already working well, report that and propose only evidence-based refinements; do not make changes just to apply a new style.
+- Keep the existing branding, design tokens, component libraries, and reusable components. Avoid a broad redesign unless the user explicitly asks for one.
+- For a UI change, check responsive layouts where applicable, accessibility and contrast, visual consistency, and relevant existing automated coverage. Include before-and-after evidence in the change description when available.
+- The skill is vendored at `.agents/skills/unslop`; no separate installation is required. Its source, revision, attribution, and license are recorded in `.agents/skills/unslop/SOURCE.md`.
+
 ## 2. Language
 
 Use English for:
