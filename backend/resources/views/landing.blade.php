@@ -39,6 +39,10 @@
             </div>
             <div class="hero-note"><span class="status-dot"></span> Designed for iPhone and Fujifilm X-S20</div>
         </div>
+        <figure class="hero-visual">
+            <img src="/images/example-street.jpg" alt="A quiet stone street at blue hour with warm window light" fetchpriority="high" width="1122" height="1402">
+            <figcaption><span>Street / Blue hour</span><span>SimRecipes example photograph</span></figcaption>
+        </figure>
     </section>
 
     <section class="principles section-wrap" id="discover">
