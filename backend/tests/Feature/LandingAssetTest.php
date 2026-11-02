@@ -11,6 +11,8 @@ class LandingAssetTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('/images/example-street.jpg', false)
+            ->assertSee('class="hero-visual"', false)
+            ->assertSee('fetchpriority="high"', false)
             ->assertSee('A quiet stone street at blue hour with warm window light', false);
 
         $this->assertFileIsReadable(public_path('images/example-street.jpg'));
