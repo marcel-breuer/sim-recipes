@@ -24,7 +24,7 @@
         <a href="#camera">Camera</a>
         <a href="#community">Community</a>
     </nav>
-            <a class="header-link" href="#download" data-analytics-event="feature_cta_click">Get the app <span aria-hidden="true">↗</span></a>
+            <a class="header-link" href="#download">Get the app <span aria-hidden="true">↗</span></a>
 </header>
 
 <main id="top">
@@ -34,7 +34,7 @@
             <h1>Recipes for the way <em>you</em> see.</h1>
             <p class="hero-text">Build a look. Keep it close. SimRecipes brings the character of Fujifilm recipes into one calm, personal library.</p>
             <div class="hero-actions">
-                <a class="button button-light" href="#discover" data-analytics-event="feature_cta_click">Explore recipes <span aria-hidden="true">↗</span></a>
+                <a class="button button-light" href="#discover">Explore recipes <span aria-hidden="true">↗</span></a>
                 <a class="button button-quiet" href="#camera">Made for X-S20 <span aria-hidden="true">↓</span></a>
             </div>
             <div class="hero-note"><span class="status-dot"></span> Designed for iPhone and Fujifilm X-S20</div>
@@ -97,7 +97,7 @@
             <h2>Less menu. More moment.</h2>
             <p>Every recipe has a place in the flow: a name you remember, settings you trust, and a library that stays close.</p>
             <div class="metric-line"><span>Built for the details that matter</span><span>01—04</span></div>
-            <a class="text-link" href="#community" data-analytics-event="feature_cta_click">See how the library works <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="#community">See how the library works <span aria-hidden="true">↗</span></a>
         </div>
     </section>
 
@@ -128,7 +128,7 @@
     <section class="final-cta section-wrap" id="download">
         <p class="eyebrow">Your next favourite look</p>
         <h2>See differently.<br><em>Save intentionally.</em></h2>
-        <a class="button button-light" href="#top" data-analytics-event="feature_cta_click">Back to the beginning <span aria-hidden="true">↑</span></a>
+        <a class="button button-light" href="#top">Back to the beginning <span aria-hidden="true">↑</span></a>
     </section>
 
     <section class="photo-credit section-wrap" aria-labelledby="photo-credit-title">
@@ -150,43 +150,7 @@
         <a href="https://marcel-breuer.dev/impressum" target="_blank" rel="noopener noreferrer">Imprint <span aria-hidden="true">↗</span></a>
         <a href="https://marcel-breuer.dev/datenschutz" target="_blank" rel="noopener noreferrer">Privacy <span aria-hidden="true">↗</span></a>
     </nav>
-    @if ($analytics['consent_enabled'])
-        <button class="cookie-settings-link" type="button" data-consent-settings>
-            {{ $language === 'de' ? 'Cookie-Einstellungen' : 'Cookie settings' }}
-        </button>
-    @endif
     <a href="#top">Back to top ↑</a>
 </footer>
-@if ($analytics['consent_enabled'])
-    @php($german = $language === 'de')
-    <div id="consent-root"
-         class="consent-root"
-         data-gtm-container-id="{{ $analytics['gtm_container_id'] }}"
-         data-ga4-measurement-id="{{ $analytics['ga4_measurement_id'] }}"
-         data-consent-version="1"
-         hidden>
-        <section id="consent-banner" class="consent-panel" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-description" hidden>
-            <div class="consent-copy">
-                <p class="eyebrow">{{ $german ? 'Deine Wahl' : 'Your choice' }}</p>
-                <h2 id="consent-title">{{ $german ? 'Datenschutz zuerst.' : 'Privacy comes first.' }}</h2>
-                <p id="consent-description">
-                    {{ $german ? 'Notwendige Funktionen sind immer aktiv. Mit deiner Zustimmung verwenden wir Google Analytics, um die öffentliche Produktseite zu verbessern. Vor deiner Wahl werden keine Google-Dienste geladen.' : 'Necessary functions are always active. With your consent, we use Google Analytics to improve this public product page. Google services are not loaded before you choose.' }}
-                </p>
-                <a href="https://marcel-breuer.dev/datenschutz" target="_blank" rel="noopener noreferrer">{{ $german ? 'Datenschutzhinweise' : 'Privacy information' }}</a>
-            </div>
-            <div class="consent-actions">
-                <button type="button" class="consent-button" data-consent-accept>{{ $german ? 'Alle akzeptieren' : 'Accept all' }}</button>
-                <button type="button" class="consent-button" data-consent-reject>{{ $german ? 'Ablehnen' : 'Reject optional' }}</button>
-                <button type="button" class="consent-button" data-consent-configure aria-expanded="false" aria-controls="consent-preferences">{{ $german ? 'Einstellungen' : 'Configure' }}</button>
-            </div>
-            <div id="consent-preferences" class="consent-preferences" hidden>
-                <label><input type="checkbox" checked disabled> {{ $german ? 'Notwendig (immer aktiv)' : 'Necessary (always active)' }}</label>
-                <label><input type="checkbox" data-consent-statistics> {{ $german ? 'Statistik (Google Analytics)' : 'Statistics (Google Analytics)' }}</label>
-                <button type="button" class="consent-button" data-consent-save>{{ $german ? 'Auswahl speichern' : 'Save choice' }}</button>
-            </div>
-        </section>
-    </div>
-    <script type="module" src="/js/cookie-consent.js"></script>
-@endif
 </body>
 </html>
