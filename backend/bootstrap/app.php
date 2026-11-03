@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\LandingPageContentSecurityPolicy;
 use App\Http\Middleware\PreventIndexing;
 use App\Http\Middleware\RecordApiRequestMetrics;
 use App\Http\Middleware\RejectSuspendedUsers;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.api' => Authenticate::class,
             'active.account' => RejectSuspendedUsers::class,
             'admin' => EnsureAdmin::class,
+            'landing.csp' => LandingPageContentSecurityPolicy::class,
             'noindex' => PreventIndexing::class,
         ]);
     })

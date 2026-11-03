@@ -52,6 +52,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Run landing-page consent tests
+        run: docker run --rm --volume "$PWD:/workspace" --workdir /workspace node:22-alpine node --experimental-default-type=module --test tests/JavaScript/cookie-consent.test.mjs
+
+      - name: Build and verify landing-page assets
+        run: |
+          docker run --rm --volume "$PWD:/workspace" --workdir /workspace node:22-alpine sh -c 'npm ci && npm run build:landing'
+          git diff --exit-code -- public/css/landing.css
+
       - name: Detect Laravel project
         id: project
         shell: bash
