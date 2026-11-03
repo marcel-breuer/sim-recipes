@@ -52,6 +52,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Install landing-page Node dependencies
+        run: docker run --rm --volume "$PWD:/workspace" --workdir /workspace node:22-alpine npm ci
+
+      - name: Run landing-page consent tests
+        run: docker run --rm --volume "$PWD:/workspace" --workdir /workspace node:22-alpine node --test tests/JavaScript/cookie-consent.test.mjs
+
+      - name: Build and verify landing-page assets
+        run: |
+          docker run --rm --volume "$PWD:/workspace" --workdir /workspace node:22-alpine sh -c 'npm ci && npm run build:landing'
+          git diff --exit-code -- public/css/landing.css
+
       - name: Detect Laravel project
         id: project
         shell: bash
@@ -79,6 +90,20 @@ jobs:
       - name: Install Composer dependencies
         if: steps.project.outputs.present == 'true'
         run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Run consent flow in Chromium
+        if: steps.project.outputs.present == 'true'
+        env:
+          CONSENT_TEST_GTM_CONTAINER_ID: GTM-ABC123
+          CONSENT_TEST_GA4_MEASUREMENT_ID: G-ABC123
+        run: |
+          APP_ENV=testing CACHE_STORE=array SESSION_DRIVER=array GTM_CONTAINER_ID="$CONSENT_TEST_GTM_CONTAINER_ID" GA4_MEASUREMENT_ID="$CONSENT_TEST_GA4_MEASUREMENT_ID" php artisan serve --host=0.0.0.0 --port=8000 > "$RUNNER_TEMP/landing-server.log" 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8000/ >/dev/null
+          docker run --rm --network host --volume "$PWD:/workspace" --workdir /workspace --env PLAYWRIGHT_BASE_URL=http://127.0.0.1:8000 mcr.microsoft.com/playwright:v1.64.1-noble node --test tests/Browser/cookie-consent.browser.test.mjs
 
       - name: Check formatting with Laravel Pint
         if: steps.project.outputs.present == 'true'
