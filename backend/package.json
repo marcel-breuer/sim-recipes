@@ -1,11 +1,13 @@
 {
   "name": "sim-recipes-landing-assets",
   "private": true,
+  "type": "module",
   "scripts": {
     "build:landing": "tailwindcss -i resources/css/landing.css -o public/css/landing.css --minify && sed -i 's@/\\*! tailwindcss[^*]*\\*/@@' public/css/landing.css"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.13",
+    "playwright": "1.64.1",
     "tailwindcss": "^4.1.13"
   }
 }

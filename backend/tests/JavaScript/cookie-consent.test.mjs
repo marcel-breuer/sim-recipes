@@ -110,6 +110,7 @@ test('shows consent and sends no Google request before a choice or after rejecti
     page.reject.click();
 
     assert.equal(page.banner.hidden, true);
+    assert.equal(page.root.hidden, true);
     assert.deepEqual(page.scripts, []);
     assert.equal(page.windowRef.dataLayer.filter((event) => event?.event === 'feature_cta_click').length, 0);
     assert.equal(JSON.parse(page.storage.get('simrecipes.analytics-consent')).statistics, false);
@@ -140,6 +141,7 @@ test('restores a previous opt-in on reload without loading a duplicate script', 
     startConsentManager(page.documentRef, page.windowRef);
 
     assert.equal(page.banner.hidden, true);
+    assert.equal(page.root.hidden, true);
     assert.equal(page.scripts.length, 1);
     assert.equal(page.windowRef.dataLayer.filter((event) => event?.event === 'page_view').length, 1);
 });

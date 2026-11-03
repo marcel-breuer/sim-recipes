@@ -35,8 +35,6 @@ export function startConsentManager(documentRef = document, windowRef = window) 
         showBanner(false);
     }
 
-    root.hidden = false;
-
     root.querySelector('[data-consent-accept]').addEventListener('click', () => saveConsent(true));
     root.querySelector('[data-consent-reject]').addEventListener('click', () => saveConsent(false));
     root.querySelector('[data-consent-configure]').addEventListener('click', (event) => {
@@ -96,6 +94,7 @@ export function startConsentManager(documentRef = document, windowRef = window) 
 
         banner.hidden = true;
         preferences.hidden = true;
+        root.hidden = true;
     }
 
     function enableStatistics() {
