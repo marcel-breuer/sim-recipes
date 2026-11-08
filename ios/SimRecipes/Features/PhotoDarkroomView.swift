@@ -106,6 +106,7 @@ struct PhotoDarkroomView: View {
                     selectedCount: syncTargetCount,
                     onApply: applySync
                 )
+                .glassPresentationSurface()
             }
             .alert("JPEG Darkroom", isPresented: Binding(
                 get: { errorMessage != nil },
@@ -116,6 +117,7 @@ struct PhotoDarkroomView: View {
                 Text(errorMessage ?? "Please try again.")
             }
         }
+        .glassNavigationChrome()
     }
 
     private var importActions: some View {
@@ -136,118 +138,139 @@ struct PhotoDarkroomView: View {
 
     private var editor: some View {
         Form {
-            Section("Photos · \(projects.count)") {
-                ForEach(projects) { project in
-                    HStack(spacing: 12) {
-                        Button {
-                            currentProjectID = project.id
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: currentProjectID == project.id ? "photo.fill" : "photo")
-                                    .foregroundStyle(currentProjectID == project.id ? Color.accentColor : Color.secondary)
-                                VStack(alignment: .leading) {
-                                    Text(project.displayName).lineLimit(1)
-                                    Text(project.edits.recipeName ?? "Original")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+            photosSection
+
+            if let project = currentProject {
+                beforeAndAfterSection
+                recipeSection(for: project)
+                lightAndColorSection(for: project)
+                cropSection(for: project)
+                exportPrivacySection
+            }
+        }
+        .glassFormSurface()
+    }
+
+    private var photosSection: some View {
+        Section("Photos · \(projects.count)") {
+            ForEach(projects) { project in
+                HStack(spacing: 12) {
+                    Button {
+                        currentProjectID = project.id
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: currentProjectID == project.id ? "photo.fill" : "photo")
+                                .foregroundStyle(currentProjectID == project.id ? Color.accentColor : Color.secondary)
+                            VStack(alignment: .leading) {
+                                Text(project.displayName).lineLimit(1)
+                                Text(project.edits.recipeName ?? "Original")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .buttonStyle(.plain)
-                        Spacer()
-                        Toggle("Include in sync", isOn: syncBinding(for: project.id))
-                            .labelsHidden()
-                            .accessibilityLabel("Include \(project.displayName) in batch edit sync")
                     }
-                    .contentShape(Rectangle())
-                    .onChange(of: project) { _, changedProject in persist(changedProject) }
-                    .contextMenu {
-                        Button("Remove from Darkroom", systemImage: "trash", role: .destructive) {
-                            Task { await remove(project) }
-                        }
+                    .buttonStyle(.plain)
+                    Spacer()
+                    Toggle("Include in sync", isOn: syncBinding(for: project.id))
+                        .labelsHidden()
+                        .accessibilityLabel("Include \(project.displayName) in batch edit sync")
+                }
+                .contentShape(Rectangle())
+                .onChange(of: project) { _, changedProject in persist(changedProject) }
+                .contextMenu {
+                    Button("Remove from Darkroom", systemImage: "trash", role: .destructive) {
+                        Task { await remove(project) }
                     }
                 }
             }
+        }
+    }
 
-            if let project = currentProject {
-                Section("Before and after") {
-                    if isLoading {
-                        ProgressView("Preparing photo…").frame(maxWidth: .infinity, minHeight: 180)
-                    } else if let preview,
-                              let before = UIImage(data: preview.originalJPEG),
-                              let after = UIImage(data: preview.editedJPEG) {
-                        RecipeBeforeAfterView(originalImage: before, previewImage: after)
-                            .frame(height: 300)
-                    } else {
-                        Label("The JPEG preview is unavailable.", systemImage: "photo.badge.exclamationmark")
-                    }
-                    Text("Recipe rendering is an approximation and does not reproduce Fujifilm color science exactly.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Previews are optimized for responsiveness; exports retain up to 5,000 pixels on the long edge.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    if let preview, !preview.unsupportedRecipeSettings.isEmpty {
-                        Text("Camera does not support: \(preview.unsupportedRecipeSettings.joined(separator: ", ")).")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
-                    if let preview, !preview.notSimulatedRecipeSettings.isEmpty {
-                        Text("This preview does not approximate: \(preview.notSimulatedRecipeSettings.joined(separator: ", ")).")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+    private var beforeAndAfterSection: some View {
+        Section("Before and after") {
+            if isLoading {
+                ProgressView("Preparing photo…").frame(maxWidth: .infinity, minHeight: 180)
+            } else if let preview,
+                      let before = UIImage(data: preview.originalJPEG),
+                      let after = UIImage(data: preview.editedJPEG) {
+                RecipeBeforeAfterView(originalImage: before, previewImage: after)
+                    .frame(height: 300)
+            } else {
+                Label("The JPEG preview is unavailable.", systemImage: "photo.badge.exclamationmark")
+            }
+            Text("Recipe rendering is an approximation and does not reproduce Fujifilm color science exactly.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Previews are optimized for responsiveness; exports retain up to 5,000 pixels on the long edge.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            if let preview, !preview.unsupportedRecipeSettings.isEmpty {
+                Text("Camera does not support: \(preview.unsupportedRecipeSettings.joined(separator: ", ")).")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+            if let preview, !preview.notSimulatedRecipeSettings.isEmpty {
+                Text("This preview does not approximate: \(preview.notSimulatedRecipeSettings.joined(separator: ", ")).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func recipeSection(for project: PhotoDarkroomProject) -> some View {
+        Section("Recipe") {
+            Picker("Apply recipe", selection: recipeBinding(for: project)) {
+                Text("No recipe").tag("")
+                ForEach(recipes) { recipe in
+                    Text(recipe.name).tag(recipe.id)
                 }
+            }
+            Text(project.edits.recipeName.map { "Approximate look: \($0)" } ?? "Choose a locally saved recipe.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
 
-                Section("Recipe") {
-                    Picker("Apply recipe", selection: recipeBinding(for: project)) {
-                        Text("No recipe").tag("")
-                        ForEach(recipes) { recipe in
-                            Text(recipe.name).tag(recipe.id)
-                        }
-                    }
-                    Text(project.edits.recipeName.map { "Approximate look: \($0)" } ?? "Choose a locally saved recipe.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+    private func lightAndColorSection(for project: PhotoDarkroomProject) -> some View {
+        Section("Light and color") {
+            adjustmentSlider("Exposure", value: editBinding(for: project, keyPath: \.exposure), range: -2...2)
+            adjustmentSlider("Contrast", value: editBinding(for: project, keyPath: \.contrast), range: -0.5...0.5)
+            adjustmentSlider("Saturation", value: editBinding(for: project, keyPath: \.saturation), range: -1...1)
+            adjustmentSlider("Temperature", value: editBinding(for: project, keyPath: \.temperature), range: -50...50)
+            adjustmentSlider("Tint", value: editBinding(for: project, keyPath: \.tint), range: -50...50)
+        }
+    }
 
-                Section("Light and color") {
-                    adjustmentSlider("Exposure", value: editBinding(for: project, keyPath: \.exposure), range: -2...2)
-                    adjustmentSlider("Contrast", value: editBinding(for: project, keyPath: \.contrast), range: -0.5...0.5)
-                    adjustmentSlider("Saturation", value: editBinding(for: project, keyPath: \.saturation), range: -1...1)
-                    adjustmentSlider("Temperature", value: editBinding(for: project, keyPath: \.temperature), range: -50...50)
-                    adjustmentSlider("Tint", value: editBinding(for: project, keyPath: \.tint), range: -50...50)
-                }
+    private func cropSection(for project: PhotoDarkroomProject) -> some View {
+        Section("Crop and straighten") {
+            adjustmentSlider("Crop", value: editBinding(for: project, keyPath: \.cropScale), range: 1...2.5)
+            adjustmentSlider("Crop horizontal", value: editBinding(for: project, keyPath: \.cropOffsetX), range: -0.5...0.5)
+            adjustmentSlider("Crop vertical", value: editBinding(for: project, keyPath: \.cropOffsetY), range: -0.5...0.5)
+            adjustmentSlider("Straighten", value: editBinding(for: project, keyPath: \.straightenDegrees), range: -15...15)
+            Picker("Frame", selection: frameBinding(for: project)) {
+                Text("None").tag(PhotoDarkroomFrame.none)
+                Text("White").tag(PhotoDarkroomFrame.white)
+                Text("Black").tag(PhotoDarkroomFrame.black)
+            }
+        }
+    }
 
-                Section("Crop and straighten") {
-                    adjustmentSlider("Crop", value: editBinding(for: project, keyPath: \.cropScale), range: 1...2.5)
-                    adjustmentSlider("Crop horizontal", value: editBinding(for: project, keyPath: \.cropOffsetX), range: -0.5...0.5)
-                    adjustmentSlider("Crop vertical", value: editBinding(for: project, keyPath: \.cropOffsetY), range: -0.5...0.5)
-                    adjustmentSlider("Straighten", value: editBinding(for: project, keyPath: \.straightenDegrees), range: -15...15)
-                    Picker("Frame", selection: frameBinding(for: project)) {
-                        Text("None").tag(PhotoDarkroomFrame.none)
-                        Text("White").tag(PhotoDarkroomFrame.white)
-                        Text("Black").tag(PhotoDarkroomFrame.black)
-                    }
-                }
-
-                Section("Export privacy") {
-                    Toggle("Keep original metadata, including GPS", isOn: $preserveMetadata)
-                    Text(preserveMetadata
-                         ? "The exported copy preserves the source JPEG metadata and location data."
-                         : "The exported copy removes EXIF, GPS, and other source metadata.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if isExporting {
-                        ProgressView("Rendering JPEG…")
-                        Button("Cancel export", role: .cancel) { exportTask?.cancel() }
-                    } else {
-                        Button {
-                            beginExport()
-                        } label: {
-                            Label("Export a separate JPEG copy", systemImage: "square.and.arrow.up")
-                        }
-                    }
+    private var exportPrivacySection: some View {
+        Section("Export privacy") {
+            Toggle("Keep original metadata, including GPS", isOn: $preserveMetadata)
+            Text(preserveMetadata
+                 ? "The exported copy preserves the source JPEG metadata and location data."
+                 : "The exported copy removes EXIF, GPS, and other source metadata.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if isExporting {
+                ProgressView("Rendering JPEG…")
+                Button("Cancel export", role: .cancel) { exportTask?.cancel() }
+            } else {
+                Button {
+                    beginExport()
+                } label: {
+                    Label("Export a separate JPEG copy", systemImage: "square.and.arrow.up")
                 }
             }
         }
@@ -497,6 +520,7 @@ private struct PhotoDarkroomSyncSheet: View {
                     Toggle("Crop and straighten", isOn: $syncCrop)
                 }
             }
+            .glassFormSurface()
             .navigationTitle("Sync Edits")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }

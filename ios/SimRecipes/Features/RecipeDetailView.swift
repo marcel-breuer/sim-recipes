@@ -146,6 +146,8 @@ struct RecipeDetailView: View {
                         Text(description)
                     }
                 }
+                .padding(16)
+                .glassCard()
 
                 HStack(spacing: 20) {
                     Label("\(recipe.viewsCount) views", systemImage: "eye")
@@ -154,6 +156,8 @@ struct RecipeDetailView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .padding(12)
+                .glassCard(cornerRadius: 14)
 
                 if likeAction != nil || unlikeAction != nil {
                     Button {
@@ -180,6 +184,8 @@ struct RecipeDetailView: View {
                         value: "Targeted for \(recipe.cameraModelName ?? recipe.cameraModelID)"
                     )
                 }
+                .padding(16)
+                .glassCard()
 
                 if !recipe.categories.isEmpty {
                     LabeledContent("Categories", value: recipe.categories.joined(separator: ", "))
@@ -404,6 +410,8 @@ struct RecipeDetailView: View {
             NavigationStack {
                 RecipeShareCardEditorView(recipe: recipe)
             }
+            .glassNavigationChrome()
+            .glassPresentationSurface()
         }
         .task {
             guard let viewAction else { return }

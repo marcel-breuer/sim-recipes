@@ -30,6 +30,7 @@ struct ProfileView: View {
                 await loadProfile()
             }
         }
+        .glassNavigationChrome()
     }
 
     private var signInView: some View {
@@ -205,6 +206,7 @@ struct ProfileView: View {
                 }
             }
         }
+        .glassFormSurface()
     }
 
     private func loadProfile() async {

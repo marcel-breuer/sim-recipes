@@ -108,6 +108,7 @@ struct RootView: View {
             selectedTab = .explore
             deepLinkRecipeID = url.pathComponents[recipesIndex + 1]
         }
+        .glassTabBarChrome()
     }
 }
 
@@ -176,6 +177,7 @@ private struct OnboardingView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .glassFormSurface()
             .navigationTitle("Welcome to SimRecipes")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -186,6 +188,7 @@ private struct OnboardingView: View {
                 }
             }
         }
+        .glassNavigationChrome()
     }
 
     private func toggle(_ interest: OnboardingInterest) {
@@ -217,6 +220,7 @@ private struct CreateRecipeView: View {
             }
             .navigationTitle("Create")
         }
+        .glassNavigationChrome()
     }
 
     @ViewBuilder

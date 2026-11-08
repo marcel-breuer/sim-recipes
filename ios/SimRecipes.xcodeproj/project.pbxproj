@@ -52,6 +52,7 @@
 		A00000000000000000000047 /* PhotoDarkroom.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000047 /* PhotoDarkroom.swift */; };
 		A00000000000000000000048 /* PhotoDarkroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000048 /* PhotoDarkroomView.swift */; };
 		A00000000000000000000049 /* CameraKitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000049 /* CameraKitView.swift */; };
+		A00000000000000000000050 /* GlassDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000050 /* GlassDesign.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +115,7 @@
 		B00000000000000000000047 /* PhotoDarkroom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDarkroom.swift; sourceTree = "<group>"; };
 		B00000000000000000000048 /* PhotoDarkroomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/PhotoDarkroomView.swift; sourceTree = "<group>"; };
 		B00000000000000000000049 /* CameraKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CameraKitView.swift; sourceTree = "<group>"; };
+		B00000000000000000000050 /* GlassDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassDesign.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +154,7 @@
 				G00000000000000000000008 /* Profile */,
 				B00000000000000000000001 /* SimRecipesApp.swift */,
 				B00000000000000000000002 /* RootView.swift */,
+				B00000000000000000000050 /* GlassDesign.swift */,
 				B00000000000000000000021 /* AppConfiguration.swift */,
 				B00000000000000000000022 /* SimRecipes.entitlements */,
 				B00000000000000000000003 /* ExploreView.swift */,
@@ -385,6 +388,7 @@
 				A00000000000000000000047 /* PhotoDarkroom.swift in Sources */,
 				A00000000000000000000048 /* PhotoDarkroomView.swift in Sources */,
 				A00000000000000000000049 /* CameraKitView.swift in Sources */,
+				A00000000000000000000050 /* GlassDesign.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

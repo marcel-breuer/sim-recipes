@@ -84,6 +84,7 @@ struct RecipePhotoScanView: View {
                     }
                 }
             }
+            .glassFormSurface()
             .navigationTitle("Scan Recipe")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -112,6 +113,7 @@ struct RecipePhotoScanView: View {
                 Text(errorMessage ?? "Please try again.")
             }
         }
+        .glassNavigationChrome()
     }
 
     private var selectedSettings: [RecipeSettingTransport] {
@@ -460,6 +462,7 @@ struct RecipeCaptureImportView: View {
                     }
                 }
             }
+            .glassFormSurface()
             .navigationTitle("Import Capture Data")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -490,6 +493,7 @@ struct RecipeCaptureImportView: View {
                 Text(errorMessage ?? "Please try another JPEG.")
             }
         }
+        .glassNavigationChrome()
     }
 
     private func loadInitialData() async {

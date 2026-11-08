@@ -94,6 +94,7 @@ struct ExploreView: View {
             .sheet(isPresented: $showingFilters) {
                 ExploreFilterView(viewModel: viewModel)
                     .presentationDetents([.medium, .large])
+                    .glassPresentationSurface()
             }
             .sheet(isPresented: $showingComparison) {
                 NavigationStack {
@@ -102,6 +103,8 @@ struct ExploreView: View {
                         contextFilter: viewModel.filter.exampleContext ?? RecipeExampleContextFilter()
                     )
                 }
+                .glassNavigationChrome()
+                .glassPresentationSurface()
             }
             .task {
                 await viewModel.loadInitial()
@@ -116,8 +119,11 @@ struct ExploreView: View {
                 NavigationStack {
                     detail(for: recipe)
                 }
+                .glassNavigationChrome()
+                .glassPresentationSurface()
             }
         }
+        .glassNavigationChrome()
     }
 
     private var recipeList: some View {
@@ -163,6 +169,7 @@ struct ExploreView: View {
             }
         }
         .listStyle(.plain)
+        .glassListSurface()
         .refreshable {
             await viewModel.refresh()
         }
@@ -357,6 +364,8 @@ private struct RecipeCard: View {
             }
         }
         .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .glassCard(cornerRadius: 18)
     }
 }
 
@@ -461,6 +470,7 @@ private struct ExploreFilterView: View {
                         .textInputAutocapitalization(.never)
                 }
             }
+            .glassFormSurface()
             .navigationTitle("Filters")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -492,6 +502,8 @@ private struct ExploreFilterView: View {
                 Button("Cancel", role: .cancel) { renamePresetID = nil }
             }
         }
+        .glassNavigationChrome()
+        .glassPresentationSurface()
     }
 
     private func contextOptions(
