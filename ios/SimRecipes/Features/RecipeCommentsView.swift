@@ -124,6 +124,8 @@ struct RecipeCommentsView: View {
                 }
             }
         }
+        .padding(16)
+        .glassCard()
         .task {
             await viewModel.load()
         }

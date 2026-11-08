@@ -240,6 +240,7 @@ struct CameraKitCollectionPickerView: View {
                 }
             }
         }
+        .glassListSurface()
         .navigationTitle("Choose a camera kit")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -356,6 +357,7 @@ struct CameraKitInstallView: View {
                 Section("Status") { Label(errorMessage, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
             }
         }
+        .glassListSurface()
         .navigationTitle("Install camera kit")
         .task { await model.load() }
         .confirmationDialog(

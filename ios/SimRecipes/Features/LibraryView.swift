@@ -182,6 +182,7 @@ struct LibraryView: View {
                             .tint(.accentColor)
                         }
                     }
+                    .glassListSurface()
                 }
             }
             .navigationTitle("Library")
@@ -190,6 +191,8 @@ struct LibraryView: View {
                 NavigationStack {
                     RecipeShareCardEditorView(recipe: recipe)
                 }
+                .glassNavigationChrome()
+                .glassPresentationSurface()
             }
             .sheet(isPresented: $showingLocalFilters) {
                 LocalRecipeFilterView(
@@ -217,6 +220,7 @@ struct LibraryView: View {
                         selectedLocalLooks = Set(context.looks)
                     }
                 )
+                .glassPresentationSurface()
             }
             .sheet(isPresented: $showingCameraKit) {
                 NavigationStack {
@@ -227,6 +231,8 @@ struct LibraryView: View {
                         capabilityService: CameraCapabilityService(apiClient: apiClient)
                     )
                 }
+                .glassNavigationChrome()
+                .glassPresentationSurface()
             }
             .fullScreenCover(isPresented: $showingDarkroom) {
                 PhotoDarkroomView(
@@ -300,6 +306,7 @@ struct LibraryView: View {
                 Text(message ?? "")
             }
         }
+        .glassNavigationChrome()
     }
 
     @ViewBuilder
@@ -541,6 +548,7 @@ private struct LocalRecipeFilterView: View {
                 }
             }
             .navigationTitle("Saved recipe filters")
+            .glassFormSurface()
             .onChange(of: cameraID) {
                 if cameraID == nil { evidence = .any }
             }
@@ -572,6 +580,8 @@ private struct LocalRecipeFilterView: View {
                 }
             }
         }
+        .glassNavigationChrome()
+        .glassPresentationSurface()
     }
 
     private func contextOptions(

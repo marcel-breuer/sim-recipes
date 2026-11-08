@@ -71,6 +71,8 @@ struct SimilarRecipesView: View {
                 }
             }
         }
+        .padding(16)
+        .glassCard()
         .task {
             await viewModel.load()
         }
@@ -157,6 +159,8 @@ struct RecipeComparisonView: View {
                         .background(differs ? Color.accentColor.opacity(0.08) : Color.clear)
                     }
                 }
+                .padding(16)
+                .glassCard()
             }
             .padding()
         }
@@ -233,7 +237,7 @@ struct RecipeComparisonView: View {
             }
         }
         .padding(10)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        .glassCard(cornerRadius: 14)
     }
 
     private func value(for key: String, in recipe: RecipeTransport) -> String {

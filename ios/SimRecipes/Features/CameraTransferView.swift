@@ -305,6 +305,7 @@ struct CameraTransferView: View {
             slotSection
             actionSection
         }
+        .glassListSurface()
     }
 
     @ViewBuilder

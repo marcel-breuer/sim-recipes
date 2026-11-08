@@ -61,6 +61,7 @@ struct RecipeEditorView: View {
                     await viewModel.applyScannedSettings(settings, cameraID: cameraID)
                 }
             )
+            .glassPresentationSurface()
         }
         .sheet(isPresented: $showCaptureImport) {
             RecipeCaptureImportView(
@@ -77,6 +78,7 @@ struct RecipeEditorView: View {
                     )
                 }
             )
+            .glassPresentationSurface()
         }
         .sheet(item: $contextEditorTarget) { target in
             NavigationStack {
@@ -87,6 +89,8 @@ struct RecipeEditorView: View {
                     }
                 )
             }
+            .glassNavigationChrome()
+            .glassPresentationSurface()
         }
         .alert("Recipe Editor", isPresented: errorIsPresented) {
             Button("OK", role: .cancel) {}
@@ -330,6 +334,7 @@ struct RecipeEditorView: View {
                 .disabled(viewModel.isSaving || viewModel.isLoading)
             }
         }
+        .glassFormSurface()
     }
 
     private var errorIsPresented: Binding<Bool> {
@@ -565,6 +570,7 @@ private struct RecipeExampleContextEditorView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .glassFormSurface()
         .navigationTitle("Example context")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

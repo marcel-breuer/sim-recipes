@@ -333,6 +333,7 @@ struct RecipeCardPNGShareItem: Transferable {
                     .accessibilityIdentifier("recipe-card-privacy-note")
             }
             .padding()
+            .glassCard()
         }
         .navigationTitle("Recipe card")
         .navigationBarTitleDisplayMode(.inline)
