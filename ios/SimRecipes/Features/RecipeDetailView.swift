@@ -157,7 +157,7 @@ struct RecipeDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(12)
-                .glassCard(cornerRadius: 14)
+                .glassCard(cornerRadius: Glass.insetRadius, level: .inset)
 
                 if likeAction != nil || unlikeAction != nil {
                     Button {

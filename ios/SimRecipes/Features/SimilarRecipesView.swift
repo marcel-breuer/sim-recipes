@@ -237,7 +237,7 @@ struct RecipeComparisonView: View {
             }
         }
         .padding(10)
-        .glassCard(cornerRadius: 14)
+        .glassCard(cornerRadius: Glass.insetRadius, level: .inset)
     }
 
     private func value(for key: String, in recipe: RecipeTransport) -> String {
