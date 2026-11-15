@@ -181,3 +181,25 @@ An issue is done only when:
 - no secrets or debug artifacts are committed;
 - the pull request references the issue;
 - the implementation matches `PROJECT_SPEC.md` or documents an explicitly approved specification change.
+
+## 12. CI/CD pipeline
+
+Stand: 2026-11-15.
+
+Behaltene Workflows (Tests, Releases, Tags):
+- `.github/workflows/backend.yml` ("Backend tests"): Laravel-Unit- und Feature-Tests mit PHPUnit gegen PostgreSQL 17; baut zusätzlich die Landing-Page-Assets und prüft, dass `public/css/landing.css` nicht abweicht.
+- `.github/workflows/ios.yml` ("iOS quality"): Xcode-Build und Unit-Tests (`SimRecipesTests`) auf einem iPhone-Simulator.
+- `.github/workflows/docker.yml` ("Docker quality"): Compose-Konfiguration, Image-Build und Smoke-Test des Stacks (Health-Endpunkt, Schreibrechte, Seeder). Bleibt, weil der Smoke-Test ein integrationsnaher End-to-End-Check ist.
+
+Entfernte Workflows:
+- `.github/workflows/dependabot-auto-merge.yml`: Auto-Merge von Dependabot-PRs. Reine Dependency-Automatisierung, kein Test- oder Release-Bestandteil.
+- `.github/workflows/monitor-braces-advisory.yml`: Wöchentlicher Scheduled-Job zur Prüfung eines Security-Advisories. Reiner Advisory-Check.
+
+Entfernte Steps im Backend-Workflow:
+- Composer-Validierung (`composer validate --strict`): Lint-artige Konfigurationsprüfung.
+- Laravel Pint (`pint --test`): Formatierungsprüfung.
+- PHPStan (`phpstan analyse`): statische Analyse.
+
+Nicht verändert: `.github/dependabot.yml` (Version-Update-Konfiguration, kein Workflow).
+
+Regel: Vor jedem PR alle Pipeline-Schritte lokal ausführen, die vom geänderten Bereich betroffen sind (Backend: Composer-Install, Landing-Asset-Build, PHPUnit; iOS: xcodebuild test; Docker: Compose-Config und Build bei Infrastrukturänderungen).
