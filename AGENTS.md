@@ -181,3 +181,25 @@ An issue is done only when:
 - no secrets or debug artifacts are committed;
 - the pull request references the issue;
 - the implementation matches `PROJECT_SPEC.md` or documents an explicitly approved specification change.
+
+## 12. CI/CD pipeline
+
+Status as of 2026-11-15.
+
+Retained workflows (tests, releases, tags):
+- `.github/workflows/backend.yml` ("Backend tests"): Laravel unit and feature tests with PHPUnit against PostgreSQL 17. It also builds the landing-page assets and fails if the committed `public/css/landing.css` differs from the build output.
+- `.github/workflows/ios.yml` ("iOS quality"): Xcode build and unit tests (`SimRecipesTests`) on an iPhone simulator.
+- `.github/workflows/docker.yml` ("Docker quality"): Compose configuration check, image build, and a smoke test of the stack (health endpoint, storage write permission, seeder). Kept because the smoke test is an integration-level end-to-end check.
+
+Removed workflows:
+- `.github/workflows/dependabot-auto-merge.yml`: auto-merges Dependabot pull requests. Dependency automation only; not a test or release step.
+- `.github/workflows/monitor-braces-advisory.yml`: scheduled job that polls a security advisory. Advisory check only.
+
+Removed steps from the backend workflow:
+- Composer validation (`composer validate --strict`): lint-style configuration check.
+- Laravel Pint (`pint --test`): formatting check.
+- PHPStan (`phpstan analyse`): static analysis.
+
+Unchanged: `.github/dependabot.yml` (version-update configuration, not a workflow).
+
+Rule: before every pull request, run all pipeline steps that cover the changed area locally (backend: Composer install, landing-asset build, PHPUnit; iOS: `xcodebuild test`; Docker: Compose config and build when infrastructure changes).
