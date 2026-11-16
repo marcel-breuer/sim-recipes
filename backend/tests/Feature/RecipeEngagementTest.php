@@ -23,7 +23,7 @@ class RecipeEngagementTest extends TestCase
             'camera_model_id' => $recipe->camera_model_id,
             'name' => 'Private recipe',
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes/'.$recipe->id.'/like')
             ->assertOk()

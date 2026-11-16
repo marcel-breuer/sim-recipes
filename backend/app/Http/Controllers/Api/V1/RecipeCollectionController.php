@@ -28,6 +28,13 @@ class RecipeCollectionController extends Controller
         return RecipeCollectionResource::collection($collections);
     }
 
+    public function show(RecipeCollection $collection): RecipeCollectionResource
+    {
+        Gate::authorize('manage', $collection);
+
+        return new RecipeCollectionResource($collection->load(['recipes' => fn ($query) => $query->with('cameraModel')]));
+    }
+
     public function store(StoreRecipeCollectionRequest $request): RecipeCollectionResource
     {
         $collection = RecipeCollection::query()->create([

@@ -31,7 +31,7 @@ class RecipeCollectionTest extends TestCase
             'status' => Recipe::STATUS_PUBLISHED,
             'published_at' => now(),
         ]);
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
 
         $response = $this->postJson('/api/v1/collections', [
             'name' => 'Street set',
@@ -64,13 +64,13 @@ class RecipeCollectionTest extends TestCase
             ->assertJsonPath('data.0.id', $second->id)
             ->assertJsonPath('data.1.id', $collectionID);
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->patchJson("/api/v1/collections/{$collectionID}", ['name' => 'No access'])
             ->assertForbidden();
         $this->deleteJson("/api/v1/collections/{$collectionID}")
             ->assertForbidden();
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->deleteJson("/api/v1/collections/{$collectionID}")
             ->assertOk()
             ->assertJsonPath('data.deleted', true);
@@ -138,7 +138,7 @@ class RecipeCollectionTest extends TestCase
             'name' => 'Other set',
         ]);
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->getJson('/api/v1/collections')
             ->assertOk()
             ->assertJsonPath('data.0.name', 'Owner set')

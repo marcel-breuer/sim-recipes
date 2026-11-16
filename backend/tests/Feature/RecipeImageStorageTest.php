@@ -26,7 +26,7 @@ class RecipeImageStorageTest extends TestCase
 
         $user = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $response = $this->post('/api/v1/recipes', [
             'name' => 'Five Images',
@@ -72,7 +72,7 @@ class RecipeImageStorageTest extends TestCase
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
 
         $metadataWithoutLocationConsent = [
             'source' => 'fujifilm_jpeg',
@@ -139,7 +139,7 @@ class RecipeImageStorageTest extends TestCase
             ->assertJsonPath('data.images.0.capture_metadata.location_shared', true);
 
         $this->postJson('/api/v1/recipes/'.$publicRecipeID.'/publish')->assertOk();
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->get('/api/v1/recipes/'.$publicRecipeID)
             ->assertOk()
             ->assertJsonPath('data.images.0.capture_metadata.location.longitude', -122.03);
@@ -158,7 +158,7 @@ class RecipeImageStorageTest extends TestCase
         $this->assertSame($exampleContext['looks'], $copiedContext['looks']);
         $this->assertDatabaseHas('recipe_images', ['id' => $publicImageID]);
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $invalidMetadata = [...$metadataWithLocationConsent, 'location' => ['latitude' => 91, 'longitude' => -122.03]];
         $this->post('/api/v1/recipes', [
             'name' => 'Invalid GPS metadata',
@@ -187,7 +187,7 @@ class RecipeImageStorageTest extends TestCase
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
 
         $response = $this->post('/api/v1/recipes', [
             'name' => 'Private Image',
@@ -203,15 +203,15 @@ class RecipeImageStorageTest extends TestCase
         $this->get($imageURL.'?variant=thumbnail')->assertOk();
         $this->get($imageURL.'?variant=detail')->assertOk();
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->get($imageURL)->assertForbidden();
         $this->get($imageURL.'?variant=thumbnail')->assertForbidden();
         $this->get($imageURL.'?variant=detail')->assertForbidden();
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->postJson('/api/v1/recipes/'.$response->json('data.id').'/publish')->assertOk();
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->get($imageURL)->assertOk();
     }
 
@@ -224,7 +224,7 @@ class RecipeImageStorageTest extends TestCase
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
 
         $response = $this->post('/api/v1/recipes', [
             'name' => 'Variant Access',
@@ -237,7 +237,7 @@ class RecipeImageStorageTest extends TestCase
         (new GenerateRecipeImageDerivatives($imageID))->handle();
         $this->postJson('/api/v1/recipes/'.$response->json('data.id').'/publish')->assertOk();
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->get($imageURL)->assertOk();
         $this->get($imageURL.'?variant=thumbnail')->assertOk();
         $this->get($imageURL.'?variant=detail')->assertOk();
@@ -314,7 +314,7 @@ class RecipeImageStorageTest extends TestCase
 
         $user = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
         $response = $this->post('/api/v1/recipes', [
             'name' => 'Deletable Image',
             'camera_model_id' => $camera->id,
@@ -337,7 +337,7 @@ class RecipeImageStorageTest extends TestCase
 
         $user = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
         $privateResponse = $this->post('/api/v1/recipes', [
             'name' => 'Private Image Delete',
             'camera_model_id' => $camera->id,

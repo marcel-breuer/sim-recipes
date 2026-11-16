@@ -20,7 +20,7 @@ class RecipeCommentsTest extends TestCase
         $commenter = User::factory()->create(['name' => 'Comment Author']);
         $recipe = $this->createPublishedRecipe($author);
 
-        Sanctum::actingAs($commenter);
+        Sanctum::actingAs($commenter, ['*']);
         $created = $this->postJson('/api/v1/recipes/'.$recipe->id.'/comments', [
             'body' => 'This is a useful X-S20 starting point.',
         ])->assertCreated()
@@ -28,7 +28,7 @@ class RecipeCommentsTest extends TestCase
             ->assertJsonPath('data.author.name', 'Comment Author')
             ->assertJsonPath('data.can_delete', true);
 
-        Sanctum::actingAs($author);
+        Sanctum::actingAs($author, ['*']);
         $this->getJson('/api/v1/recipes/'.$recipe->id.'/comments')
             ->assertOk()
             ->assertJsonPath('data.0.id', $created->json('data.id'))
@@ -39,7 +39,7 @@ class RecipeCommentsTest extends TestCase
     {
         $user = User::factory()->create();
         $recipe = $this->createPublishedRecipe(User::factory()->create());
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes/'.$recipe->id.'/comments', [
             'body' => 'Porn comment',
@@ -59,10 +59,10 @@ class RecipeCommentsTest extends TestCase
             'body' => 'Keep this comment focused.',
         ]);
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->deleteJson('/api/v1/comments/'.$comment->id)->assertForbidden();
 
-        Sanctum::actingAs($author);
+        Sanctum::actingAs($author, ['*']);
         $this->deleteJson('/api/v1/comments/'.$comment->id)
             ->assertOk()
             ->assertJsonPath('data.deleted', true);
@@ -83,12 +83,12 @@ class RecipeCommentsTest extends TestCase
             'body' => 'Reported comment',
         ]);
 
-        Sanctum::actingAs($reporter);
+        Sanctum::actingAs($reporter, ['*']);
         $report = $this->postJson('/api/v1/comments/'.$comment->id.'/reports', [
             'reason' => 'harassment',
         ])->assertCreated();
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
         $this->patchJson('/api/v1/admin/reports/'.$report->json('data.id'), [
             'status' => 'resolved',
             'resolution' => 'hide_content',

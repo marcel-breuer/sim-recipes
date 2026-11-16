@@ -23,7 +23,7 @@ class RecipeLifecycleTest extends TestCase
         $otherUser = User::factory()->create();
         $camera = $this->createCamera();
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $response = $this->postJson('/api/v1/recipes', [
             'name' => 'Private Chrome',
             'camera_model_id' => $camera->id,
@@ -32,10 +32,10 @@ class RecipeLifecycleTest extends TestCase
 
         $recipeID = $response->json('data.id');
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->getJson('/api/v1/recipes/'.$recipeID)->assertNotFound();
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->patchJson('/api/v1/recipes/'.$recipeID, [
             'name' => 'Updated Chrome',
             'description' => null,
@@ -63,7 +63,7 @@ class RecipeLifecycleTest extends TestCase
             'transport_identifier' => 'film_simulation',
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
         $this->postJson('/api/v1/recipes', [
             'name' => 'Unsupported Recipe',
             'camera_model_id' => $camera->id,
@@ -84,7 +84,7 @@ class RecipeLifecycleTest extends TestCase
         $xS20 = CameraModel::query()->where('slug', 'fujifilm-x-s20')->firstOrFail();
         $xT5 = CameraModel::query()->where('slug', 'fujifilm-x-t5')->firstOrFail();
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
         $recipe = $this->postJson('/api/v1/recipes', [
             'name' => 'Migratable Recipe',
             'camera_model_id' => $xS20->id,
@@ -127,7 +127,7 @@ class RecipeLifecycleTest extends TestCase
         $otherUser = User::factory()->create();
         $camera = $this->createCamera();
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $draft = $this->postJson('/api/v1/recipes', [
             'name' => 'Missing Image',
             'camera_model_id' => $camera->id,
@@ -146,12 +146,12 @@ class RecipeLifecycleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', Recipe::STATUS_PUBLISHED);
 
-        Sanctum::actingAs($otherUser);
+        Sanctum::actingAs($otherUser, ['*']);
         $this->getJson('/api/v1/recipes/'.$recipeID)
             ->assertOk()
             ->assertJsonPath('data.name', 'Published Chrome');
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->patchJson('/api/v1/recipes/'.$recipeID, ['name' => 'Changed After Publish'])
             ->assertForbidden();
         $this->deleteJson('/api/v1/recipes/'.$recipeID)->assertForbidden();

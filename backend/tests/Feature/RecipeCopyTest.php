@@ -74,7 +74,7 @@ class RecipeCopyTest extends TestCase
             'processing_status' => 'ready',
         ]);
 
-        Sanctum::actingAs($copier);
+        Sanctum::actingAs($copier, ['*']);
         $response = $this->postJson('/api/v1/recipes/'.$source->id.'/copy')
             ->assertOk()
             ->assertJsonPath('data.status', Recipe::STATUS_PRIVATE)
@@ -115,7 +115,7 @@ class RecipeCopyTest extends TestCase
         ]);
 
         $this->postJson('/api/v1/recipes/'.$private->id.'/copy')->assertUnauthorized();
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($owner, ['*']);
         $this->postJson('/api/v1/recipes/'.$private->id.'/copy')->assertNotFound();
     }
 }

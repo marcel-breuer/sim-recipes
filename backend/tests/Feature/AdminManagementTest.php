@@ -17,7 +17,7 @@ class AdminManagementTest extends TestCase
     {
         $admin = $this->createAdmin();
         $user = User::factory()->create(['name' => 'Recipe Owner']);
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
 
         $this->getJson('/api/v1/admin/users?search=Recipe&per_page=1')
             ->assertOk()
@@ -29,7 +29,7 @@ class AdminManagementTest extends TestCase
     {
         $admin = $this->createAdmin();
         $user = User::factory()->create();
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
 
         $this->patchJson('/api/v1/admin/users/'.$user->id.'/suspension', [
             'is_suspended' => true,
@@ -63,7 +63,7 @@ class AdminManagementTest extends TestCase
             'sort_order' => 0,
             'processing_status' => 'ready',
         ]);
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
 
         $this->getJson('/api/v1/admin/recipes/'.$recipe->id)
             ->assertOk()
@@ -75,7 +75,7 @@ class AdminManagementTest extends TestCase
     public function test_admin_cannot_suspend_their_own_account(): void
     {
         $admin = $this->createAdmin();
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
 
         $this->patchJson('/api/v1/admin/users/'.$admin->id.'/suspension', [
             'is_suspended' => true,
