@@ -15,7 +15,7 @@ class CrawlProtectionTest extends TestCase
     {
         $admin = User::factory()->create();
         $admin->forceFill(['is_admin' => true])->save();
-        Sanctum::actingAs($admin->fresh());
+        Sanctum::actingAs($admin->fresh(), ['*']);
 
         $this->getJson('/api/v1/admin/users')
             ->assertOk()

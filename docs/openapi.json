@@ -3,182 +3,5321 @@
   "info": {
     "title": "SimRecipes API",
     "version": "v1",
-    "description": "The versioned public application contract for SimRecipes."
+    "description": "The versioned public application contract for SimRecipes. Authentication: Authorization: Bearer <token>. Errors use {\"error\": {\"code\", \"message\", \"details\"}}. Collections are returned as {\"data\": [...], \"links\", \"meta\"}. See docs/API.md and docs/MCP.md."
   },
   "servers": [
-    { "url": "/api/v1" }
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "System"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Cameras"
+    },
+    {
+      "name": "Recipes"
+    },
+    {
+      "name": "Library"
+    },
+    {
+      "name": "Collections"
+    },
+    {
+      "name": "Profiles"
+    },
+    {
+      "name": "Community"
+    },
+    {
+      "name": "Safety"
+    },
+    {
+      "name": "Tokens"
+    },
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "MCP"
+    }
   ],
   "paths": {
-    "/health": {
+    "/admin/recipes/{recipe}": {
       "get": {
-        "operationId": "getHealth",
+        "operationId": "adminGetRecipe",
+        "summary": "Get a recipe with moderation fields",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
         "responses": {
-          "200": { "$ref": "#/components/responses/HealthResponse" }
+          "200": {
+            "$ref": "#/components/responses/AdminRecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/admin/reports": {
+      "get": {
+        "operationId": "adminListReports",
+        "summary": "List reports",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ReportStatus"
+          },
+          {
+            "$ref": "#/components/parameters/ReportReason"
+          },
+          {
+            "$ref": "#/components/parameters/ReportType"
+          },
+          {
+            "$ref": "#/components/parameters/ReportFrom"
+          },
+          {
+            "$ref": "#/components/parameters/ReportTo"
+          },
+          {
+            "$ref": "#/components/parameters/AdminPerPage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ReportPage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/admin/reports/{report}": {
+      "patch": {
+        "operationId": "adminUpdateReport",
+        "summary": "Resolve a report",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ReportPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "adminListUsers",
+        "summary": "Search users",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Administrators only; unrestricted first-party token required.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminSearch"
+          },
+          {
+            "$ref": "#/components/parameters/AdminUserStatus"
+          },
+          {
+            "$ref": "#/components/parameters/AdminPerPage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AdminUserPage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}": {
+      "get": {
+        "operationId": "adminGetUser",
+        "summary": "Get a user",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AdminUserResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/suspension": {
+      "patch": {
+        "operationId": "adminUpdateUserSuspension",
+        "summary": "Suspend or restore a user",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSuspension"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AdminUserResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/auth/apple": {
       "post": {
         "operationId": "signInWithApple",
-        "requestBody": { "$ref": "#/components/requestBodies/AppleLogin" },
+        "summary": "Sign in with Apple",
+        "tags": [
+          "Auth"
+        ],
+        "description": "Exchanges a verified Apple identity token for an unrestricted first-party bearer token (ability `*`). Rate limited per IP.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleLogin"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "$ref": "#/components/responses/AuthSessionResponse" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "200": {
+            "$ref": "#/components/responses/AuthSessionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Revoke the current token",
+        "tags": [
+          "Auth"
+        ],
+        "description": "Works with any valid token, including read-only personal access tokens.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "any",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/LoggedOutResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/cameras": {
       "get": {
         "operationId": "listCameras",
+        "summary": "List supported camera models",
+        "tags": [
+          "Cameras"
+        ],
         "responses": {
-          "200": { "$ref": "#/components/responses/CameraCollection" }
+          "200": {
+            "$ref": "#/components/responses/CameraCollection"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/cameras/{camera}": {
       "get": {
         "operationId": "getCamera",
-        "parameters": [{ "$ref": "#/components/parameters/Camera" }],
+        "summary": "Get a camera model with capabilities",
+        "tags": [
+          "Cameras"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CameraPath"
+          }
+        ],
         "responses": {
-          "200": { "$ref": "#/components/responses/CameraResponse" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/CameraResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/cameras/{camera}/capabilities": {
       "get": {
         "operationId": "listCameraCapabilities",
-        "parameters": [{ "$ref": "#/components/parameters/Camera" }],
+        "summary": "List a camera model's capabilities",
+        "tags": [
+          "Cameras"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CameraPath"
+          }
+        ],
         "responses": {
-          "200": { "$ref": "#/components/responses/CameraCapabilityCollection" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/CameraCapabilityCollection"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/categories": {
       "get": {
         "operationId": "listCategories",
+        "summary": "List recipe categories",
+        "tags": [
+          "Cameras"
+        ],
         "responses": {
-          "200": { "$ref": "#/components/responses/CategoryCollection" }
+          "200": {
+            "$ref": "#/components/responses/CategoryCollection"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/collections": {
+      "get": {
+        "operationId": "listCollections",
+        "summary": "List my collections",
+        "tags": [
+          "Collections"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "read",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCollection",
+        "summary": "Create a collection",
+        "tags": [
+          "Collections"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollection"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CollectionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
+      }
+    },
+    "/collections/reorder": {
+      "patch": {
+        "operationId": "reorderCollections",
+        "summary": "Reorder my collections",
+        "tags": [
+          "Collections"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderCollections"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/collections/{collection}": {
+      "get": {
+        "operationId": "getCollection",
+        "summary": "Get one of my collections",
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "read",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCollection",
+        "summary": "Update a collection",
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionPath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollection"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteCollection",
+        "summary": "Delete a collection",
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeletedResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/collections/{collection}/recipes/{recipe}": {
+      "put": {
+        "operationId": "addRecipeToCollection",
+        "summary": "Add a recipe to a collection",
+        "tags": [
+          "Collections"
+        ],
+        "description": "Idempotent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionPath"
+          },
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeRecipeFromCollection",
+        "summary": "Remove a recipe from a collection",
+        "tags": [
+          "Collections"
+        ],
+        "description": "Idempotent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CollectionPath"
+          },
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CollectionResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/comments/{comment}": {
+      "delete": {
+        "operationId": "deleteComment",
+        "summary": "Delete own comment",
+        "tags": [
+          "Community"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CommentPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeletedResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/comments/{comment}/reports": {
+      "post": {
+        "operationId": "reportComment",
+        "summary": "Report a comment",
+        "tags": [
+          "Safety"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CommentPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Liveness probe",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/HealthResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "summary": "Readiness probe (database and Redis)",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ReadinessResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ReadinessResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "operationId": "mcpRpc",
+        "summary": "MCP server (Streamable HTTP, JSON-RPC 2.0)",
+        "tags": [
+          "MCP"
+        ],
+        "description": "Model Context Protocol endpoint. Accepts a read or write scoped personal access token; tools are filtered by scope. Own rate limit bucket. GET and DELETE return 405. See docs/MCP.md.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "read,write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/McpResult"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "400": {
+            "description": "Invalid JSON-RPC request or unknown tool.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "jsonrpc",
+                  "method"
+                ],
+                "properties": {
+                  "jsonrpc": {
+                    "const": "2.0"
+                  },
+                  "id": {},
+                  "method": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/profile": {
+      "get": {
+        "operationId": "getMyProfile",
+        "summary": "Get my profile",
+        "tags": [
+          "Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "read",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProfileResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateMyProfile",
+        "summary": "Create or update my profile",
+        "tags": [
+          "Profiles"
+        ],
+        "description": "Returns 201 when the profile is created by this call, 200 when updated.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProfileResponse"
+          },
+          "201": {
+            "$ref": "#/components/responses/ProfileResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "updateMyProfileMultipart",
+        "summary": "Create or update my profile (POST alias)",
+        "tags": [
+          "Profiles"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProfileResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/me/recipes": {
+      "get": {
+        "operationId": "listMyRecipes",
+        "summary": "List my recipe library",
+        "tags": [
+          "Library"
+        ],
+        "description": "Private drafts, published recipes and copies, newest first. Cursor pagination.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LibraryStatus"
+          },
+          {
+            "$ref": "#/components/parameters/LibrarySearch"
+          },
+          {
+            "$ref": "#/components/parameters/LibraryCamera"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "read",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeCursorPage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/me/tokens": {
+      "get": {
+        "operationId": "listAccessTokens",
+        "summary": "List my personal access tokens",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "Requires an unrestricted first-party token; personal access tokens cannot manage tokens.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccessTokenCursorPage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAccessToken",
+        "summary": "Create a personal access token",
+        "tags": [
+          "Tokens"
+        ],
+        "description": "The secret is returned once. Requires an unrestricted first-party token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccessToken"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CreatedAccessTokenResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/me/tokens/{token}": {
+      "delete": {
+        "operationId": "revokeAccessToken",
+        "summary": "Revoke a personal access token",
+        "tags": [
+          "Tokens"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TokenPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "full",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RevokedResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/profiles/{username}": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Get a public profile",
+        "tags": [
+          "Profiles"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProfileResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/profiles/{username}/block": {
+      "post": {
+        "operationId": "blockProfile",
+        "summary": "Block a profile",
+        "tags": [
+          "Safety"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BlockResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unblockProfile",
+        "summary": "Unblock a profile",
+        "tags": [
+          "Safety"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BlockResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/profiles/{username}/follow": {
+      "post": {
+        "operationId": "followProfile",
+        "summary": "Follow a profile",
+        "tags": [
+          "Profiles"
+        ],
+        "description": "Idempotent. Unavailable when either user blocked the other.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FollowResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unfollowProfile",
+        "summary": "Unfollow a profile",
+        "tags": [
+          "Profiles"
+        ],
+        "description": "Idempotent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FollowResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/profiles/{username}/reports": {
+      "post": {
+        "operationId": "reportProfile",
+        "summary": "Report a profile",
+        "tags": [
+          "Safety"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsernamePath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipe-images/{recipeImage}": {
+      "get": {
+        "operationId": "getRecipeImage",
+        "summary": "Download a recipe image",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Authorized against the owning recipe. Private images are only served to their owner with a read-scoped token.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipeimagePath"
+          },
+          {
+            "$ref": "#/components/parameters/ImageVariant"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeImageBinary"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteRecipeImage",
+        "summary": "Delete an image of a private recipe",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Images of published recipes are immutable (403).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipeimagePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeletedResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipe-images/{recipeImage}/reports": {
+      "post": {
+        "operationId": "reportRecipeImage",
+        "summary": "Report a recipe image",
+        "tags": [
+          "Safety"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipeimagePath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/recipes": {
       "get": {
         "operationId": "listRecipes",
+        "summary": "Search the community feed",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Public; returns only published recipes. Page-number pagination (existing contract). Order is deterministic.",
         "parameters": [
-          { "$ref": "#/components/parameters/Feed" },
-          { "$ref": "#/components/parameters/Search" },
-          { "$ref": "#/components/parameters/CompatibilityEvidence" },
-          { "$ref": "#/components/parameters/Subjects" },
-          { "$ref": "#/components/parameters/Lighting" },
-          { "$ref": "#/components/parameters/Looks" },
-          { "$ref": "#/components/parameters/PerPage" },
-          { "$ref": "#/components/parameters/Page" }
+          {
+            "$ref": "#/components/parameters/Feed"
+          },
+          {
+            "$ref": "#/components/parameters/Search"
+          },
+          {
+            "$ref": "#/components/parameters/CameraModelId"
+          },
+          {
+            "$ref": "#/components/parameters/FilmSimulation"
+          },
+          {
+            "$ref": "#/components/parameters/CompatibilityEvidence"
+          },
+          {
+            "$ref": "#/components/parameters/Categories"
+          },
+          {
+            "$ref": "#/components/parameters/Tags"
+          },
+          {
+            "$ref": "#/components/parameters/Subjects"
+          },
+          {
+            "$ref": "#/components/parameters/Lighting"
+          },
+          {
+            "$ref": "#/components/parameters/Looks"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          }
         ],
         "responses": {
-          "200": { "$ref": "#/components/responses/RecipePage" }
+          "200": {
+            "$ref": "#/components/responses/RecipePage"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       },
       "post": {
         "operationId": "createRecipe",
-        "security": [{ "bearerAuth": [] }],
-        "requestBody": { "$ref": "#/components/requestBodies/CreateRecipe" },
+        "summary": "Create a private recipe",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecipe"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecipe"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
         "responses": {
-          "201": { "$ref": "#/components/responses/RecipeResponse" },
-          "401": { "$ref": "#/components/responses/Unauthenticated" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
-        }
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
       }
     },
     "/recipes/{recipe}": {
       "get": {
         "operationId": "getRecipe",
-        "parameters": [{ "$ref": "#/components/parameters/Recipe" }],
+        "summary": "Get a recipe",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Published recipes are public. A valid bearer token with the read scope additionally lets the owner read their private recipes.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
         "responses": {
-          "200": { "$ref": "#/components/responses/RecipeResponse" },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateRecipe",
+        "summary": "Update a private recipe",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Published recipes are immutable (403). POST is accepted as an alias for multipart clients.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecipe"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecipe"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "updateRecipeMultipart",
+        "summary": "Update a private recipe (POST alias)",
+        "tags": [
+          "Recipes"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecipe"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecipe"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteRecipe",
+        "summary": "Delete a private recipe",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Published recipes cannot be deleted (403).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DeletedResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/comments": {
+      "get": {
+        "operationId": "listRecipeComments",
+        "summary": "List comments",
+        "tags": [
+          "Community"
+        ],
+        "description": "Page-number pagination, 50 per page (existing contract).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CommentPage"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createRecipeComment",
+        "summary": "Comment on a published recipe",
+        "tags": [
+          "Community"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateComment"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CommentResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/copy": {
+      "post": {
+        "operationId": "copyRecipe",
+        "summary": "Copy a published recipe into the library",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Creates a new private recipe with provenance. Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/like": {
+      "post": {
+        "operationId": "likeRecipe",
+        "summary": "Like a published recipe",
+        "tags": [
+          "Community"
+        ],
+        "description": "Idempotent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/LikeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unlikeRecipe",
+        "summary": "Remove a like",
+        "tags": [
+          "Community"
+        ],
+        "description": "Idempotent.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/LikeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/publish": {
+      "post": {
+        "operationId": "publishRecipe",
+        "summary": "Publish a recipe (irreversible)",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Requires at least one image. The recipe becomes immutable.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/reports": {
+      "post": {
+        "operationId": "reportRecipe",
+        "summary": "Report a recipe",
+        "tags": [
+          "Safety"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/recipes/{recipe}/similar": {
+      "get": {
+        "operationId": "listSimilarRecipes",
+        "summary": "Similar published recipes",
+        "tags": [
+          "Recipes"
+        ],
+        "description": "Up to 6 recipes for the same camera model, ranked by shared categories, tags and settings. Not paginated by design.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecipeList"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
     "/recipes/{recipe}/view": {
       "post": {
         "operationId": "recordRecipeView",
-        "parameters": [{ "$ref": "#/components/parameters/Recipe" }],
+        "summary": "Record a view",
+        "tags": [
+          "Community"
+        ],
+        "description": "Public. Authenticated viewers are deduplicated for 15 minutes; anonymous clients may send X-Anonymous-Key.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RecipePath"
+          }
+        ],
         "responses": {
-          "204": { "description": "The view was recorded or deduplicated." },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          "200": {
+            "$ref": "#/components/responses/ViewResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/support": {
+      "get": {
+        "operationId": "getSupport",
+        "summary": "Support email and policy URLs",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SupportResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/users/{user}/block": {
+      "post": {
+        "operationId": "blockUser",
+        "summary": "Block a user by ID",
+        "tags": [
+          "Safety"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BlockResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unblockUser",
+        "summary": "Unblock a user by ID",
+        "tags": [
+          "Safety"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserPath"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BlockResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/users/{user}/reports": {
+      "post": {
+        "operationId": "reportUser",
+        "summary": "Report a user",
+        "tags": [
+          "Safety"
+        ],
+        "description": "Supports the Idempotency-Key header.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-token-scope": "write",
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ReportResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     }
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Sanctum bearer token. Tokens from Sign in with Apple have the ability `*`; personal access tokens carry `read` and/or `write`. Each operation lists the required scope in x-token-scope (`full` means an unrestricted first-party token)."
+      }
     },
     "parameters": {
-      "Camera": { "name": "camera", "in": "path", "required": true, "schema": { "type": "string" } },
-      "Recipe": { "name": "recipe", "in": "path", "required": true, "schema": { "type": "string" } },
-      "Feed": { "name": "feed", "in": "query", "schema": { "type": "string", "enum": ["popular", "newest"] } },
-      "Search": { "name": "search", "in": "query", "schema": { "type": "string" } },
-      "CompatibilityEvidence": { "name": "compatibility_evidence", "in": "query", "description": "Minimum evidence for every recipe setting; requires camera_model_id.", "schema": { "type": "string", "enum": ["manufacturer_documented", "camera_verified"] } },
-      "Subjects": { "name": "subjects[]", "in": "query", "description": "Match recipes with an example image labeled with any selected subject.", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "enum": ["street", "portrait", "landscape", "architecture", "nature", "wildlife", "travel", "automotive", "night", "low_light", "indoor", "food", "everyday", "documentary", "close_up"] } } },
-      "Lighting": { "name": "lighting[]", "in": "query", "description": "Match recipes with an example image labeled with any selected lighting condition.", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "enum": ["daylight", "golden_hour", "blue_hour", "overcast", "open_shade", "backlit", "artificial", "mixed", "low_light", "studio"] } } },
-      "Looks": { "name": "looks[]", "in": "query", "description": "Match recipes with an example image labeled with any selected look.", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string", "enum": ["warm", "neutral", "cool", "monochrome", "vibrant", "muted", "cinematic", "vintage"] } } },
-      "PerPage": { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } },
-      "Page": { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } }
-    },
-    "requestBodies": {
-      "AppleLogin": {
+      "CameraPath": {
+        "name": "camera",
+        "in": "path",
         "required": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "required": ["identity_token"],
-              "properties": { "identity_token": { "type": "string" }, "authorization_code": { "type": "string" } }
-            }
-          }
+        "description": "Camera model ULID or slug.",
+        "schema": {
+          "type": "string"
         }
       },
-      "CreateRecipe": {
+      "RecipePath": {
+        "name": "recipe",
+        "in": "path",
         "required": true,
-        "content": {
-          "multipart/form-data": {
-            "schema": { "$ref": "#/components/schemas/CreateRecipe" }
+        "description": "Recipe ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CollectionPath": {
+        "name": "collection",
+        "in": "path",
+        "required": true,
+        "description": "Collection ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CommentPath": {
+        "name": "comment",
+        "in": "path",
+        "required": true,
+        "description": "Comment ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "UsernamePath": {
+        "name": "username",
+        "in": "path",
+        "required": true,
+        "description": "Profile username.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RecipeimagePath": {
+        "name": "recipeImage",
+        "in": "path",
+        "required": true,
+        "description": "Recipe image ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "UserPath": {
+        "name": "user",
+        "in": "path",
+        "required": true,
+        "description": "User ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReportPath": {
+        "name": "report",
+        "in": "path",
+        "required": true,
+        "description": "Report ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "TokenPath": {
+        "name": "token",
+        "in": "path",
+        "required": true,
+        "description": "Personal access token ID (numeric).",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PerPage": {
+        "name": "per_page",
+        "in": "query",
+        "description": "Items per page, 1-100 (default 20).",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number, starting at 1.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "description": "Opaque cursor from meta.next_cursor of the previous response.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "AdminPerPage": {
+        "name": "per_page",
+        "in": "query",
+        "description": "Items per page, 1-50 (default 25).",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 25
+        }
+      },
+      "Feed": {
+        "name": "feed",
+        "in": "query",
+        "description": "Ordering: popular (default) or newest.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "popular",
+            "newest"
+          ]
+        }
+      },
+      "Search": {
+        "name": "search",
+        "in": "query",
+        "description": "Free text over name, description, recommendation and tags (max 100 characters).",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CameraModelId": {
+        "name": "camera_model_id",
+        "in": "query",
+        "description": "Only recipes for this camera model ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "FilmSimulation": {
+        "name": "film_simulation",
+        "in": "query",
+        "description": "Only recipes whose film_simulation setting equals this value.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CompatibilityEvidence": {
+        "name": "compatibility_evidence",
+        "in": "query",
+        "description": "Minimum evidence level of every setting; requires camera_model_id.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "manufacturer_documented",
+            "camera_verified"
+          ]
+        }
+      },
+      "Categories": {
+        "name": "categories[]",
+        "in": "query",
+        "description": "Category IDs or slugs; any match.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
+        },
+        "style": "form",
+        "explode": true
+      },
+      "Tags": {
+        "name": "tags[]",
+        "in": "query",
+        "description": "Tag IDs or slugs; any match.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "style": "form",
+        "explode": true
+      },
+      "Subjects": {
+        "name": "subjects[]",
+        "in": "query",
+        "description": "Example-photo subject labels; any match.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "street",
+              "portrait",
+              "landscape",
+              "architecture",
+              "nature",
+              "wildlife",
+              "travel",
+              "automotive",
+              "night",
+              "low_light",
+              "indoor",
+              "food",
+              "everyday",
+              "documentary",
+              "close_up"
+            ]
+          }
+        },
+        "style": "form",
+        "explode": true
+      },
+      "Lighting": {
+        "name": "lighting[]",
+        "in": "query",
+        "description": "Example-photo lighting labels; any match.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "daylight",
+              "golden_hour",
+              "blue_hour",
+              "overcast",
+              "open_shade",
+              "backlit",
+              "artificial",
+              "mixed",
+              "low_light",
+              "studio"
+            ]
+          }
+        },
+        "style": "form",
+        "explode": true
+      },
+      "Looks": {
+        "name": "looks[]",
+        "in": "query",
+        "description": "Example-photo look labels; any match.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "warm",
+              "neutral",
+              "cool",
+              "monochrome",
+              "vibrant",
+              "muted",
+              "cinematic",
+              "vintage"
+            ]
+          }
+        },
+        "style": "form",
+        "explode": true
+      },
+      "LibraryStatus": {
+        "name": "status",
+        "in": "query",
+        "description": "Only private drafts or only published recipes.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "private",
+            "published"
+          ]
+        }
+      },
+      "LibrarySearch": {
+        "name": "search",
+        "in": "query",
+        "description": "Free text over name, description and recommendation.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "LibraryCamera": {
+        "name": "camera_model_id",
+        "in": "query",
+        "description": "Only recipes for this camera model ULID.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ImageVariant": {
+        "name": "variant",
+        "in": "query",
+        "description": "thumbnail, detail or original (default depends on visibility).",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "thumbnail",
+            "detail",
+            "original"
+          ]
+        }
+      },
+      "AdminSearch": {
+        "name": "search",
+        "in": "query",
+        "description": "Name, email or username.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "AdminUserStatus": {
+        "name": "status",
+        "in": "query",
+        "description": "active (default), suspended or all.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "active",
+            "suspended",
+            "all"
+          ]
+        }
+      },
+      "ReportStatus": {
+        "name": "status",
+        "in": "query",
+        "description": "Report status filter.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReportReason": {
+        "name": "reason",
+        "in": "query",
+        "description": "Report reason filter.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReportType": {
+        "name": "reportable_type",
+        "in": "query",
+        "description": "Reported item type filter.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReportFrom": {
+        "name": "from",
+        "in": "query",
+        "description": "Created at or after (date).",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "ReportTo": {
+        "name": "to",
+        "in": "query",
+        "description": "Created at or before (date).",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Stable key (8-128 chars of letters, digits and . _ : -) for one logical operation. A retry with the same key and payload returns the original result with Idempotent-Replayed: true; a different payload is rejected with idempotency_key_reused.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{8,128}$"
         }
       }
     },
     "responses": {
-      "HealthResponse": { "description": "API health", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthEnvelope" } } } },
-      "AuthSessionResponse": { "description": "Authenticated session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
-      "CameraCollection": { "description": "Camera models", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
-      "CameraResponse": { "description": "Camera model", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
-      "CameraCapabilityCollection": { "description": "Camera capabilities", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CameraCapabilityArrayEnvelope" } } } },
-      "CategoryCollection": { "description": "Recipe categories", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataArrayEnvelope" } } } },
-      "RecipeResponse": { "description": "Recipe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DataEnvelope" } } } },
-      "RecipePage": { "description": "Paginated recipes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PageEnvelope" } } } },
-      "Unauthenticated": { "description": "Authentication is required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } },
-      "ValidationError": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } },
-      "NotFound": { "description": "Resource not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorEnvelope" } } } }
+      "Unauthenticated": {
+        "description": "Authentication is required or the token is invalid, expired or revoked.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Not allowed: the token lacks the required scope (insufficient_scope) or a policy denies the action (forbidden).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The resource does not exist or is not visible to the caller.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The request conflicts with current state, or an identical idempotent request is still running.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation failed (validation_failed) or the request is not processable (unprocessable, idempotency_key_reused, invalid_idempotency_key).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded; see the Retry-After header.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds until the next request is allowed.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "HealthResponse": {
+        "description": "API liveness",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "ReadinessResponse": {
+        "description": "Dependencies are reachable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "SupportResponse": {
+        "description": "Support contact details",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Support"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "AuthSessionResponse": {
+        "description": "Authenticated session",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "LoggedOutResponse": {
+        "description": "Token revoked",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/LoggedOut"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CameraCollection": {
+        "description": "Supported camera models",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Camera"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CameraResponse": {
+        "description": "Camera model with capabilities",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Camera"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CameraCapabilityCollection": {
+        "description": "Camera capabilities",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CameraCapability"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CategoryCollection": {
+        "description": "Recipe categories",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "RecipePage": {
+        "description": "Page of recipes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Recipe"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/PageMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "RecipeCursorPage": {
+        "description": "Cursor page of recipes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Recipe"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/CursorMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "RecipeList": {
+        "description": "List of recipes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Recipe"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "RecipeResponse": {
+        "description": "Recipe",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "DeletedResponse": {
+        "description": "Deleted",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Deleted"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "ViewResponse": {
+        "description": "View recorded or deduplicated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ViewResult"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "LikeResponse": {
+        "description": "Like state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/LikeState"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "FollowResponse": {
+        "description": "Follow state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/FollowState"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "BlockResponse": {
+        "description": "Block state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/BlockState"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CommentPage": {
+        "description": "Page of comments",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Comment"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/PageMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "CommentResponse": {
+        "description": "Comment",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Comment"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CollectionList": {
+        "description": "The caller's collections in display order (not paginated; bounded per user)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Collection"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "CollectionResponse": {
+        "description": "Collection",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Collection"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "ProfileResponse": {
+        "description": "Profile",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "AccessTokenCursorPage": {
+        "description": "Cursor page of personal access tokens (secrets are never included)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessToken"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/CursorMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "CreatedAccessTokenResponse": {
+        "description": "Created token including its one-time secret",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/CreatedAccessToken"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "RevokedResponse": {
+        "description": "Token revoked",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Revoked"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "ReportResponse": {
+        "description": "Report",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "ReportPage": {
+        "description": "Page of reports",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Report"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/PageMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "AdminUserPage": {
+        "description": "Page of users",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUser"
+                  }
+                },
+                "links": {
+                  "$ref": "#/components/schemas/PageLinks"
+                },
+                "meta": {
+                  "$ref": "#/components/schemas/PageMeta"
+                }
+              },
+              "required": [
+                "data",
+                "links",
+                "meta"
+              ]
+            }
+          }
+        }
+      },
+      "AdminUserResponse": {
+        "description": "User",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/AdminUser"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "AdminRecipeResponse": {
+        "description": "Recipe with moderation fields",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/AdminRecipe"
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      },
+      "RecipeImageBinary": {
+        "description": "The image bytes. Private recipe images are only served to their owner.",
+        "content": {
+          "image/jpeg": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/png": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/webp": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      },
+      "McpResult": {
+        "description": "A JSON-RPC 2.0 response (or 202 for notifications). See docs/MCP.md.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "jsonrpc"
+              ],
+              "properties": {
+                "jsonrpc": {
+                  "const": "2.0"
+                },
+                "id": {},
+                "result": {},
+                "error": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {}
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "schemas": {
-      "DataEnvelope": { "type": "object", "required": ["data"], "properties": { "data": {} } },
-      "DataArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array" } } },
-      "CameraCapabilityArrayEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/CameraCapability" } } } },
-      "CameraCapability": { "type": "object", "required": ["id", "key", "display_name", "value_type", "evidence"], "properties": { "id": { "type": "string" }, "key": { "type": "string" }, "display_name": { "type": "string" }, "value_type": { "type": "string" }, "allowed_values": {}, "minimum": { "type": ["number", "null"] }, "maximum": { "type": ["number", "null"] }, "step": { "type": ["number", "null"] }, "transport_identifier": { "type": ["string", "null"] }, "custom_slot_metadata": { "type": ["object", "null"] }, "evidence": { "$ref": "#/components/schemas/CameraCapabilityEvidence" } } },
-      "CameraCapabilityEvidence": { "type": "object", "required": ["level", "source", "firmware", "verified_at"], "properties": { "level": { "type": "string", "enum": ["catalog_only", "manufacturer_documented", "camera_verified"] }, "source": { "type": ["string", "null"] }, "firmware": { "type": ["string", "null"] }, "verified_at": { "type": ["string", "null"], "format": "date-time" } } },
-      "CreateRecipe": { "type": "object", "required": ["name", "camera_model_id"], "properties": { "name": { "type": "string", "maxLength": 120 }, "camera_model_id": { "type": "string" }, "images": { "type": "array", "maxItems": 5, "items": { "type": "string", "format": "binary" } }, "capture_metadata": { "type": "string", "contentMediaType": "application/json", "description": "JSON array aligned by index with images; each item is null or RecipeCaptureMetadata." }, "example_context": { "type": "string", "contentMediaType": "application/json", "description": "JSON array aligned by index with images; each item is null or RecipeExampleContext." } } },
-      "RecipeCaptureMetadata": { "type": "object", "required": ["source", "location_shared"], "properties": { "source": { "type": "string", "enum": ["fujifilm_jpeg", "jpeg_exif"] }, "camera_make": { "type": ["string", "null"] }, "camera_model": { "type": ["string", "null"] }, "lens_model": { "type": ["string", "null"] }, "exposure": { "type": ["object", "null"], "properties": { "iso": { "type": ["number", "null"] }, "exposure_time_seconds": { "type": ["number", "null"] }, "f_number": { "type": ["number", "null"] }, "focal_length_mm": { "type": ["number", "null"] }, "exposure_compensation_ev": { "type": ["number", "null"] } } }, "settings": { "type": "array", "items": { "type": "object", "required": ["setting_key", "value", "source", "was_edited"], "properties": { "setting_key": { "type": "string" }, "value": {}, "source": { "type": "string" }, "was_edited": { "type": "boolean" } } } }, "scene_notes": { "type": ["string", "null"], "maxLength": 500 }, "lighting_notes": { "type": ["string", "null"], "maxLength": 500 }, "location": { "type": ["object", "null"], "properties": { "latitude": { "type": "number", "minimum": -90, "maximum": 90 }, "longitude": { "type": "number", "minimum": -180, "maximum": 180 } } }, "location_shared": { "type": "boolean", "default": false } } },
-      "RecipeExampleContext": { "type": "object", "properties": { "subjects": { "type": "array", "items": { "type": "string", "enum": ["street", "portrait", "landscape", "architecture", "nature", "wildlife", "travel", "automotive", "night", "low_light", "indoor", "food", "everyday", "documentary", "close_up"] } }, "lighting": { "type": "array", "items": { "type": "string", "enum": ["daylight", "golden_hour", "blue_hour", "overcast", "open_shade", "backlit", "artificial", "mixed", "low_light", "studio"] } }, "looks": { "type": "array", "items": { "type": "string", "enum": ["warm", "neutral", "cool", "monochrome", "vibrant", "muted", "cinematic", "vintage"] } } } },
-      "RecipeImage": { "type": "object", "properties": { "id": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "capture_metadata": { "oneOf": [{ "$ref": "#/components/schemas/RecipeCaptureMetadata" }, { "type": "null" }], "description": "Location is included only when location_shared is true." }, "example_context": { "oneOf": [{ "$ref": "#/components/schemas/RecipeExampleContext" }, { "type": "null" }], "description": "User-supplied labels about a real example image; never inferred by the app." } } },
-      "HealthEnvelope": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Health" } } },
-      "Health": { "type": "object", "required": ["service", "status", "version"], "properties": { "service": { "type": "string" }, "status": { "type": "string" }, "version": { "type": "string" } } },
-      "PageEnvelope": { "type": "object", "required": ["data", "links", "meta"], "properties": { "data": { "type": "array" }, "links": { "type": "object" }, "meta": { "$ref": "#/components/schemas/PageMeta" } } },
-      "PageMeta": { "type": "object", "required": ["current_page", "last_page", "per_page", "total"], "properties": { "current_page": { "type": "integer" }, "last_page": { "type": "integer" }, "per_page": { "type": "integer" }, "total": { "type": "integer" } } },
-      "ErrorEnvelope": { "type": "object", "required": ["error"], "properties": { "error": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "details": { "type": "object" } } } } }
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "PageLinks": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "prev": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "next": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PageMeta": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer"
+          },
+          "from": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "last_page": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "per_page": {
+            "type": "integer"
+          },
+          "to": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current_page",
+          "last_page",
+          "per_page",
+          "total"
+        ],
+        "description": "Page-number pagination metadata."
+      },
+      "CursorMeta": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "per_page": {
+            "type": "integer"
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "prev_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "per_page",
+          "next_cursor",
+          "prev_cursor"
+        ],
+        "description": "Cursor pagination metadata. Pass next_cursor as the cursor query parameter to fetch the next page; null means there are no more items."
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "service",
+          "status",
+          "version"
+        ]
+      },
+      "Readiness": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ]
+          },
+          "checks": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "type": "boolean"
+              },
+              "redis": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "required": [
+          "service",
+          "status",
+          "checks"
+        ]
+      },
+      "Support": {
+        "type": "object",
+        "properties": {
+          "support_email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "community_standards_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "privacy_policy_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "support_email",
+          "community_standards_url",
+          "privacy_policy_url"
+        ]
+      },
+      "CameraCapabilityEvidence": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "catalog_only",
+              "manufacturer_documented",
+              "camera_verified"
+            ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "firmware": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "level",
+          "source",
+          "firmware",
+          "verified_at"
+        ]
+      },
+      "CameraCapability": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "value_type": {
+            "type": "string"
+          },
+          "allowed_values": {
+            "description": "Allowed enum values or null."
+          },
+          "minimum": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "maximum": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "step": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "transport_identifier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "custom_slot_metadata": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/CameraCapabilityEvidence"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "display_name",
+          "value_type",
+          "evidence"
+        ]
+      },
+      "Camera": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "model_identifier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_supported": {
+            "type": "boolean"
+          },
+          "unsupported_recipe_settings": {},
+          "transport_metadata": {},
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CameraCapability"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "CameraRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "RecipeSetting": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "description": "String, number, boolean or object, as allowed by the camera capability."
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "RecipeCaptureMetadata": {
+        "type": "object",
+        "required": [
+          "source",
+          "location_shared"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "fujifilm_jpeg",
+              "jpeg_exif"
+            ]
+          },
+          "camera_make": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "camera_model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lens_model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exposure": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "iso": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "exposure_time_seconds": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "f_number": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "focal_length_mm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "exposure_compensation_ev": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "settings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "setting_key": {
+                  "type": "string"
+                },
+                "value": {},
+                "source": {
+                  "type": "string"
+                },
+                "was_edited": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "setting_key",
+                "value",
+                "source",
+                "was_edited"
+              ]
+            }
+          },
+          "scene_notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "lighting_notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "location": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "location_shared": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "RecipeExampleContext": {
+        "type": "object",
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "street",
+                "portrait",
+                "landscape",
+                "architecture",
+                "nature",
+                "wildlife",
+                "travel",
+                "automotive",
+                "night",
+                "low_light",
+                "indoor",
+                "food",
+                "everyday",
+                "documentary",
+                "close_up"
+              ]
+            }
+          },
+          "lighting": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "daylight",
+                "golden_hour",
+                "blue_hour",
+                "overcast",
+                "open_shade",
+                "backlit",
+                "artificial",
+                "mixed",
+                "low_light",
+                "studio"
+              ]
+            }
+          },
+          "looks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "warm",
+                "neutral",
+                "cool",
+                "monochrome",
+                "vibrant",
+                "muted",
+                "cinematic",
+                "vintage"
+              ]
+            }
+          }
+        },
+        "description": "Author-supplied labels for a real example photo; never inferred by the application."
+      },
+      "RecipeImage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "derivative_urls": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "mime_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "width": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "height": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "sort_order": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "processing_status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "capture_metadata": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RecipeCaptureMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Location is included only when location_shared is true."
+          },
+          "example_context": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RecipeExampleContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "Recipe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recommendation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lens": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "private",
+              "published"
+            ]
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "views_count": {
+            "type": "integer"
+          },
+          "likes_count": {
+            "type": "integer"
+          },
+          "downloads_count": {
+            "type": "integer"
+          },
+          "camera_model": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CameraRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "username": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "provenance": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "source_recipe_id": {
+                "type": "string"
+              },
+              "source_author_id": {
+                "type": "string"
+              }
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            }
+          },
+          "settings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSetting"
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeImage"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "camera_model",
+          "settings",
+          "images"
+        ]
+      },
+      "RecipeSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "camera_model": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CameraRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "Collection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSummary"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "is_public",
+          "sort_order",
+          "recipes"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "biography": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "camera_model": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CameraRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_image_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "published_recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSummary"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Collection"
+            }
+          },
+          "followers_count": {
+            "type": "integer"
+          },
+          "following_count": {
+            "type": "integer"
+          },
+          "is_following": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ]
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "can_delete": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "body"
+        ]
+      },
+      "AuthSession": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Unrestricted first-party bearer token. Treat as a secret."
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "token",
+          "expires_at",
+          "user"
+        ]
+      },
+      "AccessToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "abilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write"
+              ]
+            }
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "abilities",
+          "expires_at"
+        ]
+      },
+      "CreatedAccessToken": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AccessToken"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "The secret bearer token. Shown exactly once, never stored in clear text and never returned again."
+              }
+            },
+            "required": [
+              "token"
+            ]
+          }
+        ]
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reportable_type": {
+            "type": "string"
+          },
+          "reportable_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "details": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewer_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporter": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "context": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Type-specific summary of the reported item."
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reviewed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "status"
+        ]
+      },
+      "AdminUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_admin": {
+            "type": "boolean"
+          },
+          "is_suspended": {
+            "type": "boolean"
+          },
+          "suspended_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "suspension_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "recipe_count": {
+            "type": "integer"
+          },
+          "published_recipe_count": {
+            "type": "integer"
+          },
+          "profile": {
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "is_suspended"
+        ]
+      },
+      "AdminRecipe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "is_hidden": {
+            "type": "boolean"
+          },
+          "moderated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "moderation_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "settings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSetting"
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "is_hidden"
+        ]
+      },
+      "Deleted": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
+      "Revoked": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "LoggedOut": {
+        "type": "object",
+        "properties": {
+          "logged_out": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "logged_out"
+        ]
+      },
+      "ViewResult": {
+        "type": "object",
+        "properties": {
+          "recorded": {
+            "type": "boolean"
+          },
+          "views_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "recorded",
+          "views_count"
+        ]
+      },
+      "LikeState": {
+        "type": "object",
+        "properties": {
+          "liked": {
+            "type": "boolean"
+          },
+          "likes_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "liked",
+          "likes_count"
+        ]
+      },
+      "FollowState": {
+        "type": "object",
+        "properties": {
+          "following": {
+            "type": "boolean"
+          },
+          "followers_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "following",
+          "followers_count"
+        ]
+      },
+      "BlockState": {
+        "type": "object",
+        "properties": {
+          "blocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "blocked"
+        ]
+      },
+      "AppleLogin": {
+        "type": "object",
+        "properties": {
+          "identity_token": {
+            "type": "string"
+          },
+          "authorization_code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name, used only when the account is created."
+          }
+        },
+        "required": [
+          "identity_token"
+        ]
+      },
+      "CreateRecipe": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "camera_model_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 5000
+          },
+          "recommendation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "lens": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120
+          },
+          "categories": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string"
+            },
+            "description": "Category IDs from GET /categories."
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          "settings": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "properties": {
+                "setting_key": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "value": {}
+              },
+              "required": [
+                "setting_key",
+                "value"
+              ]
+            },
+            "description": "Validated against the camera model's capabilities (GET /cameras/{camera}). Replaces all existing settings on update. In multipart requests send a JSON-encoded string."
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "description": "JPEG, PNG or WebP, up to 25 MB each. Multipart requests only."
+          },
+          "capture_metadata": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "JSON array aligned by index with images; each item is null or RecipeCaptureMetadata."
+          },
+          "example_context": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "JSON array aligned by index with images; each item is null or RecipeExampleContext."
+          }
+        },
+        "required": [
+          "name",
+          "camera_model_id"
+        ],
+        "description": "Send as application/json (no images) or multipart/form-data (with images)."
+      },
+      "UpdateRecipe": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "camera_model_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 5000
+          },
+          "recommendation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "lens": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120
+          },
+          "categories": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string"
+            },
+            "description": "Category IDs from GET /categories."
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          "settings": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "properties": {
+                "setting_key": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "value": {}
+              },
+              "required": [
+                "setting_key",
+                "value"
+              ]
+            },
+            "description": "Validated against the camera model's capabilities (GET /cameras/{camera}). Replaces all existing settings on update. In multipart requests send a JSON-encoded string."
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "description": "JPEG, PNG or WebP, up to 25 MB each. Multipart requests only."
+          },
+          "capture_metadata": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "JSON array aligned by index with images; each item is null or RecipeCaptureMetadata."
+          },
+          "example_context": {
+            "type": "string",
+            "contentMediaType": "application/json",
+            "description": "JSON array aligned by index with images; each item is null or RecipeExampleContext."
+          }
+        },
+        "description": "Only private recipes can be updated. Omitted fields are unchanged."
+      },
+      "CreateCollection": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Unique per user."
+          },
+          "is_public": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateCollection": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "is_public": {
+            "type": "boolean"
+          },
+          "sort_order": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ReorderCollections": {
+        "type": "object",
+        "properties": {
+          "collection_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "collection_ids"
+        ]
+      },
+      "CreateComment": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "UpdateProfile": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "camera_model_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "biography": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "profile_image": {
+            "type": "string",
+            "format": "binary",
+            "description": "Multipart requests only."
+          },
+          "remove_profile_image": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateReport": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "objectionable_content",
+              "harassment",
+              "copyright",
+              "spam",
+              "other"
+            ]
+          },
+          "details": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "UpdateReport": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "hide_content",
+              "suspend_user",
+              "restore_content",
+              "dismiss",
+              null
+            ]
+          },
+          "reviewer_note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "UpdateSuspension": {
+        "type": "object",
+        "properties": {
+          "is_suspended": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "description": "Required when is_suspended is true."
+          }
+        },
+        "required": [
+          "is_suspended"
+        ]
+      },
+      "CreateAccessToken": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "abilities": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write"
+              ]
+            }
+          },
+          "expires_in_days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 30
+          }
+        },
+        "required": [
+          "name",
+          "abilities"
+        ]
+      }
     }
   }
 }

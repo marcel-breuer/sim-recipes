@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\AuthenticateOptionalToken;
+use App\Http\Middleware\EnforceIdempotency;
+use App\Http\Middleware\EnforceTokenScope;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\LandingPageContentSecurityPolicy;
 use App\Http\Middleware\PreventIndexing;
@@ -29,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.api' => Authenticate::class,
             'active.account' => RejectSuspendedUsers::class,
             'admin' => EnsureAdmin::class,
+            'auth.optional' => AuthenticateOptionalToken::class,
+            'idempotent' => EnforceIdempotency::class,
+            'token.scope' => EnforceTokenScope::class,
             'landing.csp' => LandingPageContentSecurityPolicy::class,
             'noindex' => PreventIndexing::class,
         ]);
@@ -75,16 +81,29 @@ return Application::configure(basePath: dirname(__DIR__))
                 : 500;
 
             [$code, $message] = match ($status) {
+                400 => ['bad_request', 'The request could not be processed.'],
+                403 => ['forbidden', 'You are not allowed to perform this action.'],
                 404 => ['not_found', 'The requested resource was not found.'],
                 405 => ['method_not_allowed', 'The requested method is not allowed.'],
+                409 => ['conflict', 'The request conflicts with the current state of the resource.'],
+                422 => ['unprocessable', 'The request could not be processed.'],
+                429 => ['rate_limited', 'Too many requests. Retry after the indicated delay.'],
                 default => ['server_error', 'An unexpected error occurred.'],
             };
+
+            if ($status === 422 && $exception->getMessage() !== '') {
+                $message = $exception->getMessage();
+            }
+
+            $headers = $exception instanceof HttpExceptionInterface
+                ? array_intersect_key($exception->getHeaders(), array_flip(['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'Allow']))
+                : [];
 
             return response()->json([
                 'error' => [
                     'code' => $code,
                     'message' => $message,
                 ],
-            ], $status);
+            ], $status, $headers);
         });
     })->create();

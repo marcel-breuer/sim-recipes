@@ -59,6 +59,16 @@ behavior, and `AGENTS.md` for engineering conventions.
 Release-candidate checks and known limitations are tracked in
 `docs/RELEASE_VALIDATION.md`.
 
+## API and automation
+
+- [`docs/API.md`](docs/API.md): REST conventions, authentication and token
+  scopes, pagination, errors, rate limits, idempotency and the endpoint
+  reference.
+- [`docs/openapi.json`](docs/openapi.json): the OpenAPI 3.1 contract; a test
+  fails when it drifts from the routes.
+- [`docs/MCP.md`](docs/MCP.md): the Model Context Protocol server for AI
+  assistants (client setup, tool catalogue, permission model, security).
+
 ## Example photography
 
 The public landing page uses the approved example photograph

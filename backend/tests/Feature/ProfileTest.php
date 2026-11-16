@@ -61,7 +61,7 @@ class ProfileTest extends TestCase
             'name' => 'X-S20',
             'slug' => 'x-s20',
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->patchJson('/api/v1/me/profile', [
             'username' => 'new_profile',
@@ -91,7 +91,7 @@ class ProfileTest extends TestCase
             ->assertUnauthorized();
 
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
         Storage::fake('local');
         config(['filesystems.default' => 'local']);
 
@@ -119,7 +119,7 @@ class ProfileTest extends TestCase
             ->assertJsonPath('data.following_count', 0)
             ->assertJsonPath('data.is_following', false);
 
-        Sanctum::actingAs($follower);
+        Sanctum::actingAs($follower, ['*']);
         $this->postJson('/api/v1/profiles/creator/follow')
             ->assertOk()
             ->assertJsonPath('data.following', true)
@@ -146,14 +146,14 @@ class ProfileTest extends TestCase
         Profile::create(['user_id' => $creator->id, 'username' => 'creator']);
         Profile::create(['user_id' => $follower->id, 'username' => 'follower']);
 
-        Sanctum::actingAs($creator);
+        Sanctum::actingAs($creator, ['*']);
         $this->postJson('/api/v1/profiles/creator/follow')->assertStatus(422);
 
         UserBlock::create([
             'blocker_id' => $follower->id,
             'blocked_user_id' => $creator->id,
         ]);
-        Sanctum::actingAs($follower);
+        Sanctum::actingAs($follower, ['*']);
         $this->postJson('/api/v1/profiles/creator/follow')->assertNotFound();
     }
 }

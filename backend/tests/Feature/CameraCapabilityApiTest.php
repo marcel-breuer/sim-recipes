@@ -83,7 +83,7 @@ class CameraCapabilityApiTest extends TestCase
         $this->seed(CameraCapabilitySeeder::class);
         $camera = CameraModel::query()->where('slug', 'fujifilm-x-s20')->firstOrFail();
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes', [
             'name' => 'Valid X-S20 Recipe',
@@ -138,7 +138,7 @@ class CameraCapabilityApiTest extends TestCase
         $this->seed(CameraCapabilitySeeder::class);
         $camera = CameraModel::query()->where('slug', 'fujifilm-x-t5')->firstOrFail();
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes', [
             'name' => 'Valid X-T5 Recipe',

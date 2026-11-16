@@ -19,7 +19,7 @@ class ModerationTest extends TestCase
     {
         $user = User::factory()->create();
         $camera = $this->createCamera();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes', [
             'name' => 'Porn recipe',
@@ -48,7 +48,7 @@ class ModerationTest extends TestCase
             'processing_status' => 'ready',
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson('/api/v1/recipes/'.$recipe->id.'/publish')
             ->assertUnprocessable()
@@ -75,14 +75,14 @@ class ModerationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        Sanctum::actingAs($reporter);
+        Sanctum::actingAs($reporter, ['*']);
         $report = $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
             'reason' => 'objectionable_content',
             'details' => 'Please review this recipe.',
         ])->assertCreated()
             ->assertJsonPath('data.status', 'open');
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
         $this->getJson('/api/v1/admin/reports')
             ->assertOk()
             ->assertJsonPath('data.0.id', $report->json('data.id'));
@@ -100,7 +100,7 @@ class ModerationTest extends TestCase
     public function test_non_admin_cannot_discover_admin_report_endpoints(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->getJson('/api/v1/admin/reports')->assertNotFound();
         $this->patchJson('/api/v1/admin/reports/'.str()->ulid(), [
@@ -121,7 +121,7 @@ class ModerationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        Sanctum::actingAs($blocker);
+        Sanctum::actingAs($blocker, ['*']);
         $this->postJson('/api/v1/profiles/blocked-author/block')
             ->assertOk()
             ->assertJsonPath('data.blocked', true);
@@ -150,12 +150,12 @@ class ModerationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        Sanctum::actingAs($reporter);
+        Sanctum::actingAs($reporter, ['*']);
         $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
             'reason' => 'spam',
         ])->assertCreated();
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
         $this->getJson('/api/v1/admin/reports?reason=spam&reportable_type=Recipe')
             ->assertOk()
             ->assertJsonPath('data.0.context.type', 'recipe')
@@ -177,12 +177,12 @@ class ModerationTest extends TestCase
             'published_at' => now(),
         ]);
 
-        Sanctum::actingAs($reporter);
+        Sanctum::actingAs($reporter, ['*']);
         $report = $this->postJson('/api/v1/recipes/'.$recipe->id.'/reports', [
             'reason' => 'objectionable_content',
         ])->json('data.id');
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($admin, ['*']);
         $payload = ['status' => 'resolved', 'resolution' => 'hide_content', 'reviewer_note' => 'Hidden.'];
         $this->patchJson('/api/v1/admin/reports/'.$report, $payload)->assertOk();
         $firstReviewedAt = ModerationReport::query()->findOrFail($report)->reviewed_at;
