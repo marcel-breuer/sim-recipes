@@ -157,6 +157,10 @@ Expected services:
 
 Only the API service is publicly routable in Coolify. PostgreSQL and Redis remain internal. PostgreSQL, Redis, and image files use Docker/Coolify persistent volumes. The API, queue, and scheduler share the image-storage volume.
 
+## Automation and MCP
+
+Scripts and AI assistants use scoped personal access tokens (`read`, `write`) issued from a first-party session. A single middleware enforces scopes on all authenticated routes. The MCP server (`POST /api/v1/mcp`, `App\Mcp`) contains no domain logic: each tool dispatches an in-process request to the matching REST route with the caller's token, so validation, policies, scopes and rate limits are the REST ones. See `docs/MCP.md` and `docs/API.md`.
+
 ## API evolution
 
 The initial public application contract is `/api/v1`. Within v1, changes should remain backward compatible where feasible. Breaking changes require deliberate versioning and coordinated iOS migration.
